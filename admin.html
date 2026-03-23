@@ -15,7 +15,6 @@
 
         .container { max-width: 800px; margin: 0 auto; }
         
-        /* YENİ: ARAMA KUTUSU TASARIMI */
         .admin-search-box { margin-bottom: 20px; position: relative; }
         .admin-search-input { width: 100%; box-sizing: border-box; padding: 12px 15px; border-radius: 8px; border: 1px solid #444; background: #2c3e50; color: white; font-size: 15px; outline: none; }
         .admin-search-input:focus { border-color: #3498db; }
@@ -26,10 +25,22 @@
         .bg-blue { background: #3498db; }
         .bg-red { background: #e74c3c; }
 
-        .action-btns button { border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 5px; color: white; }
+        .action-btns button { border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 5px; color: white; transition: 0.2s; }
+        .action-btns button:hover { opacity: 0.8; }
         .btn-verify { background: #3498db; }
-        .btn-ban { background: #e74c3c; }
+        .btn-ban { background: #e67e22; }
         .btn-unban { background: #2ecc71; }
+        .btn-posts { background: #9b59b6; }
+        .btn-delete { background: #c0392b; }
+
+        /* POST MODALI TASARIMI */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #2c3e50; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); max-height: 80vh; overflow-y: auto; color: white; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #aaa; }
+        .admin-post-item { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; }
+        .admin-post-content { font-size: 14px; margin-bottom: 10px; line-height: 1.4; }
+        .admin-delete-post-btn { background: #c0392b; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
 
         .ticket-item { background: #2c3e50; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
         .ticket-header { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 8px; font-size: 14px; color: #aaa; }
@@ -51,108 +62,142 @@
 
     <div class="container">
         <div id="users-section">
-            <div class="admin-search-box">
-                <input type="text" id="admin-user-search" class="admin-search-input" placeholder="Kullanıcı adı ile ara...">
-            </div>
+            <div class="admin-search-box"><input type="text" id="admin-user-search" class="admin-search-input" placeholder="Kullanıcı adı ile ara..."></div>
             <div id="users-list">Yükleniyor...</div>
         </div>
+        <div id="tickets-section" style="display:none;"><div id="tickets-list">Yükleniyor...</div></div>
+    </div>
 
-        <div id="tickets-section" style="display:none;">
-            <div id="tickets-list">Yükleniyor...</div>
+    <div class="modal-overlay" id="admin-posts-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;">Kullanıcı Gönderileri</h3>
+                <button class="close-btn" onclick="document.getElementById('admin-posts-modal').style.display='none'">&times;</button>
+            </div>
+            <div id="admin-posts-list">Yükleniyor...</div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        // YENİ EKLENENLER: getDocs, where, addDoc, serverTimestamp
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        const ADMIN_USERNAME = "realdincer"; 
-        let allUsers = []; // Tüm kullanıcıları burada tutacağız
+        const ADMIN_USERNAME = "realdincer"; let allUsers = []; 
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 const myUsername = user.displayName || user.email.split('@')[0];
                 if (myUsername !== ADMIN_USERNAME) { window.location.href = "feed.html"; return; }
-                loadUsers();
-                loadTickets();
+                loadUsers(); loadTickets();
             } else { window.location.href = "index.html"; }
         });
 
-        document.getElementById('tab-users-btn').addEventListener('click', () => {
-            document.getElementById('users-section').style.display = 'block';
-            document.getElementById('tickets-section').style.display = 'none';
-            document.getElementById('tab-users-btn').classList.add('active');
-            document.getElementById('tab-tickets-btn').classList.remove('active');
-        });
-        document.getElementById('tab-tickets-btn').addEventListener('click', () => {
-            document.getElementById('users-section').style.display = 'none';
-            document.getElementById('tickets-section').style.display = 'block';
-            document.getElementById('tab-tickets-btn').classList.add('active');
-            document.getElementById('tab-users-btn').classList.remove('active');
-        });
+        document.getElementById('tab-users-btn').addEventListener('click', () => { document.getElementById('users-section').style.display = 'block'; document.getElementById('tickets-section').style.display = 'none'; document.getElementById('tab-users-btn').classList.add('active'); document.getElementById('tab-tickets-btn').classList.remove('active'); });
+        document.getElementById('tab-tickets-btn').addEventListener('click', () => { document.getElementById('users-section').style.display = 'none'; document.getElementById('tickets-section').style.display = 'block'; document.getElementById('tab-tickets-btn').classList.add('active'); document.getElementById('tab-users-btn').classList.remove('active'); });
 
-        // 1. KULLANICILARI ÇEK
         function loadUsers() {
             onSnapshot(collection(db, "users"), (snapshot) => {
                 allUsers = [];
-                snapshot.forEach(docSnap => {
-                    allUsers.push({ id: docSnap.id, ...docSnap.data() });
-                });
+                snapshot.forEach(docSnap => { allUsers.push({ id: docSnap.id, ...docSnap.data() }); });
                 renderUserList(allUsers);
             });
         }
 
-        // 2. KULLANICILARI EKRANA BAS (ARAMA UYUMLU)
         function renderUserList(users) {
-            const list = document.getElementById('users-list');
-            list.innerHTML = '';
+            const list = document.getElementById('users-list'); list.innerHTML = '';
             users.forEach(user => {
-                const isVerified = user.isVerified || false;
-                const isBanned = user.isBanned || false;
-                let badgesHtml = '';
-                if (isVerified) badgesHtml += '<span class="badge bg-blue">VIP</span>';
-                if (isBanned) badgesHtml += '<span class="badge bg-red">BANLI</span>';
+                const isVerified = user.isVerified || false; const isBanned = user.isBanned || false;
+                let badgesHtml = ''; if (isVerified) badgesHtml += '<span class="badge bg-blue">VIP</span>'; if (isBanned) badgesHtml += '<span class="badge bg-red">BANLI</span>';
 
+                // YENİ BUTONLAR EKLENDİ
                 list.innerHTML += `
                     <div class="list-item">
                         <div class="user-info">@${user.id} ${badgesHtml}</div>
                         <div class="action-btns">
                             <button class="btn-verify" onclick="window.toggleVerify('${user.id}', ${isVerified})">${isVerified ? 'Tiki Al' : 'Tik Ver'}</button>
                             <button class="${isBanned ? 'btn-unban' : 'btn-ban'}" onclick="window.toggleBan('${user.id}', ${isBanned})">${isBanned ? 'Ban Aç' : 'Banla'}</button>
+                            <button class="btn-posts" onclick="window.viewUserPosts('${user.id}')">Postlar</button>
+                            <button class="btn-delete" onclick="window.deleteUserCompletely('${user.id}')">Sil</button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        // 3. CANLI ARAMA MANTIĞI
         document.getElementById('admin-user-search').addEventListener('input', (e) => {
-            const text = e.target.value.toLowerCase().trim();
-            const filtered = allUsers.filter(u => u.id.toLowerCase().includes(text));
-            renderUserList(filtered);
+            const text = e.target.value.toLowerCase().trim(); const filtered = allUsers.filter(u => u.id.toLowerCase().includes(text)); renderUserList(filtered);
         });
 
+        // ==========================================
+        // YENİ: HESAP SİLME MOTORU
+        // ==========================================
+        window.deleteUserCompletely = async function(username) {
+            if(confirm(`DİKKAT! @${username} adlı kullanıcıyı tamamen silmek istediğine emin misin? Bu işlem geri alınamaz!`)) {
+                await deleteDoc(doc(db, "users", username));
+                // Kullanıcının attığı tüm postları da sil
+                const q = query(collection(db, "posts"), where("author", "==", username));
+                const snap = await getDocs(q);
+                snap.forEach(async (d) => { await deleteDoc(doc(db, "posts", d.id)); });
+                alert("Kullanıcı ve gönderileri sistemden kazındı!");
+            }
+        };
+
+        // ==========================================
+        // YENİ: POSTLARI GÖRME VE BİLDİRİMLİ SİLME
+        // ==========================================
+        window.viewUserPosts = async function(username) {
+            document.getElementById('admin-posts-modal').style.display = 'flex';
+            const list = document.getElementById('admin-posts-list');
+            list.innerHTML = 'Gönderiler aranıyor...';
+            
+            const q = query(collection(db, "posts"), where("author", "==", username));
+            const snap = await getDocs(q);
+            
+            if(snap.empty) { list.innerHTML = '<p style="color:#aaa;">Bu kullanıcının hiç gönderisi yok.</p>'; return; }
+            
+            let html = '';
+            snap.forEach(d => {
+                const data = d.data();
+                const imageHtml = data.imageUrl ? `<img src="${data.imageUrl}" style="max-width:100%; border-radius:5px; margin-bottom:10px;">` : '';
+                html += `
+                    <div class="admin-post-item" id="admin-post-${d.id}">
+                        <div class="admin-post-content">${data.content || ''}</div>
+                        ${imageHtml}
+                        <button class="admin-delete-post-btn" onclick="window.adminDeletePost('${d.id}', '${username}')">🚨 Kurallara Aykırı - Sil ve Bildir</button>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        };
+
+        window.adminDeletePost = async function(postId, author) {
+            if(confirm("Gönderi silinecek ve kullanıcıya 'Kuralları ihlal ettin' bildirimi gidecek. Emin misin?")) {
+                await deleteDoc(doc(db, "posts", postId));
+                
+                // Kullanıcıya özel sistem cezası bildirimi gönder
+                await addDoc(collection(db, "notifications"), {
+                    type: 'admin_delete',
+                    sender: ADMIN_USERNAME,
+                    recipient: author,
+                    createdAt: serverTimestamp()
+                });
+                
+                document.getElementById(`admin-post-${postId}`).style.display = 'none';
+            }
+        };
+
         function loadTickets() {
-            const q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
-            onSnapshot(q, (snapshot) => {
-                const list = document.getElementById('tickets-list');
-                list.innerHTML = '';
+            onSnapshot(query(collection(db, "tickets"), orderBy("createdAt", "desc")), (snapshot) => {
+                const list = document.getElementById('tickets-list'); list.innerHTML = '';
                 if(snapshot.empty) { list.innerHTML = '<p>Destek talebi yok.</p>'; return; }
                 snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    let dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString() : "Tarih Yok";
-                    list.innerHTML += `
-                        <div class="ticket-item">
-                            <div class="ticket-header"><span><b>@${data.sender}</b> -> @${data.reportedProfile}</span><span>${dateStr}</span></div>
-                            <div class="ticket-msg">"${data.message}"</div>
-                            <button class="delete-ticket" onclick="window.deleteTicket('${docSnap.id}')">Kapat</button>
-                            <div style="clear:both;"></div>
-                        </div>
-                    `;
+                    const data = docSnap.data(); let dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString() : "";
+                    list.innerHTML += `<div class="ticket-item"><div class="ticket-header"><span><b>@${data.sender}</b> -> @${data.reportedProfile}</span><span>${dateStr}</span></div><div class="ticket-msg">"${data.message}"</div><button class="delete-ticket" onclick="window.deleteTicket('${docSnap.id}')">Kapat</button><div style="clear:both;"></div></div>`;
                 });
             });
         }

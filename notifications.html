@@ -13,7 +13,6 @@
         .requests-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .box-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px; }
         
-        /* İstekler Tasarımı */
         .request-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
         .request-item:last-child { border-bottom: none; }
         .req-user-info { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; }
@@ -25,13 +24,13 @@
         .accept-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .reject-btn { background: #ecf0f1; color: #555; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
 
-        /* Etkileşimler Tasarımı */
         .notification-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eee; text-decoration: none; color: #333; transition: 0.2s; }
         .notification-item:hover { background: #f9f9f9; border-radius: 8px; padding-left: 10px; }
-        .notif-icon { font-size: 20px; }
         .notif-content { flex: 1; }
         .notif-main-text { font-size: 14px; }
         .notif-time { font-size: 11px; color: #888; margin-top: 3px; }
+        /* YENİ: Yönetici Cezası İçin Kırmızı Vurgu */
+        .notif-alert { color: #c0392b; }
 
         .empty-text { text-align: center; color: #888; padding: 20px; font-size: 14px; }
 
@@ -66,7 +65,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        // YENİ: orderBy'ı sildik
         import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
@@ -117,26 +115,18 @@
             });
         }
 
-        // FİREBASE İNDEX HATASINI ÇÖZEN YENİ BİLDİRİM FONKSİYONU
         function loadNotifications() {
-            // Firebase'den sadece veriyi çek (Sıralamayı Firebase'e yaptırma)
             const q = query(collection(db, "notifications"), where("recipient", "==", myUsername));
             
             onSnapshot(q, async (snapshot) => {
                 const container = document.getElementById('notifications-container');
-                if (snapshot.empty) {
-                    container.innerHTML = '<div class="empty-text">Henüz yeni bir etkileşim yok. Gönderi paylaşarak dikkatleri üzerine çek! ✨</div>';
-                    return;
-                }
+                if (snapshot.empty) { container.innerHTML = '<div class="empty-text">Henüz yeni bir etkileşim yok. Gönderi paylaşarak dikkatleri üzerine çek! ✨</div>'; return; }
 
-                // JS ile verileri diziye al ve kendimiz sıralayalım
                 let notifs = [];
                 snapshot.forEach(docSnap => { notifs.push(docSnap.data()); });
                 
-                // Tarihe göre yeniden eskiye doğru sırala
                 notifs.sort((a, b) => {
-                    let timeA = a.createdAt ? a.createdAt.toMillis() : 0;
-                    let timeB = b.createdAt ? b.createdAt.toMillis() : 0;
+                    let timeA = a.createdAt ? a.createdAt.toMillis() : 0; let timeB = b.createdAt ? b.createdAt.toMillis() : 0;
                     return timeB - timeA;
                 });
 
@@ -145,9 +135,13 @@
                     if (data.sender === myUsername) continue;
 
                     let icon = '🔔'; let actionText = ''; let link = `profile.html?user=${data.sender}`;
+                    let isAlert = false;
+
                     if (data.type === 'like') { icon = '❤️'; actionText = 'gönderini beğendi.'; }
                     else if (data.type === 'comment') { icon = '💬'; actionText = 'gönderine yorum yaptı.'; }
                     else if (data.type === 'follow') { icon = '🤝'; actionText = 'seni takip etmeye başladı.'; }
+                    // YENİ: SİSTEM CEZA BİLDİRİMİ
+                    else if (data.type === 'admin_delete') { icon = '🚨'; actionText = 'bir gönderini kurallara uymadığı gerekçesiyle sistemden kaldırdı.'; link = '#'; isAlert = true; }
 
                     let avatarHtml = '👤';
                     try {
@@ -170,7 +164,7 @@
                         <a href="${link}" class="notification-item">
                             <div class="req-avatar">${avatarHtml}</div>
                             <div class="notif-content">
-                                <div class="notif-main-text"><b>@${data.sender}</b> ${actionText}</div>
+                                <div class="notif-main-text ${isAlert ? 'notif-alert' : ''}"><b>@${data.sender}</b> ${actionText}</div>
                                 <div class="notif-time">${icon} ${timeAgo}</div>
                             </div>
                         </a>
@@ -184,14 +178,9 @@
 
         window.acceptRequest = async function(reqUser) {
             const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", reqUser);
-            try {
-                await setDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }, { merge: true });
-                await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true });
-            } catch(e) {}
+            try { await setDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }, { merge: true }); await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true }); } catch(e) {}
         };
-        window.rejectRequest = async function(reqUser) {
-            try { await setDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }, { merge: true }); } catch(e) {}
-        };
+        window.rejectRequest = async function(reqUser) { try { await setDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }, { merge: true }); } catch(e) {} };
     </script>
 </body>
 </html>
