@@ -10,10 +10,8 @@
         * { box-sizing: border-box; }
         a { text-decoration: none; color: inherit; }
 
-        /* 3 SÜTUNLU ANA IZGARA (MASAÜSTÜ) */
         .app-container { display: flex; justify-content: center; max-width: 1250px; margin: 0 auto; min-height: 100vh; }
         
-        /* SOL MENÜ */
         .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; }
         .logo-desktop { font-size: 28px; font-weight: 800; padding: 10px; margin-bottom: 10px; display: inline-block; color: #1da1f2; }
         .desktop-nav { display: flex; flex-direction: column; gap: 5px; }
@@ -22,7 +20,6 @@
         .desktop-nav-item.active { font-weight: bold; }
         .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
 
-        /* ORTA AKIŞ */
         .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; }
         
         .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; }
@@ -36,8 +33,7 @@
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; transition: 0.2s; width: 60px; display: none; }
         .feed-tab.active .tab-indicator { display: block; }
 
-        /* ÇEKMECE MENÜ (DRAWER) */
-        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; cursor: pointer; }
+        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; }
         .mobile-sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: white; z-index: 4001; transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
         .mobile-sidebar.open { left: 0; }
         .sidebar-header-mobile { padding: 20px; border-bottom: 1px solid #eff3f4; }
@@ -51,7 +47,6 @@
         .sidebar-menu-item { padding: 15px 20px; font-size: 20px; font-weight: bold; color: #0f1419; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.2s; }
         .sidebar-menu-item:hover { background: #eff3f4; }
 
-        /* POST ATMA KUTUSU */
         .post-input-box { display: flex; gap: 10px; padding: 15px; border-bottom: 1px solid #eff3f4; }
         .input-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; flex-shrink: 0; overflow: hidden; cursor: pointer; }
         .input-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -64,24 +59,23 @@
         .share-btn { background: #1da1f2; color: white; border: none; padding: 8px 16px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 15px; opacity: 0.5; }
         .share-btn.active { opacity: 1; }
 
-        /* X TARZI GÖNDERİ TASARIMI */
-        .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; position: relative;}
+        /* POST GÜNCELLENDİ: Yazı çizgisi çıkmasını engeller */
+        .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; position: relative; -webkit-tap-highlight-color: transparent;}
         .post:hover { background: #f7f9f9; }
         .post-left { flex-shrink: 0; }
         .post-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         .post-avatar-img img { width: 100%; height: 100%; object-fit: cover; }
         .post-right { flex: 1; overflow: hidden; }
         
-        .repost-indicator { font-size: 13px; color: #536471; font-weight: bold; display: flex; align-items: center; gap: 5px; margin-bottom: 4px; margin-left: 30px;}
+        .repost-indicator { font-size: 13px; color: #536471; font-weight: bold; display: flex; align-items: center; gap: 5px; margin-bottom: 4px; margin-left: 30px; user-select: none; -webkit-user-select: none; cursor: pointer;}
         
         .post-header-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; position:relative;}
-        .author-group { display: flex; align-items: center; gap: 4px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .author-group { display: flex; align-items: center; gap: 4px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; -webkit-user-select: none; cursor: pointer;}
         .author-name { font-weight: bold; color: #0f1419; text-decoration: none; }
         .author-username { color: #536471; text-decoration: none; }
         .verified-badge { color: #1da1f2; font-size: 14px; }
         .post-time { color: #536471; font-size: 14px; margin-left: 4px; }
         
-        /* ••• MENÜSÜ */
         .post-options-btn { background: none; border: none; color: #536471; cursor: pointer; border-radius: 50%; padding: 5px; transition: 0.2s; width:30px; height:30px; display:flex; justify-content:center; align-items:center;}
         .post-options-btn:hover { background: #e7f5fe; color: #1da1f2; }
         .dropdown-menu { display: none; position: absolute; right: 0; top: 30px; background: white; border: 1px solid #eff3f4; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 200; overflow: hidden; width: 200px; flex-direction: column;}
@@ -89,25 +83,20 @@
         .dropdown-item:hover { background: #f7f9f9; }
         .dropdown-item.danger { color: #f4212e; }
 
-        .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; }
+        /* YAZI SEÇİMİ ENGELLENDİ: user-select ve cursor eklendi */
+        .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; user-select: none; -webkit-user-select: none; cursor: pointer !important; }
         .hashtag { color: #1da1f2; text-decoration: none; }
         .hashtag:hover { text-decoration: underline; }
-        .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; position: relative;}
-        .post-image { width: 100%; max-height: 400px; object-fit: cover; display: block; }
+        .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; }
+        .post-image { width: 100%; max-height: 400px; object-fit: cover; display: block; pointer-events: none;} /* Resimde seçimi engeller */
 
         .post-footer-actions { display: flex; justify-content: space-between; max-width: 425px; margin-top: 10px; color: #536471; }
-        .action-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .action-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; user-select: none;}
         .action-item:hover { color: #1da1f2; }
-        .action-item.like-box:hover { color: #f91880; }
         .action-item.liked { color: #f91880; }
-        .action-item.repost-box:hover { color: #00ba7c; }
         .action-item.reposted { color: #00ba7c; }
         .action-icon { padding: 8px; border-radius: 50%; transition: 0.2s; }
-        .action-item:hover .action-icon { background: #e7f5fe; }
-        .action-item.like-box:hover .action-icon { background: #fbeef5; }
-        .action-item.repost-box:hover .action-icon { background: #def1eb; }
 
-        /* DETAYLI İNCELEME & YORUM AĞACI */
         .comments-wrapper { padding-top: 15px; border-top: 1px solid #eff3f4; margin-top: 15px; }
         .comment-node { position: relative; margin-top: 15px; }
         .comment-node::before { content: ''; position: absolute; top: 40px; bottom: -10px; left: 19px; width: 2px; background: #cfd9de; z-index: 0; }
@@ -123,12 +112,10 @@
         .comment-action-btn:hover { color: #1da1f2; }
         .comment-replies { margin-left: 20px; }
 
-        /* SAĞ SÜTUN (MASAÜSTÜ) */
         .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
         .search-box-right { background: #eff3f4; border-radius: 30px; padding: 12px 20px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
         .search-box-right input { border: none; background: none; outline: none; width: 100%; font-size: 15px; }
 
-        /* MOBİL EKRAN */
         .fab-button { display: none; position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; background: #1da1f2; color: white; border-radius: 50%; font-size: 30px; font-weight: 300; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 1000; align-items: center; justify-content: center; transition: 0.2s;}
         .fab-button:active { transform: scale(0.9); }
         .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #eff3f4; z-index: 1000; padding: 10px 0; justify-content: space-around; }
@@ -144,7 +131,6 @@
             .fab-button { display: flex; }
         }
 
-        /* MODALLAR */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; overflow-y: auto;}
         .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: sticky; top: -20px; background: white; z-index: 10; padding-bottom: 10px; border-bottom: 1px solid #eff3f4;}
@@ -184,7 +170,6 @@
     </div>
 
     <div class="app-container">
-        
         <nav class="sidebar-left">
             <a href="feed.html" class="logo-desktop">Mozaik</a>
             <div class="desktop-nav">
@@ -232,7 +217,6 @@
                 <span>🔍</span><input type="text" placeholder="Mozaik'te Ara" onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
             </div>
         </aside>
-
     </div>
 
     <button class="fab-button" onclick="window.openMobileModal()">+</button>
@@ -319,13 +303,13 @@
         let currentUser = null; let myUsername = null; let currentTab = 'discover'; let myFollowingList = []; let globalPosts = []; let allUsersData = {}; let currentlyEditingPostId = null;
         let postToShare = null; let activeReplyParentId = null;
 
-        // GLOBAL TIKLAMA İLE OVERLAY & DROPDOWN KAPATMA
+        // GLOBAL TIKLAMA YAKALAYICI: Hem Dropdown Menüleri hem de Arka Plan (Overlay) kapatmak için
         document.addEventListener('click', function(event) {
-            // Dropdown Menü Kapat
+            // Dropdown Menüleri Kapat
             if (!event.target.classList.contains('post-options-btn')) {
                 document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
             }
-            // Overlay Arka Plan Kapat
+            // Overlay Arka Plan (Boşluk) Kapatma
             if (event.target.classList.contains('modal-overlay')) {
                 event.target.style.display = 'none';
                 if(event.target.id === 'post-detail-modal') {
@@ -336,7 +320,6 @@
             }
         });
 
-        // MOBİL MENÜ
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
         window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
         window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
@@ -360,7 +343,6 @@
         };
         document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
 
-        // SEKME MANTIĞI
         document.getElementById('tab-discover').addEventListener('click', () => { currentTab = 'discover'; document.getElementById('tab-discover').classList.add('active'); document.getElementById('tab-following').classList.remove('active'); renderFeed(); });
         document.getElementById('tab-following').addEventListener('click', () => { currentTab = 'following'; document.getElementById('tab-following').classList.add('active'); document.getElementById('tab-discover').classList.remove('active'); renderFeed(); });
 
@@ -399,7 +381,6 @@
             });
         }
 
-        // PAYLAŞIM
         document.getElementById('post-text').addEventListener('input', (e) => { const btn = document.getElementById('share-btn'); if(e.target.value.trim().length > 0) btn.classList.add('active'); else btn.classList.remove('active'); });
         document.getElementById('image-input').addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('image-preview-text').style.display = 'block'; document.getElementById('share-btn').classList.add('active'); }});
         
@@ -422,7 +403,6 @@
             document.getElementById('mobile-post-text').value = ''; document.getElementById('mobile-image-input').value = ''; document.getElementById('mobile-image-preview-text').style.display = 'none'; btn.disabled = false; btn.innerText = "Gönder"; closeMobileModal();
         });
 
-        // 1. ••• MENÜ MANTIĞI
         window.toggleDropdown = function(postId, event) {
             event.stopPropagation();
             document.querySelectorAll('.dropdown-menu').forEach(menu => { if(menu.id !== `dropdown-${postId}`) menu.style.display = 'none'; });
@@ -445,7 +425,6 @@
             try { await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true }); document.getElementById('edit-post-modal').style.display = 'none'; } catch(e) {}
         });
 
-        // 2. DM OLARAK PAYLAŞ (SHARE) MANTIĞI
         window.openShareModal = function(postId, event) {
             event.stopPropagation(); postToShare = postId;
             const container = document.getElementById('share-users-list'); container.innerHTML = '';
@@ -470,7 +449,6 @@
             document.getElementById('share-dm-modal').style.display = 'none';
         };
 
-        // 3. YENİDEN PAYLAŞ (REPOST) MANTIĞI
         window.repostPost = async function(postId, originalAuthor, event) {
             event.stopPropagation();
             if(confirm(`@${originalAuthor} adlı kullanıcının gönderisini yeniden paylaşmak istiyor musun?`)) {
@@ -481,13 +459,13 @@
             }
         };
 
-        // BEĞENİ MANTIĞI
         window.toggleLike = async function(postId, isLiked, postAuthor, event) {
             event.stopPropagation(); const postRef = doc(db, "posts", postId);
             if (isLiked) { await updateDoc(postRef, { likes: arrayRemove(myUsername) }); } 
             else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } }
         };
 
+        // BEĞENENLERİ GÖSTERME (HATASIZ)
         window.showLikes = function(postId, event) {
             event.stopPropagation(); 
             const postObj = globalPosts.find(p => p.id === postId);
@@ -497,7 +475,6 @@
             window.showUserList("Beğenenler", likesArray);
         };
 
-        // 4. DETAYLI İNCELEME VE SONSUZ YORUM AĞACI
         function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
 
         window.closePostDetail = function() {
@@ -516,7 +493,7 @@
             const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
             const fullName = authorData.fullName || postData.author;
             
-            // HATA KORUMALI ZAMAN HESAPLAYICI (FAIL-SAFE)
+            // HATA KORUMALI ZAMAN (FAIL-SAFE)
             let timeString = "";
             if (postData.createdAt) {
                 if (typeof postData.createdAt.toMillis === 'function') {
@@ -567,7 +544,6 @@
             document.getElementById('post-detail-modal').style.display = 'flex';
         };
 
-        // İÇ İÇE YORUM AĞACI OLUŞTURUCU
         function buildCommentsTree(allComments, parentId, depth = 0) {
             let html = '';
             const children = allComments.filter(c => (c.parentId || null) === (parentId || null)).sort((a,b) => a.timestamp - b.timestamp);
@@ -617,7 +593,6 @@
             input.value = ''; window.cancelDetailReply();
         };
 
-        // GÖNDERİ RENDER
         function renderFeed() {
             const feedContainer = document.getElementById('feed-container'); feedContainer.innerHTML = '';
             
@@ -642,7 +617,6 @@
                 const isMyRepost = (postData.author === myUsername); 
                 const fullName = authorData.fullName || originalAuthor;
                 
-                // HATA KORUMALI ZAMAN HESAPLAYICI
                 let timeAgo = "";
                 if(postData.createdAt) {
                     let millis = 0;
@@ -660,7 +634,7 @@
                 let repostHtml = '';
                 if(postData.isRepost) {
                     const reposterName = postData.author === myUsername ? 'Sen' : (allUsersData[postData.author]?.fullName || postData.author);
-                    repostHtml = `<div class="repost-indicator">🔁 ${reposterName} yeniden paylaştı</div>`;
+                    repostHtml = `<div class="repost-indicator" onclick="event.stopPropagation(); window.location.href='profile.html?user=${postData.author}'">🔁 ${reposterName} yeniden paylaştı</div>`;
                 }
 
                 const postDiv = document.createElement('div'); postDiv.className = 'post';

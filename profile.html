@@ -82,27 +82,36 @@
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; display: none; width: 60px; }
         .feed-tab.active .tab-indicator { display: block; }
 
-        .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; }
+        /* POST STİLLERİ (X AKIŞI) GÜNCELLENDİ */
+        .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; position: relative; -webkit-tap-highlight-color: transparent;}
         .post:hover { background: #f7f9f9; }
         .post-left { flex-shrink: 0; }
         .post-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; display:flex; justify-content:center; align-items:center; overflow:hidden;}
         .post-avatar-img img { width: 100%; height: 100%; object-fit: cover; }
         .post-right { flex: 1; overflow: hidden; }
         .post-header-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+        
+        .author-group, .repost-indicator { user-select: none; -webkit-user-select: none; cursor: pointer; }
         .author-group { display: flex; align-items: center; gap: 4px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
         .author-name { font-weight: bold; color: #0f1419; text-decoration:none; }
         .author-username, .post-time { color: #536471; text-decoration:none; }
         .post-owner-actions button { background: none; border: none; color: #536471; cursor: pointer; border-radius: 50%; padding: 5px; transition: 0.2s; font-size: 16px; }
-        .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; }
+        
+        /* GÜNCELLENDİ */
+        .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; user-select: none; -webkit-user-select: none; cursor: pointer !important; }
+        
         .hashtag { color: #1da1f2; text-decoration: none; }
         .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; position: relative;}
-        .post-image { width: 100%; max-height:400px; object-fit:cover; display: block; }
+        .post-image { width: 100%; max-height:400px; object-fit:cover; display: block; pointer-events: none;}
         
+        /* AKSİYON BUTONLARI */
         .post-footer-actions { display: flex; justify-content: space-between; max-width: 425px; margin-top: 10px; color: #536471; }
-        .action-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .action-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; user-select: none; }
         .action-item.liked { color: #f91880; }
         .action-icon { padding: 8px; border-radius: 50%; transition: 0.2s; }
 
+        /* YORUM MANTIĞI */
         .comments-section { display: none; margin-top: 15px; border-top: 1px solid #eff3f4; padding-top: 15px; }
         .comment-item { display: flex; gap: 10px; margin-bottom: 10px; font-size: 14px; }
         .comment-author { font-weight: bold; color: #0f1419; text-decoration: none; }
@@ -110,9 +119,11 @@
         .comment-input { flex-grow: 1; padding: 10px 15px; border: 1px solid #eff3f4; border-radius: 20px; font-size: 14px; outline: none; background: #f7f9f9;}
         .comment-send-btn { background: #1da1f2; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s;}
 
+        /* SAĞ SÜTUN (Arama vb) */
         .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
         .trends-box { background: #f7f9f9; border-radius: 16px; padding: 15px; margin-top: 10px; }
 
+        /* MOBİL TEPSİ VE FAB BUTONU */
         .fab-button { display: none; position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; background: #1da1f2; color: white; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 1000; align-items: center; justify-content: center; }
         .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #eff3f4; z-index: 1000; padding: 10px 0; justify-content: space-around; }
         .nav-item { color: #536471; font-size: 24px; padding: 5px 20px; border-radius: 30px; transition: 0.2s; text-decoration: none;}
@@ -125,23 +136,24 @@
             .fab-button { display: flex; }
         }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; }
+        /* SİSTEM MODALLARI VE ANİMASYONLAR */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; overflow-y: auto;}
         .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: sticky; top:-20px; background:white; z-index:10; padding-bottom:10px; border-bottom:1px solid #eff3f4;}
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #0f1419; display:flex; justify-content:center; align-items:center; width:40px; height:40px; border-radius:50%;}
+        
         .modal-input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; border: 1px solid #eff3f4; border-radius: 8px; font-family: inherit; font-size: 15px; outline:none; background:white; transition: 0.2s;}
+        .modal-input:focus { border-color: #1da1f2; }
         .modal-btn-save { background: #0f1419; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; font-size:15px;}
 
         .user-row { display: flex; align-items: center; gap: 12px; padding: 10px; text-decoration: none; color: #0f1419; transition: 0.2s; border-bottom: 1px solid #eff3f4; }
-        .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; }
-        .row-avatar img { width: 100%; height: 100%; object-fit: cover;}
+        .user-row:hover { background: #f7f9f9; }
         
         @keyframes heartBurst { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 15% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 30% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; } }
         .heart-burst-anim { animation: heartBurst 0.8s ease-out forwards; }
     </style>
 </head>
 <body>
-
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
@@ -294,7 +306,8 @@
             <div id="users-list-container"></div>
         </div>
     </div>
-    <div class="modal-overlay" id="edit-post-modal" style="align-items:center;"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 style="margin:0;">Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div><textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit; outline:none;"></textarea><div style="display:flex; justify-content:space-between; margin-top:15px;"><button style="padding:8px 15px; border:none; background:#eff3f4; border-radius:30px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button><button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#1da1f2; color:white; border-radius:30px; font-weight:bold; cursor:pointer;">Kaydet</button></div></div></div>
+    
+    <div class="modal-overlay" id="edit-post-modal" style="align-items:center;"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 style="margin:0;">Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div><textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit; outline:none; font-size:16px;"></textarea><div style="display:flex; justify-content:space-between; margin-top:15px;"><button style="padding:8px 15px; border:none; background:#eff3f4; border-radius:30px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button><button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#1da1f2; color:white; border-radius:30px; font-weight:bold; cursor:pointer;">Kaydet</button></div></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
@@ -308,33 +321,36 @@
         let currentUser = null; let myUsername = null; let isFollowing = false; let isRequested = false; let isTargetPrivate = false; let isTargetVerified = false; 
         let allUsersData = {}; let currentProfileFollowers = []; let currentProfileFollowing = []; let unsubscribePosts = null; let currentlyEditingPostId = null; 
 
-        // URL'DEKİ İSMİ AL
+        // GLOBAL KAPATICI
+        document.addEventListener('click', function(event) {
+            if (!event.target.classList.contains('post-options-btn')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
+            }
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+            }
+        });
+
         const urlParams = new URLSearchParams(window.location.search);
         let targetUsername = urlParams.get('user');
 
-        // MOBİL MENÜ MANTIĞI
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
         window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
         window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
         window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
 
-        window.showMyFollowing = function() {
-            window.closeMobileSidebar();
-            if (allUsersData[myUsername]) { window.showUserList("Takip Edilenler", allUsersData[myUsername].following || []); }
-        };
-        window.showMyFollowers = function() {
-            window.closeMobileSidebar();
-            if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); }
-        };
+        window.showMyFollowing = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Takip Edilenler", allUsersData[myUsername].following || []); } };
+        window.showMyFollowers = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); } };
+        
         window.showUserList = function(title, userArray) {
             const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
             const container = document.getElementById('users-list-container'); if(!container) return;
             container.innerHTML = '';
-            if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#536471; padding:20px;">Henüz kimse yok.</p>'; } 
+            if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#536471; padding:20px;">Liste boş.</p>'; } 
             else {
                 userArray.forEach(uname => {
                     let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
-                    container.innerHTML += `<a href="profile.html?user=${uname}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:14px; color:#536471;">@${uname}</div></div></a>`;
+                    container.innerHTML += `<div onclick="window.location.href='profile.html?user=${uname}'" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:14px; color:#536471;">@${uname}</div></div></div>`;
                 });
             }
             document.getElementById('users-list-modal').style.display = 'flex';
@@ -382,7 +398,8 @@
             if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } 
         };
 
-        window.toggleLike = async function(postId, isLiked, postAuthor) { 
+        window.toggleLike = async function(postId, isLiked, postAuthor, event) { 
+            event.stopPropagation();
             const postRef = doc(db, "posts", postId); 
             if (isLiked) { await updateDoc(postRef, { likes: arrayRemove(myUsername) }); } 
             else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } } 
@@ -391,7 +408,7 @@
         window.handleDoubleTap = async function(postId, isLiked, postAuthor) { 
             const heartIcon = document.getElementById(`heart-anim-${postId}`); 
             if(heartIcon) { heartIcon.classList.remove('heart-burst-anim'); void heartIcon.offsetWidth; heartIcon.classList.add('heart-burst-anim'); } 
-            if (!isLiked) { await window.toggleLike(postId, false, postAuthor); } 
+            if (!isLiked) { await window.toggleLike(postId, false, postAuthor, event); } 
         };
 
         window.deletePost = async function(postId) { if(confirm("Gönderi silinsin mi?")) await deleteDoc(doc(db, "posts", postId)); };
@@ -572,6 +589,13 @@
             });
         }
 
+        window.toggleDropdown = function(postId, event) {
+            event.stopPropagation();
+            document.querySelectorAll('.dropdown-menu').forEach(menu => { if(menu.id !== `dropdown-${postId}`) menu.style.display = 'none'; });
+            const menu = document.getElementById(`dropdown-${postId}`);
+            menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+        };
+
         function loadUserPosts() {
             unsubscribePosts = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
                 const feedContainer = document.getElementById('profile-feed-container'); feedContainer.innerHTML = ''; let userPostCount = 0;
@@ -592,8 +616,14 @@
                         
                         let timeAgo = "";
                         if(postData.createdAt) {
-                            const secs = Math.floor((Date.now() - postData.createdAt.toMillis()) / 1000);
-                            if(secs < 60) timeAgo = `${secs}s`; else if (secs < 3600) timeAgo = `${Math.floor(secs/60)}d`; else if (secs < 86400) timeAgo = `${Math.floor(secs/3600)}sa`; else timeAgo = `${Math.floor(secs/86400)}g`;
+                            let millis = 0;
+                            if (typeof postData.createdAt.toMillis === 'function') millis = postData.createdAt.toMillis();
+                            else if (postData.createdAt.seconds) millis = postData.createdAt.seconds * 1000;
+                            
+                            if(millis > 0) {
+                                const secs = Math.floor((Date.now() - millis) / 1000);
+                                if(secs < 60) timeAgo = `${secs}s`; else if (secs < 3600) timeAgo = `${Math.floor(secs/60)}d`; else if (secs < 86400) timeAgo = `${Math.floor(secs/3600)}sa`; else timeAgo = `${Math.floor(secs/86400)}g`;
+                            }
                         }
 
                         const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
@@ -605,45 +635,50 @@
                         });
 
                         const postDiv = document.createElement('div'); postDiv.className = 'post';
+                        postDiv.onclick = () => { alert("Gönderi detay ekranı profil sayfası için yakında aktif edilecek!"); };
+
                         postDiv.innerHTML = `
-                            <div class="post-left">
+                            <div class="post-left" onclick="event.stopPropagation();">
                                 <div class="post-avatar-img" style="overflow:hidden; display:flex; align-items:center; justify-content:center;">${avatarImg}</div>
                             </div>
                             <div class="post-right">
                                 <div class="post-header-info">
-                                    <div class="author-group">
+                                    <div class="author-group" onclick="event.stopPropagation();">
                                         <span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${postData.author}</span> <span class="post-time">· ${timeAgo}</span>
                                         ${editedHtml}
                                     </div>
-                                    <div class="post-owner-actions">
-                                        ${isOwner ? `
-                                            <button onclick="window.openEditModal('${postId}', '${safeContentForEdit}')" title="Düzenle">✏️</button>
-                                            <button onclick="window.deletePost('${postId}')" title="Sil">🗑️</button>
-                                        ` : '•••'}
+                                    <div style="position:relative;">
+                                        <button class="post-options-btn" onclick="window.toggleDropdown('${post.id}', event)">•••</button>
+                                        <div id="dropdown-${post.id}" class="dropdown-menu">
+                                            ${isOwner ? `
+                                                <div class="dropdown-item danger" onclick="event.stopPropagation(); window.deletePost('${post.id}')">🗑️ Sil</div>
+                                                ${!postData.isRepost ? `<div class="dropdown-item" onclick="event.stopPropagation(); window.openEditModal('${post.id}', '${safeContentForEdit}')">✏️ Düzenle</div>` : ''}
+                                                <div class="dropdown-item" onclick="event.stopPropagation(); window.pinPost('${post.id}')">📌 Profiline Sabitle</div>
+                                            ` : `<div class="dropdown-item" onclick="event.stopPropagation(); alert('Gönderi bildirildi.')">🚩 Bildir</div>`}
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <div class="post-content">${window.formatHashtags(postData.content)}</div>
                                 
                                 ${postData.imageUrl ? `
-                                <div class="post-image-container" ondblclick="window.handleDoubleTap('${postId}', ${isLiked}, '${postData.author}')" style="position:relative;">
+                                <div class="post-image-container" ondblclick="window.handleDoubleTap('${post.id}', ${isLiked}, '${postData.author}')" style="position:relative;">
                                     <img src="${postData.imageUrl}" class="post-image">
-                                    <div id="heart-anim-${postId}" class="heart-burst-anim" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:80px; z-index:10; opacity:0; pointer-events:none; text-shadow:0 2px 10px rgba(0,0,0,0.3);">❤️</div>
+                                    <div id="heart-anim-${post.id}" class="heart-burst-anim" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:80px; z-index:10; opacity:0; pointer-events:none; text-shadow:0 2px 10px rgba(0,0,0,0.3);">❤️</div>
                                 </div>` : ''}
                                 
                                 <div class="post-footer-actions">
-                                    <div class="action-item" onclick="window.toggleComments('${postId}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
+                                    <div class="action-item" onclick="window.toggleComments('${post.id}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
                                     <div class="action-item" onclick="window.repostAlert()" title="Yeniden Paylaş"><span class="action-icon">🔁</span> </div>
-                                    <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}')" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="event.stopPropagation(); window.showUserList('Beğenenler', ${JSON.stringify(likesArray.map(l=>l.includes('@')?l.split('@')[0]:l))})">${likesArray.length || ''}</span></div>
-                                    <div class="action-item" title="Görüntülenme"><span class="action-icon">📊</span> ${Math.floor(Math.random() * 500 + 50)}</div>
-                                    <div class="action-item" onclick="window.sharePost('${postId}')" title="Paylaş"><span class="action-icon">📤</span></div>
+                                    <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${postData.author}', event)" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="event.stopPropagation(); window.showUserList('Beğenenler', ${JSON.stringify(likesArray.map(l=>l.includes('@')?l.split('@')[0]:l))})">${likesArray.length || ''}</span></div>
+                                    <div class="action-item" onclick="window.sharePost('${post.id}')" title="Paylaş"><span class="action-icon">📤</span></div>
                                 </div>
 
-                                <div class="comments-section" id="comments-${postId}">
+                                <div class="comments-section" id="comments-${post.id}">
                                     <div class="comments-list">${commentsHTML}</div>
                                     <div class="comment-input-box">
-                                        <input type="text" class="comment-input" id="input-${postId}" placeholder="Yanıtını gönder...">
-                                        <button class="comment-send-btn" onclick="window.addComment('${postId}', '${postData.author}')">Yanıtla</button>
+                                        <input type="text" class="comment-input" id="input-${post.id}" placeholder="Yanıtını gönder...">
+                                        <button class="comment-send-btn" onclick="window.addComment('${post.id}', '${postData.author}')">Yanıtla</button>
                                     </div>
                                 </div>
                             </div>

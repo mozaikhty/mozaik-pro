@@ -34,8 +34,7 @@
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; display: none; width: 60px; }
         .feed-tab.active .tab-indicator { display: block; }
 
-        /* MOBİL SOL ÇEKMECE MENÜSÜ (DRAWER) */
-        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; }
+        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; cursor:pointer;}
         .mobile-sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: white; z-index: 4001; transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
         .mobile-sidebar.open { left: 0; }
         .sidebar-header-mobile { padding: 20px; border-bottom: 1px solid #eff3f4; }
@@ -65,15 +64,16 @@
         .search-username { font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 4px; }
         .search-handle { color: #536471; font-size: 15px; }
 
-        .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; }
+        .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; position: relative; -webkit-tap-highlight-color: transparent;}
         .post:hover { background: #f7f9f9; }
         .post-left { flex-shrink: 0; }
-        .post-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; }
+        .post-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; overflow:hidden;}
+        .post-avatar-img img { width: 100%; height: 100%; object-fit: cover; }
         .post-right { flex: 1; overflow: hidden; }
-        .author-group { display: flex; align-items: center; gap: 4px; font-size: 15px; margin-bottom: 2px; }
+        .author-group { display: flex; align-items: center; gap: 4px; font-size: 15px; margin-bottom: 2px; user-select: none; -webkit-user-select: none; cursor: pointer;}
         .author-name { font-weight: bold; color: #0f1419; }
         .author-username, .post-time { color: #536471; }
-        .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; margin-bottom: 10px; }
+        .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; margin-bottom: 10px; user-select: none; -webkit-user-select: none; cursor: pointer !important; }
         .hashtag { color: #1da1f2; text-decoration: none; }
 
         .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
@@ -90,7 +90,8 @@
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
         .user-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; text-decoration: none; color: #333; transition: 0.2s; background: #f9f9f9; margin-bottom: 5px; }
         .user-row:hover { background: #ebf5fb; }
-        .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+        .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow:hidden;}
+        .row-avatar img { width: 100%; height: 100%; object-fit: cover;}
 
         @media (max-width: 1000px) {
             .sidebar-left, .sidebar-right { display: none; }
@@ -214,7 +215,7 @@
             if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#536471; padding:20px;">Henüz kimse yok.</p>'; } 
             else {
                 userArray.forEach(uname => {
-                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
+                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
                     container.innerHTML += `<a href="profile.html?user=${uname}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:14px; color:#536471;">@${uname}</div></div></a>`;
                 });
             }
@@ -306,7 +307,7 @@
                 if (filteredUsers.length === 0) { resultsContainer.innerHTML = '<div style="color:#536471; padding:30px; text-align:center;">Kişi bulunamadı...</div>'; return; }
                 let html = '';
                 filteredUsers.forEach(user => {
-                    const avatarHtml = user.avatarUrl ? `<img src="${user.avatarUrl}">` : '👤';
+                    const avatarHtml = user.avatarUrl ? `<img src="${user.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
                     const fullName = allUsersData[user.username]?.fullName || user.username;
                     const vHtml = user.isVerified ? '<span style="color:#1da1f2; font-size:15px; margin-left:4px;">☑️</span>' : '';
                     html += `<a href="profile.html?user=${user.username}" class="search-user-item">
@@ -328,11 +329,11 @@
                     const authorData = allUsersData[post.author] || {};
                     const vHtml = authorData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
                     const fullName = authorData.fullName || post.author;
-                    const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" class="post-avatar-img">` : `<div class="post-avatar-img" style="display:flex;align-items:center;justify-content:center;">👤</div>`;
+                    const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
                     
                     html += `
                         <div class="post" onclick="window.location.href='profile.html?user=${post.author}'">
-                            <div class="post-left">${avatarImg}</div>
+                            <div class="post-left"><div class="post-avatar-img">${avatarImg}</div></div>
                             <div class="post-right">
                                 <div class="post-header-info">
                                     <div class="author-group"><span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${post.author}</span></div>
