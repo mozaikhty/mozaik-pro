@@ -97,6 +97,16 @@
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
         .nav-item .icon { font-size: 22px; }
         .nav-item.active { color: #000; }
+
+        /* YENİ: ÇİFT TIKLAMA KALP ANİMASYONU */
+        @keyframes heartBurst {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            15% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            30% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+        .heart-burst-anim { animation: heartBurst 0.8s ease-out forwards; }
     </style>
 </head>
 <body>
@@ -293,6 +303,21 @@
             }
         };
 
+        // YENİ: ÇİFT TIKLAMA İLE BEĞENME MOTORU
+        window.handleDoubleTap = async function(postId, isLiked, postAuthor) {
+            // Animasyonu tetikle
+            const heartIcon = document.getElementById(`heart-anim-${postId}`);
+            if(heartIcon) {
+                heartIcon.classList.remove('heart-burst-anim');
+                void heartIcon.offsetWidth; 
+                heartIcon.classList.add('heart-burst-anim');
+            }
+            
+            if (!isLiked) {
+                await window.toggleLike(postId, false, postAuthor);
+            }
+        };
+
         const hamburgerBtn = document.getElementById('hamburger-btn'); const settingsMenu = document.getElementById('settings-menu');
         hamburgerBtn.addEventListener('click', () => { settingsMenu.style.display = settingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', (e) => { if (e.target !== hamburgerBtn && !settingsMenu.contains(e.target)) { settingsMenu.style.display = 'none'; } });
@@ -309,9 +334,7 @@
             const mySnap = await getDoc(doc(db, "users", myUsername));
             if(mySnap.exists()) {
                 const d = mySnap.data();
-                // YENİ: E-POSTA VERİSİNİ KUTUYA ÇEKİYORUZ
                 document.getElementById('edit-email-display').value = d.email || currentUser.email; 
-                
                 document.getElementById('edit-fullname-input').value = d.fullName || '';
                 document.getElementById('edit-birthdate-input').value = d.birthDate || '';
                 document.getElementById('edit-gender-input').value = d.gender || '';
@@ -485,17 +508,48 @@
                         const postId = postDoc.id;
                         const isLiked = postData.likes?.includes(myUsername);
                         const isOwner = postData.author === myUsername;
+                        const editedHtml = postData.isEdited ? '<span class="edited-tag">(Düzenlendi)</span>' : '';
+
                         const postDiv = document.createElement('div'); postDiv.className = 'post';
+                        const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+
+                        let commentsHTML = ''; 
+                        (postData.comments || []).forEach(comment => { 
+                            const cVHtml = (allUsersData[comment.author] || {}).isVerified ? '<span class="verified-small">☑️</span>' : '';
+                            commentsHTML += `<div class="comment-item"><div><a href="profile.html?user=${comment.author}" class="comment-author">@${comment.author}</a>${cVHtml} <span style="color:#333;">${comment.text}</span></div></div>`; 
+                        });
+
                         postDiv.innerHTML = `
                             <div class="post-header">
-                                <a href="profile.html?user=${postData.author}" class="post-author">@${postData.author}</a>
-                                ${isOwner ? `<button onclick="window.deletePost('${postId}')">🗑️</button>` : ''}
+                                <div>
+                                    <a href="profile.html?user=${postData.author}" class="post-author">@${postData.author} ${isTargetVerified ? '<span class="verified-small">☑️</span>' : ''}</a>
+                                    ${editedHtml}
+                                </div>
+                                ${isOwner ? `
+                                <div class="post-owner-actions">
+                                    <button class="edit-post-btn" onclick="window.openEditModal('${postId}', '${safeContentForEdit}')" title="Düzenle">✏️</button>
+                                    <button class="delete-post-btn" onclick="window.deletePost('${postId}')" title="Sil">🗑️</button>
+                                </div>` : ''}
                             </div>
                             <div class="post-content">${formatHashtags(postData.content)}</div>
-                            ${postData.imageUrl ? `<img src="${postData.imageUrl}" class="post-image">` : ''}
+                            
+                            ${postData.imageUrl ? `
+                            <div style="position:relative; width:100%;" ondblclick="window.handleDoubleTap('${postId}', ${isLiked}, '${postData.author}')">
+                                <img src="${postData.imageUrl}" class="post-image" style="cursor:pointer;">
+                                <div id="heart-anim-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:80px; z-index:10; opacity:0; pointer-events:none; text-shadow:0 2px 10px rgba(0,0,0,0.3);">❤️</div>
+                            </div>` : ''}
+                            
                             <div class="post-footer">
-                                <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}')">❤️ ${postData.likes?.length || 0}</button>
-                                <button class="action-btn" onclick="window.toggleComments('${postId}')">💬 ${(postData.comments || []).length}</button>
+                                <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}')">${isLiked ? '❤️' : '🤍'}</button>
+                                <span class="likes-count" onclick='window.showLikes(${JSON.stringify(postData.likes || [])})'>${postData.likes?.length || 0} beğeni</span>
+                                <button class="action-btn" onclick="window.toggleComments('${postId}')">💬 ${(postData.comments || []).length} Yorum</button>
+                            </div>
+                            <div class="comments-section" id="comments-${postId}">
+                                <div class="comments-list">${commentsHTML}</div>
+                                <div class="comment-input-box">
+                                    <input type="text" class="comment-input" id="input-${postId}" placeholder="Bir yorum bırak...">
+                                    <button class="comment-send-btn" onclick="window.addComment('${postId}', '${postData.author}')">Gönder</button>
+                                </div>
                             </div>
                         `;
                         feedContainer.appendChild(postDiv);
