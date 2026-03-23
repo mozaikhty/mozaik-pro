@@ -30,7 +30,6 @@
         .error-msg { color: #e74c3c; font-size: 13px; margin-bottom: 15px; display: none; font-weight: bold; }
         .success-msg { color: #2ecc71; font-size: 13px; margin-bottom: 15px; display: none; font-weight: bold; }
 
-        /* MODAL TASARIMI */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
@@ -48,7 +47,7 @@
         <div id="success-message" class="success-msg"></div>
 
         <div id="login-section">
-            <input type="email" id="login-email" placeholder="E-posta Adresi" required>
+            <input type="text" id="login-email" placeholder="Kullanıcı Adı veya E-posta" required>
             <input type="password" id="login-pass" placeholder="Şifre" required>
             <button id="login-btn">Giriş Yap</button>
             <div class="forgot-pass">Şifreni mi unuttun? <a id="open-forgot-modal">Sıfırla</a></div>
@@ -136,17 +135,39 @@
         document.getElementById('show-register').addEventListener('click', () => { loginSection.style.display = 'none'; registerSection.style.display = 'block'; errorMsg.style.display = 'none'; subtitle.innerText = "Aramıza katıl."; });
         document.getElementById('show-login').addEventListener('click', () => { registerSection.style.display = 'none'; loginSection.style.display = 'block'; errorMsg.style.display = 'none'; subtitle.innerText = "Dünyana bağlan."; });
 
-        // GİRİŞ YAPMA İŞLEMİ
+        // YENİ: KULLANICI ADIYLA GİRİŞ SİHRİ
         document.getElementById('login-btn').addEventListener('click', async () => {
-            const email = document.getElementById('login-email').value; const pass = document.getElementById('login-pass').value;
-            if(!email || !pass) return showError("Lütfen tüm alanları doldurun.");
-            const btn = document.getElementById('login-btn'); btn.disabled = true; btn.innerText = "Bekleyin...";
+            const identifier = document.getElementById('login-email').value.trim(); 
+            const pass = document.getElementById('login-pass').value;
+            
+            if(!identifier || !pass) return showError("Lütfen tüm alanları doldurun.");
+            
+            const btn = document.getElementById('login-btn'); 
+            btn.disabled = true; btn.innerText = "Bekleyin...";
+            
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (error) { showError("E-posta veya şifre hatalı."); btn.disabled = false; btn.innerText = "Giriş Yap"; }
+                let loginEmail = identifier;
+                
+                // Eğer girilen metinde "@" yoksa, bunun bir kullanıcı adı olduğunu anlıyoruz
+                if (!identifier.includes('@')) {
+                    const userDoc = await getDoc(doc(db, "users", identifier.toLowerCase()));
+                    if (userDoc.exists() && userDoc.data().email) {
+                        loginEmail = userDoc.data().email; // Gizlice E-postayı bulduk
+                    } else {
+                        throw new Error("user-not-found");
+                    }
+                }
+                
+                // Firebase'e bulduğumuz e-posta ile giriş yapıyoruz
+                await signInWithEmailAndPassword(auth, loginEmail, pass);
+                
+            } catch (error) { 
+                if (error.message === "user-not-found") showError("Bu kullanıcı adıyla kayıtlı bir hesap bulunamadı.");
+                else showError("E-posta/Kullanıcı adı veya şifre hatalı."); 
+                btn.disabled = false; btn.innerText = "Giriş Yap"; 
+            }
         });
 
-        // DETAYLI KAYIT OLMA İŞLEMİ
         document.getElementById('register-btn').addEventListener('click', async () => {
             let username = document.getElementById('reg-username').value.trim().toLowerCase();
             const fullName = document.getElementById('reg-fullname').value.trim();
@@ -170,17 +191,10 @@
                 const user = userCredential.user;
                 await updateProfile(user, { displayName: username });
                 
-                // YENİ VERİLERİ VERİTABANINA YAZIYORUZ
                 await setDoc(doc(db, "users", username), {
-                    email: email, 
-                    fullName: fullName,
-                    birthDate: birthDate,
-                    gender: gender,
-                    location: location,
-                    followers: [], following: [], followRequests: [], 
-                    bio: "Merhaba, ben Mozaik'te yeniyim!", 
-                    isPrivate: false, isVerified: false, isBanned: false, 
-                    createdAt: serverTimestamp()
+                    email: email, fullName: fullName, birthDate: birthDate, gender: gender, location: location,
+                    followers: [], following: [], followRequests: [], bio: "Merhaba, ben Mozaik'te yeniyim!", 
+                    isPrivate: false, isVerified: false, isBanned: false, createdAt: serverTimestamp()
                 });
                 
             } catch (error) { 
@@ -190,7 +204,6 @@
             }
         });
 
-        // ŞİFRE SIFIRLAMA
         const forgotModal = document.getElementById('forgot-modal');
         document.getElementById('open-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'flex'; });
         document.getElementById('close-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'none'; });
