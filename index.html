@@ -5,19 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mozaik - Giriş Yap</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-box { background: white; padding: 40px 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .login-box { background: white; padding: 40px 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 380px; text-align: center; max-height: 90vh; overflow-y: auto; }
         .logo { font-size: 32px; font-weight: bold; color: #2980b9; margin-bottom: 10px; letter-spacing: 2px; }
         .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
         
-        input { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; background: #f9f9f9; }
-        input:focus { border-color: #2980b9; background: white; }
+        input, select { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; background: #f9f9f9; font-family: inherit; }
+        input:focus, select:focus { border-color: #2980b9; background: white; }
         
-        button { width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .input-group { text-align: left; margin-bottom: 5px; }
+        .input-label { font-size: 12px; font-weight: bold; color: #555; margin-bottom: 5px; display: block; margin-left: 5px; }
+
+        button { width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
         button:hover { background: #333; }
         button:disabled { background: #888; cursor: not-allowed; }
 
-        .toggle-link { margin-top: 20px; font-size: 13px; color: #666; }
+        .toggle-link { margin-top: 20px; font-size: 13px; color: #666; padding-bottom: 20px; }
         .toggle-link a { color: #2980b9; text-decoration: none; font-weight: bold; cursor: pointer; }
         .toggle-link a:hover { text-decoration: underline; }
 
@@ -53,10 +56,48 @@
         </div>
 
         <div id="register-section" style="display: none;">
-            <input type="text" id="reg-username" placeholder="Kullanıcı Adı (Boşluksuz, küçük harf)" required>
-            <input type="email" id="reg-email" placeholder="E-posta Adresi" required>
-            <input type="password" id="reg-pass" placeholder="Şifre (En az 6 hane)" required>
-            <button id="register-btn">Kayıt Ol</button>
+            
+            <div class="input-group">
+                <label class="input-label">Kullanıcı Adı (Benzersiz)</label>
+                <input type="text" id="reg-username" placeholder="Örn: ahmet123 (Boşluksuz)" required>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Görünür İsim (Ad Soyad)</label>
+                <input type="text" id="reg-fullname" placeholder="Örn: Ahmet Yılmaz" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">E-posta Adresi</label>
+                <input type="email" id="reg-email" placeholder="E-posta Adresi" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Doğum Tarihi</label>
+                <input type="date" id="reg-birthdate" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Cinsiyet</label>
+                <select id="reg-gender" required>
+                    <option value="" disabled selected>Seçiniz...</option>
+                    <option value="Kadın">Kadın</option>
+                    <option value="Erkek">Erkek</option>
+                    <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Yaşadığınız Şehir / Ülke</label>
+                <input type="text" id="reg-location" placeholder="Örn: İstanbul, Türkiye" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Şifre (En az 6 hane)</label>
+                <input type="password" id="reg-pass" placeholder="Şifre belirleyin" required>
+            </div>
+
+            <button id="register-btn">Kayıt Ol ve Katıl</button>
             <div class="toggle-link">Zaten hesabın var mı? <a id="show-login">Giriş Yap</a></div>
         </div>
     </div>
@@ -75,14 +116,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        // YENİ: sendPasswordResetEmail eklendi
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        // Zaten giriş yaptıysa direkt feed'e yönlendir
         onAuthStateChanged(auth, (user) => { if (user) window.location.href = "feed.html"; });
 
         const loginSection = document.getElementById('login-section');
@@ -104,16 +143,20 @@
             const btn = document.getElementById('login-btn'); btn.disabled = true; btn.innerText = "Bekleyin...";
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
-                // Başarılı olursa onAuthStateChanged bizi feed.html'e atacak
             } catch (error) { showError("E-posta veya şifre hatalı."); btn.disabled = false; btn.innerText = "Giriş Yap"; }
         });
 
-        // KAYIT OLMA İŞLEMİ
+        // DETAYLI KAYIT OLMA İŞLEMİ
         document.getElementById('register-btn').addEventListener('click', async () => {
             let username = document.getElementById('reg-username').value.trim().toLowerCase();
-            const email = document.getElementById('reg-email').value; const pass = document.getElementById('reg-pass').value;
+            const fullName = document.getElementById('reg-fullname').value.trim();
+            const email = document.getElementById('reg-email').value.trim(); 
+            const birthDate = document.getElementById('reg-birthdate').value;
+            const gender = document.getElementById('reg-gender').value;
+            const location = document.getElementById('reg-location').value.trim();
+            const pass = document.getElementById('reg-pass').value;
             
-            if(!username || !email || !pass) return showError("Lütfen tüm alanları doldurun.");
+            if(!username || !fullName || !email || !birthDate || !gender || !location || !pass) return showError("Lütfen tüm bilgileri eksiksiz doldurun.");
             if(username.includes(' ')) return showError("Kullanıcı adında boşluk olamaz.");
             if(pass.length < 6) return showError("Şifre en az 6 karakter olmalıdır.");
 
@@ -121,25 +164,33 @@
             
             try {
                 const userRef = doc(db, "users", username); const docSnap = await getDoc(userRef);
-                if (docSnap.exists()) { btn.disabled = false; btn.innerText = "Kayıt Ol"; return showError("Bu kullanıcı adı zaten alınmış!"); }
+                if (docSnap.exists()) { btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl"; return showError("Bu kullanıcı adı zaten alınmış!"); }
 
                 const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                 const user = userCredential.user;
                 await updateProfile(user, { displayName: username });
                 
+                // YENİ VERİLERİ VERİTABANINA YAZIYORUZ
                 await setDoc(doc(db, "users", username), {
-                    email: email, followers: [], following: [], followRequests: [], bio: "Merhaba, ben Mozaik'te yeniyim!", 
-                    isPrivate: false, isVerified: false, isBanned: false, createdAt: serverTimestamp()
+                    email: email, 
+                    fullName: fullName,
+                    birthDate: birthDate,
+                    gender: gender,
+                    location: location,
+                    followers: [], following: [], followRequests: [], 
+                    bio: "Merhaba, ben Mozaik'te yeniyim!", 
+                    isPrivate: false, isVerified: false, isBanned: false, 
+                    createdAt: serverTimestamp()
                 });
                 
             } catch (error) { 
                 if(error.code === 'auth/email-already-in-use') showError("Bu e-posta adresi zaten kullanılıyor.");
                 else showError("Kayıt sırasında bir hata oluştu.");
-                btn.disabled = false; btn.innerText = "Kayıt Ol"; 
+                btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl"; 
             }
         });
 
-        // ŞİFRE SIFIRLAMA (ŞİFREMİ UNUTTUM) İŞLEMLERİ
+        // ŞİFRE SIFIRLAMA
         const forgotModal = document.getElementById('forgot-modal');
         document.getElementById('open-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'flex'; });
         document.getElementById('close-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'none'; });
@@ -147,20 +198,13 @@
         document.getElementById('send-reset-btn').addEventListener('click', async () => {
             const email = document.getElementById('forgot-email').value.trim();
             if(!email) return alert("Lütfen e-posta adresinizi girin.");
-            
-            const btn = document.getElementById('send-reset-btn');
-            btn.disabled = true; btn.innerText = "Gönderiliyor...";
-            
+            const btn = document.getElementById('send-reset-btn'); btn.disabled = true; btn.innerText = "Gönderiliyor...";
             try {
                 await sendPasswordResetEmail(auth, email);
                 forgotModal.style.display = 'none';
-                showSuccess("Şifre sıfırlama linki e-postanıza gönderildi! (Gereksiz/Spam kutusunu kontrol etmeyi unutmayın).");
-            } catch(error) {
-                alert("Hata: " + error.message);
-            } finally {
-                btn.disabled = false; btn.innerText = "Sıfırlama Linki Gönder";
-                document.getElementById('forgot-email').value = '';
-            }
+                showSuccess("Şifre sıfırlama linki e-postanıza gönderildi!");
+            } catch(error) { alert("Hata: " + error.message); } 
+            finally { btn.disabled = false; btn.innerText = "Sıfırlama Linki Gönder"; document.getElementById('forgot-email').value = ''; }
         });
     </script>
 </body>

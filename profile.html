@@ -19,32 +19,38 @@
         .profile-header-box { background: white; padding: 30px 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; position: relative; }
         .profile-avatar-container { margin-bottom: 10px; display: flex; justify-content: center; }
         .profile-avatar-emoji { font-size: 60px; }
-        .profile-avatar-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #eee; display: none; }
+        .profile-avatar-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #eee; display: none; }
         
-        .profile-username { font-size: 24px; font-weight: bold; color: #000; margin: 0; display: flex; justify-content: center; align-items: center; gap: 5px; }
-        .profile-bio { font-size: 15px; color: #555; margin: 10px 0; font-style: italic; }
+        .profile-fullname { font-size: 24px; font-weight: bold; color: #000; margin: 0; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .profile-username { font-size: 15px; color: #666; margin-top: 2px; font-weight: bold; }
+        .profile-bio { font-size: 15px; color: #333; margin: 15px 0; font-style: italic; }
         
+        /* YENİ: DETAYLI BİLGİ ALANI */
+        .profile-details-badge { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 10px 0; font-size: 12px; color: #555; }
+        .detail-item { background: #f0f2f5; padding: 5px 10px; border-radius: 15px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+
         .verified-badge { color: #1da1f2; font-size: 20px; display: flex; align-items: center; }
         .verified-small { color: #1da1f2; font-size: 14px; margin-left: 4px; }
 
-        .follow-stats-box { display: flex; justify-content: center; gap: 15px; margin-top: 10px; margin-bottom: 15px; }
-        .stat-item-clickable { padding: 8px 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; }
-        .stat-item-clickable:hover { background-color: #ebf5fb; }
-        .stat-number { font-weight: bold; color: #000; font-size: 18px; }
-        .stat-label { font-size: 13px; color: #666; }
+        .follow-stats-box { display: flex; justify-content: center; gap: 15px; margin-top: 15px; margin-bottom: 15px; }
+        .stat-item-clickable { padding: 8px 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; background: #f9f9f9; border: 1px solid #eee; min-width: 70px; }
+        .stat-item-clickable:hover { background-color: #ebf5fb; border-color: #bfe0f2; }
+        .stat-number { font-weight: bold; color: #2980b9; font-size: 18px; }
+        .stat-label { font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; margin-top: 3px; }
         .profile-stats { font-size: 13px; color: #888; margin-top: 5px; font-weight: bold; }
         
         .private-badge { position: absolute; top: 15px; right: 15px; background: #333; color: white; font-size: 11px; padding: 5px 10px; border-radius: 20px; font-weight: bold; display: none; }
 
         .btn-container { margin-top: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
-        .follow-btn, .msg-btn, .support-btn { padding: 8px 20px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; font-size: 13px; transition: 0.2s; }
+        .follow-btn, .msg-btn, .support-btn { padding: 10px 25px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; font-size: 14px; transition: 0.2s; }
         .follow-btn { background: #3498db; color: white; }
+        .follow-btn:hover { background: #2980b9; }
         .unfollow-btn { background: #ecf0f1; color: #333; border: 1px solid #ccc; }
         .requested-btn { background: #f39c12; color: white; }
         .msg-btn { background: #fff; color: #333; border: 1px solid #ccc; }
         .support-btn { background: #e74c3c; color: white; width: 100%; margin-top: 5px; display: block; }
 
-        .private-account-screen { text-align: center; padding: 50px 20px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); color: #555; }
+        .private-account-screen { text-align: center; padding: 50px 20px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); color: #555; margin-top: 15px;}
         .private-lock-icon { font-size: 60px; margin-bottom: 10px; }
         .private-title { font-size: 18px; font-weight: bold; color: #000; margin: 0 0 5px 0; }
 
@@ -57,7 +63,7 @@
         .edit-post-btn:hover { background: #ebf5fb; }
         .delete-post-btn:hover { background: #fadbd8; }
         .edited-tag { font-size: 11px; color: #888; font-style: italic; margin-left: 5px; }
-        
+
         .post-content { font-size: 16px; color: #333; line-height: 1.4; word-wrap: break-word; }
         .post-image { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #eee; }
         .post-footer { margin-top: 12px; border-top: 1px solid #eee; padding-top: 10px; display: flex; align-items: center; gap: 15px; }
@@ -65,7 +71,7 @@
         .like-btn.liked { color: #e74c3c; }
         .likes-count { cursor: pointer; font-size: 14px; font-weight: bold; color: #555; transition: 0.2s; }
         .likes-count:hover { color: #000; text-decoration: underline; }
-        
+
         .comments-section { display: none; margin-top: 15px; border-top: 1px dashed #ddd; padding-top: 15px; }
         .comment-item { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; display: flex; align-items: flex-start; gap: 8px; }
         .comment-author { font-weight: bold; color: #2980b9; text-decoration: none; }
@@ -73,20 +79,22 @@
         .comment-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none; }
         .comment-send-btn { background: #000; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 
+        /* MODALLAR */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto; }
-        .list-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
+        .list-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; position: sticky; top: -25px; background: white; z-index: 10; }
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
         .user-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; text-decoration: none; color: #333; transition: 0.2s; background: #f9f9f9; margin-bottom: 5px; }
         .user-row:hover { background: #ebf5fb; }
         .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; }
         .row-avatar img { width: 100%; height: 100%; object-fit: cover; }
         
-        .modal-label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-        .modal-input { width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; }
-        .modal-actions { display: flex; justify-content: space-between; }
-        .modal-btn-cancel { background: #eee; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #333; }
-        .modal-btn-save { background: #27ae60; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; }
+        .modal-label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #555; margin-top: 10px;}
+        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; outline:none; background:#f9f9f9; transition: 0.2s;}
+        .modal-input:focus { border-color: #3498db; background: white; }
+        .modal-actions { display: flex; justify-content: space-between; margin-top: 20px; }
+        .modal-btn-cancel { background: #eee; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; color: #333; flex: 1; margin-right: 10px; }
+        .modal-btn-save { background: #27ae60; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; flex: 2; }
         .hashtag { color: #3498db; text-decoration: none; font-weight: bold; }
 
         .settings-option { display: block; width: 100%; text-align: left; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #eee; background: #f9f9f9; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
@@ -94,7 +102,7 @@
         .settings-danger { color: #c0392b; border-color: #f5b7b1; background: #fadbd8; }
         .settings-danger:hover { background: #f5b7b1; }
 
-        /* GÜNCELLENMİŞ 5'Lİ ALT MENÜ */
+        /* ALT MENÜ */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
         .nav-item .icon { font-size: 22px; }
@@ -118,13 +126,21 @@
                 <div class="profile-avatar-emoji" id="avatar-emoji">👤</div>
                 <img src="" class="profile-avatar-img" id="avatar-img" alt="Profil">
             </div>
-            <h1 class="profile-username" id="display-username">Yükleniyor...</h1>
+            
+            <h1 class="profile-fullname" id="display-fullname">Yükleniyor...</h1>
+            <div class="profile-username" id="display-username">@bekleniyor</div>
+            
+            <div class="profile-details-badge" id="display-details">
+                </div>
+
             <p class="profile-bio" id="display-bio">Merhaba, ben Mozaik'te yeniyim!</p>
+            
             <div class="follow-stats-box">
                 <div class="stat-item-clickable" id="followers-box"><span class="stat-number" id="followers-count">0</span><span class="stat-label">Takipçi</span></div>
-                <div class="stat-item-clickable" id="following-box"><span class="stat-number" id="following-count">0</span><span class="stat-label">Takip Edilen</span></div>
+                <div class="stat-item-clickable" id="following-box"><span class="stat-number" id="following-count">0</span><span class="stat-label">Takip</span></div>
             </div>
-            <div class="profile-stats" id="post-count">Gönderi Sayısı: 0</div>
+            <div class="profile-stats" id="post-count">Gönderi: 0</div>
+            
             <div class="btn-container">
                 <button class="follow-btn" id="follow-btn">Takip Et</button>
                 <button class="msg-btn" id="msg-btn">💬 Mesaj</button>
@@ -139,10 +155,10 @@
     <div class="modal-overlay" id="edit-post-modal">
         <div class="modal-content">
             <div class="list-header"><h3 style="margin:0;">Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div>
-            <textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit;"></textarea>
+            <textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit; outline:none;"></textarea>
             <div style="display:flex; justify-content:space-between; margin-top:15px;">
-                <button style="padding:8px 15px; border:none; background:#eee; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button>
-                <button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#2980b9; color:white; border-radius:6px; font-weight:bold; cursor:pointer;">Kaydet</button>
+                <button style="padding:10px 15px; border:none; background:#eee; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button>
+                <button id="save-edited-post-btn" style="padding:10px 15px; border:none; background:#2980b9; color:white; border-radius:8px; font-weight:bold; cursor:pointer;">Kaydet</button>
             </div>
         </div>
     </div>
@@ -151,29 +167,58 @@
         <div class="modal-content">
             <div class="list-header"><h3 style="margin:0;">Ayarlar</h3><button class="close-btn" onclick="document.getElementById('advanced-settings-modal').style.display='none'">&times;</button></div>
             <div>
-                <button class="settings-option" id="open-edit-profile-modal-btn">✏️ Profilimi Düzenle</button>
-                <button class="settings-option settings-danger" id="trigger-delete-account-btn">🗑️ Hesabımı Sil</button>
+                <button class="settings-option" id="open-edit-profile-modal-btn">✏️ Profilimi ve Bilgilerimi Düzenle</button>
+                <button class="settings-option settings-danger" id="trigger-delete-account-btn">🗑️ Hesabımı Kalıcı Olarak Sil</button>
             </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="edit-modal">
         <div class="modal-content">
-            <h3>Profili Düzenle</h3>
-            <label class="modal-label" style="display:flex; align-items:center; gap:10px; cursor:pointer; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:15px;"><input type="checkbox" id="edit-private-input" style="width:16px; height:16px; cursor:pointer;">🔒 Hesabımı Gizli Yap</label>
-            <label class="modal-label">Profil Fotoğrafı:</label><input type="file" id="edit-avatar-input" class="modal-input" accept="image/*">
-            <label class="modal-label">Hakkımda (Bio):</label><textarea id="edit-bio-input" class="modal-input" rows="3" placeholder="Kendinden bahset..."></textarea>
-            <div class="modal-actions"><button class="modal-btn-cancel" id="cancel-edit-btn">İptal</button><button class="modal-btn-save" id="save-edit-btn">Kaydet</button></div>
+            <div class="list-header"><h3 style="margin:0;">Profili Düzenle</h3><button class="close-btn" id="cancel-edit-btn-top">&times;</button></div>
+            
+            <label class="modal-label" style="display:flex; align-items:center; gap:10px; cursor:pointer; background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;">
+                <input type="checkbox" id="edit-private-input" style="width:18px; height:18px; cursor:pointer;">🔒 Hesabımı Gizli Yap
+            </label>
+            
+            <label class="modal-label">Profil Fotoğrafı:</label>
+            <input type="file" id="edit-avatar-input" class="modal-input" accept="image/*" style="padding: 8px;">
+            
+            <label class="modal-label">Görünür İsim (Ad Soyad):</label>
+            <input type="text" id="edit-fullname-input" class="modal-input" placeholder="Ad Soyad">
+
+            <label class="modal-label">Doğum Tarihi:</label>
+            <input type="date" id="edit-birthdate-input" class="modal-input">
+
+            <label class="modal-label">Cinsiyet:</label>
+            <select id="edit-gender-input" class="modal-input">
+                <option value="Kadın">Kadın</option>
+                <option value="Erkek">Erkek</option>
+                <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
+            </select>
+
+            <label class="modal-label">Şehir / Ülke:</label>
+            <input type="text" id="edit-location-input" class="modal-input" placeholder="Şehir, Ülke">
+
+            <label class="modal-label">Hakkımda (Bio):</label>
+            <textarea id="edit-bio-input" class="modal-input" rows="3" placeholder="Kendinden bahset..." style="resize:none;"></textarea>
+            
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" id="cancel-edit-btn">Vazgeç</button>
+                <button class="modal-btn-save" id="save-edit-btn">Bilgilerimi Kaydet</button>
+            </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="support-modal">
         <div class="modal-content">
-            <h3 style="color:#e74c3c;">Yönetime Mesaj Gönder</h3>
-            <textarea id="support-msg-input" class="modal-input" rows="4" placeholder="Mesajınızı yazın..."></textarea>
+            <div class="list-header"><h3 style="color:#e74c3c; margin:0;">Yönetime Bildir</h3></div>
+            <p style="font-size:13px; color:#666; margin-top:0;">Kullanıcıyı sistem yöneticilerine şikayet edebilirsiniz.</p>
+            <textarea id="support-msg-input" class="modal-input" rows="4" placeholder="Şikayet nedeniniz nedir?..." style="resize:none;"></textarea>
             <div class="modal-actions"><button class="modal-btn-cancel" id="cancel-support-btn">İptal</button><button class="modal-btn-save" id="send-support-btn" style="background:#e74c3c;">Gönder</button></div>
         </div>
     </div>
+    
     <div class="modal-overlay" id="users-list-modal"><div class="modal-content"><div class="list-header"><h3 id="users-list-title" style="margin:0;">Liste</h3><button class="close-btn" id="close-list-btn">&times;</button></div><div id="users-list-container"></div></div></div>
 
     <div class="bottom-nav">
@@ -257,21 +302,29 @@
         window.addEventListener('click', (e) => { if (e.target !== hamburgerBtn && !settingsMenu.contains(e.target)) { settingsMenu.style.display = 'none'; } });
         document.getElementById('menu-logout-btn').addEventListener('click', () => { signOut(auth).then(() => { window.location.href = "index.html"; }); });
         
-        // Ayarlar Butonu Modalı Açıyor
         document.getElementById('menu-settings-btn').addEventListener('click', () => { 
             settingsMenu.style.display = 'none'; 
             document.getElementById('advanced-settings-modal').style.display = 'flex'; 
         });
 
-        // Ayarlar İçinden Profil Düzenlemeyi Açma
-        document.getElementById('open-edit-profile-modal-btn').addEventListener('click', () => {
+        // AYARLAR -> PROFİL DÜZENLE AÇILIŞI VE VERİLERİ DOLDURMA
+        document.getElementById('open-edit-profile-modal-btn').addEventListener('click', async () => {
             document.getElementById('advanced-settings-modal').style.display = 'none';
             document.getElementById('edit-modal').style.display = 'flex'; 
-            const currentBio = document.getElementById('display-bio').innerText; 
-            if (currentBio !== "Merhaba, ben Mozaik'te yeniyim!") document.getElementById('edit-bio-input').value = currentBio;
+            
+            // Mevcut verileri veritabanından çekip form içine yerleştiriyoruz
+            const mySnap = await getDoc(doc(db, "users", myUsername));
+            if(mySnap.exists()) {
+                const d = mySnap.data();
+                document.getElementById('edit-fullname-input').value = d.fullName || '';
+                document.getElementById('edit-birthdate-input').value = d.birthDate || '';
+                document.getElementById('edit-gender-input').value = d.gender || '';
+                document.getElementById('edit-location-input').value = d.location || '';
+                document.getElementById('edit-bio-input').value = d.bio !== "Merhaba, ben Mozaik'te yeniyim!" ? d.bio : '';
+                document.getElementById('edit-private-input').checked = d.isPrivate || false;
+            }
         });
 
-        // Ayarlar İçinden Hesap Silme İşlemi
         document.getElementById('trigger-delete-account-btn').addEventListener('click', async () => {
             if(confirm("DİKKAT: Hesabınızı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
                 try { await deleteDoc(doc(db, "users", myUsername)); await deleteUser(currentUser); alert("Hesabınız başarıyla silindi. Sizi özleyeceğiz!"); window.location.href = "index.html"; } 
@@ -305,21 +358,64 @@
             followBtn.disabled = false;
         });
 
+        // DESTEK - ŞİKAYET MODALI
+        document.getElementById('open-support-btn').addEventListener('click', () => { document.getElementById('support-modal').style.display = 'flex'; });
+        document.getElementById('cancel-support-btn').addEventListener('click', () => { document.getElementById('support-modal').style.display = 'none'; });
+        document.getElementById('send-support-btn').addEventListener('click', async () => {
+            const msg = document.getElementById('support-msg-input').value.trim();
+            if(!msg) return alert("Lütfen bir açıklama yazın.");
+            const btn = document.getElementById('send-support-btn'); btn.disabled = true; btn.innerText = "Gönderiliyor...";
+            try {
+                await addDoc(collection(db, "tickets"), { sender: myUsername, reportedProfile: targetUsername, message: msg, createdAt: serverTimestamp() });
+                alert("Şikayetiniz sistem yöneticilerine başarıyla iletildi.");
+                document.getElementById('support-modal').style.display = 'none';
+            } catch(e) {} finally { btn.disabled = false; btn.innerText = "Gönder"; document.getElementById('support-msg-input').value = ''; }
+        });
+
         function loadUserProfileData() {
             onSnapshot(doc(db, "users", targetUsername), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    
+                    // YENİ ALANLARI EKRANA BAS
+                    document.getElementById('display-fullname').innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span class="verified-badge" title="Onaylı Hesap">☑️</span>' : ''}`;
+                    document.getElementById('display-username').innerText = `@${targetUsername}`;
+                    
+                    let detailsHtml = '';
+                    if(data.location) detailsHtml += `<div class="detail-item">📍 ${data.location}</div>`;
+                    if(data.birthDate) {
+                        // Yaş hesaplama
+                        const birth = new Date(data.birthDate);
+                        const today = new Date();
+                        let age = today.getFullYear() - birth.getFullYear();
+                        const m = today.getMonth() - birth.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) { age--; }
+                        detailsHtml += `<div class="detail-item">🎂 ${age} Yaşında</div>`;
+                    }
+                    if(data.gender && data.gender !== "Belirtmek İstemiyorum") detailsHtml += `<div class="detail-item">👤 ${data.gender}</div>`;
+                    
+                    document.getElementById('display-details').innerHTML = detailsHtml;
+                    
                     if (data.bio) document.getElementById('display-bio').innerText = data.bio;
                     if (data.avatarUrl) { document.getElementById('avatar-emoji').style.display = 'none'; document.getElementById('avatar-img').style.display = 'inline-block'; document.getElementById('avatar-img').src = data.avatarUrl; }
+                    
                     currentProfileFollowers = data.followers || []; currentProfileFollowing = data.following || [];
                     document.getElementById('followers-count').innerText = currentProfileFollowers.length; document.getElementById('following-count').innerText = currentProfileFollowing.length;
                     isTargetPrivate = data.isPrivate || false; isTargetVerified = data.isVerified || false; isRequested = (data.followRequests || []).includes(myUsername);
                     const isMe = (targetUsername === myUsername); const amIFollowing = currentProfileFollowers.includes(myUsername);
 
-                    document.getElementById('display-username').innerHTML = `@${targetUsername} ${isTargetVerified ? '<span class="verified-badge" title="Onaylı Hesap">☑️</span>' : ''}`;
-                    if(isMe) { document.getElementById('edit-private-input').checked = isTargetPrivate; }
                     if(isTargetPrivate) document.getElementById('private-badge').style.display = 'block'; else document.getElementById('private-badge').style.display = 'none';
                     updateFollowButtonUI(); 
+
+                    // KULLANICI LİSTELERİ (Tıklanabilir Takipçi Kutu)
+                    document.getElementById('followers-box').onclick = () => {
+                        if(isTargetPrivate && !isMe && !amIFollowing) return alert("Bu hesap gizli olduğu için takipçilerini göremezsin.");
+                        showUserList("Takipçiler", currentProfileFollowers);
+                    };
+                    document.getElementById('following-box').onclick = () => {
+                        if(isTargetPrivate && !isMe && !amIFollowing) return alert("Bu hesap gizli olduğu için takip ettiklerini göremezsin.");
+                        showUserList("Takip Edilenler", currentProfileFollowing);
+                    };
 
                     const feedContainer = document.getElementById('profile-feed-container');
                     if (isTargetPrivate && !isMe && !amIFollowing) {
@@ -330,16 +426,72 @@
             });
         }
 
+        // LİSTE GÖSTERİCİ (Takipçi ve Takip Edilenler İçin)
+        function showUserList(title, userArray) {
+            document.getElementById('users-list-title').innerText = title;
+            const container = document.getElementById('users-list-container');
+            container.innerHTML = '';
+            
+            if(userArray.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888;">Liste boş.</p>';
+            } else {
+                userArray.forEach(uname => {
+                    let uData = allUsersData[uname] || {};
+                    let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`;
+                    let vHtml = uData.isVerified ? '<span class="verified-small">☑️</span>' : '';
+                    let fullNameText = uData.fullName || uname;
+                    
+                    container.innerHTML += `
+                        <a href="profile.html?user=${uname}" class="user-row">
+                            <div class="row-avatar">${avatarHtml}</div>
+                            <div>
+                                <div style="font-weight:bold; color:#000;">${fullNameText} ${vHtml}</div>
+                                <div style="font-size:12px; color:#888;">@${uname}</div>
+                            </div>
+                        </a>
+                    `;
+                });
+            }
+            document.getElementById('users-list-modal').style.display = 'flex';
+        }
+        document.getElementById('close-list-btn').onclick = () => { document.getElementById('users-list-modal').style.display = 'none'; };
+
+
         const editModal = document.getElementById('edit-modal'); 
         document.getElementById('cancel-edit-btn').addEventListener('click', () => { editModal.style.display = 'none'; });
+        document.getElementById('cancel-edit-btn-top').addEventListener('click', () => { editModal.style.display = 'none'; });
+        
         document.getElementById('save-edit-btn').addEventListener('click', async () => {
             const saveBtn = document.getElementById('save-edit-btn'); saveBtn.innerText = "Kaydediliyor..."; saveBtn.disabled = true;
-            const newBio = document.getElementById('edit-bio-input').value; const isPrivateChecked = document.getElementById('edit-private-input').checked; const file = document.getElementById('edit-avatar-input').files[0]; let newAvatarUrl = document.getElementById('avatar-img').src; 
+            
+            // Yeni verileri topla
+            const newFullName = document.getElementById('edit-fullname-input').value.trim();
+            const newBirthDate = document.getElementById('edit-birthdate-input').value;
+            const newGender = document.getElementById('edit-gender-input').value;
+            const newLocation = document.getElementById('edit-location-input').value.trim();
+            const newBio = document.getElementById('edit-bio-input').value; 
+            const isPrivateChecked = document.getElementById('edit-private-input').checked; 
+            const file = document.getElementById('edit-avatar-input').files[0]; 
+            
+            if(!newFullName) { alert("Ad Soyad kısmı boş bırakılamaz!"); saveBtn.innerText = "Bilgilerimi Kaydet"; saveBtn.disabled = false; return; }
+
+            let newAvatarUrl = document.getElementById('avatar-img').src; 
+            
             try {
                 if (file) { const formData = new FormData(); formData.append("image", file); const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const data = await res.json(); if(data.success) newAvatarUrl = data.data.url; }
-                await setDoc(doc(db, "users", myUsername), { bio: newBio, isPrivate: isPrivateChecked, avatarUrl: newAvatarUrl === window.location.href ? null : newAvatarUrl }, { merge: true });
+                
+                await setDoc(doc(db, "users", myUsername), { 
+                    fullName: newFullName,
+                    birthDate: newBirthDate,
+                    gender: newGender,
+                    location: newLocation,
+                    bio: newBio, 
+                    isPrivate: isPrivateChecked, 
+                    avatarUrl: newAvatarUrl === window.location.href ? null : newAvatarUrl 
+                }, { merge: true });
+                
                 editModal.style.display = 'none';
-            } catch (e) {} finally { saveBtn.innerText = "Kaydet"; saveBtn.disabled = false; }
+            } catch (e) {} finally { saveBtn.innerText = "Bilgilerimi Kaydet"; saveBtn.disabled = false; }
         });
 
         window.deletePost = async function(postId) {
@@ -414,7 +566,7 @@
                         feedContainer.appendChild(postDiv);
                     }
                 });
-                document.getElementById('post-count').innerText = `Gönderi Sayısı: ${userPostCount}`;
+                document.getElementById('post-count').innerText = `Gönderi: ${userPostCount}`;
             });
         }
     </script>
