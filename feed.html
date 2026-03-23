@@ -27,14 +27,20 @@
         .post-author { font-weight: bold; font-size: 15px; color: #2980b9; text-decoration: none; display: flex; align-items: center; gap: 4px; }
         .verified-small { color: #1da1f2; font-size: 14px; }
         
+        /* YENİ: DÜZENLE VE SİL BUTONLARI */
+        .post-owner-actions { display: flex; gap: 5px; }
+        .edit-post-btn, .delete-post-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 5px; border-radius: 5px; transition: 0.2s; }
+        .edit-post-btn:hover { background: #ebf5fb; }
+        .delete-post-btn:hover { background: #fadbd8; }
+        .edited-tag { font-size: 11px; color: #888; font-style: italic; margin-left: 5px; }
+
         .post-content { font-size: 16px; color: #333; line-height: 1.4; word-wrap: break-word; }
         .hashtag { color: #3498db; text-decoration: none; font-weight: bold; }
         .post-image { max-width: 100%; border-radius: 8px; margin-top: 10px; }
 
         .post-footer { margin-top: 12px; border-top: 1px solid #eee; padding-top: 10px; display: flex; align-items: center; gap: 15px; }
-        .action-btn { background: none; border: none; cursor: pointer; font-size: 14px; color: #666; display: flex; align-items: center; gap: 6px; font-weight: bold; }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 14px; color: #666; display: flex; align-items: center; gap: 6px; font-weight: bold; padding:0; }
         .like-btn.liked { color: #e74c3c; }
-        
         .likes-count { cursor: pointer; font-size: 14px; font-weight: bold; color: #555; transition: 0.2s; }
         .likes-count:hover { color: #000; text-decoration: underline; }
 
@@ -45,15 +51,16 @@
         .comment-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none; }
         .comment-send-btn { background: #000; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 
+        /* MODAL TASARIMLARI */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; max-height: 70vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
-        
         .user-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; text-decoration: none; color: #333; transition: 0.2s; background: #f9f9f9; margin-bottom: 5px; }
         .user-row:hover { background: #ebf5fb; }
         .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; }
-
+        
+        /* GÜNCELLENMİŞ ALT MENÜ */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
         .nav-item .icon { font-size: 22px; }
@@ -80,12 +87,17 @@
     </div>
 
     <div class="modal-overlay" id="likes-modal">
+        <div class="modal-content"><div class="modal-header"><h3>Beğenenler</h3><button class="close-btn" id="close-likes-modal">&times;</button></div><div id="likes-list-container"></div></div>
+    </div>
+
+    <div class="modal-overlay" id="edit-post-modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Beğenenler</h3>
-                <button class="close-btn" id="close-likes-modal">&times;</button>
+            <div class="modal-header"><h3>Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div>
+            <textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit;"></textarea>
+            <div style="display:flex; justify-content:space-between; margin-top:15px;">
+                <button style="padding:8px 15px; border:none; background:#eee; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button>
+                <button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#2980b9; color:white; border-radius:6px; font-weight:bold; cursor:pointer;">Kaydet</button>
             </div>
-            <div id="likes-list-container"></div>
         </div>
     </div>
 
@@ -99,17 +111,15 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1"; 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
         let currentUser = null; let myUsername = null;
-        let currentTab = 'following'; 
-        let myFollowingList = [];
-        let globalPosts = []; 
-        let allUsersData = {}; 
+        let currentTab = 'following'; let myFollowingList = []; let globalPosts = []; let allUsersData = {}; 
+        let currentlyEditingPostId = null; // Düzenlenecek postun ID'si
 
         document.getElementById('tab-following').addEventListener('click', () => { currentTab = 'following'; document.getElementById('tab-following').classList.add('active'); document.getElementById('tab-discover').classList.remove('active'); renderFeed(); });
         document.getElementById('tab-discover').addEventListener('click', () => { currentTab = 'discover'; document.getElementById('tab-discover').classList.add('active'); document.getElementById('tab-following').classList.remove('active'); renderFeed(); });
@@ -123,114 +133,98 @@
                     if (docSnap.exists() && docSnap.data().following) myFollowingList = docSnap.data().following;
                     renderFeed(); 
                 });
-
-                onSnapshot(collection(db, "users"), (snapshot) => {
-                    allUsersData = {};
-                    snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); });
-                    renderFeed();
-                });
-
+                onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); }); renderFeed(); });
                 loadPostsFromDatabase(); 
             } else { window.location.href = "index.html"; }
         });
 
         function loadPostsFromDatabase() {
-            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-            onSnapshot(q, (snapshot) => {
-                globalPosts = [];
-                snapshot.forEach((postDoc) => { globalPosts.push({ id: postDoc.id, data: postDoc.data() }); });
-                renderFeed(); 
+            onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
+                globalPosts = []; snapshot.forEach((postDoc) => { globalPosts.push({ id: postDoc.id, data: postDoc.data() }); }); renderFeed(); 
             });
         }
 
-        function formatHashtags(text) {
-            if (!text) return "";
-            let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            return safeText.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`);
-        }
+        function formatHashtags(text) { if (!text) return ""; let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); return safeText.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`); }
 
         window.showLikes = function(likesArray) {
             if (!likesArray || likesArray.length === 0) return;
-            const modal = document.getElementById('likes-modal');
-            const container = document.getElementById('likes-list-container');
-            modal.style.display = 'flex';
-            let html = '';
+            document.getElementById('likes-modal').style.display = 'flex'; let html = '';
             likesArray.forEach(liker => {
-                let username = liker.includes('@') ? liker.split('@')[0] : liker;
-                let userData = allUsersData[username] || {};
-                let avatarHtml = userData.avatarUrl ? `<img src="${userData.avatarUrl}" class="row-avatar">` : `<div class="row-avatar">👤</div>`;
-                let vHtml = userData.isVerified ? '<span class="verified-small">☑️</span>' : '';
+                let username = liker.includes('@') ? liker.split('@')[0] : liker; let userData = allUsersData[username] || {};
+                let avatarHtml = userData.avatarUrl ? `<img src="${userData.avatarUrl}" class="row-avatar">` : `<div class="row-avatar">👤</div>`; let vHtml = userData.isVerified ? '<span class="verified-small">☑️</span>' : '';
                 html += `<a href="profile.html?user=${username}" class="user-row">${avatarHtml}<div style="font-weight:bold;">@${username} ${vHtml}</div></a>`;
             });
-            container.innerHTML = html;
+            document.getElementById('likes-list-container').innerHTML = html;
         };
-
         document.getElementById('close-likes-modal').onclick = () => { document.getElementById('likes-modal').style.display = 'none'; };
 
-        window.toggleComments = function(postId) {
-            const section = document.getElementById(`comments-${postId}`);
-            section.style.display = section.style.display === 'none' ? 'block' : 'none';
-        };
+        window.toggleComments = function(postId) { const section = document.getElementById(`comments-${postId}`); section.style.display = section.style.display === 'none' ? 'block' : 'none'; };
 
-        // YENİ: YORUM YAPINCA BİLDİRİM GÖNDER (KENDİ POSTUN DEĞİLSE)
         window.addComment = async function(postId, postAuthor) {
-            const input = document.getElementById(`input-${postId}`);
-            const text = input.value.trim();
-            if (!text) return;
-            
-            await updateDoc(doc(db, "posts", postId), { 
-                comments: arrayUnion({ text: text, author: myUsername, timestamp: Date.now() }) 
-            });
-            input.value = '';
-
-            if (postAuthor !== myUsername) {
-                await addDoc(collection(db, "notifications"), {
-                    type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp()
-                });
-            }
+            const input = document.getElementById(`input-${postId}`); const text = input.value.trim(); if (!text) return;
+            await updateDoc(doc(db, "posts", postId), { comments: arrayUnion({ text: text, author: myUsername, timestamp: Date.now() }) }); input.value = '';
+            if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); }
         };
 
-        // YENİ: BEĞENİNCE BİLDİRİM GÖNDER (KENDİ POSTUN DEĞİLSE)
         window.toggleLike = async function(postId, isLiked, postAuthor) {
             const postRef = doc(db, "posts", postId);
-            if (isLiked) {
-                await updateDoc(postRef, { likes: arrayRemove(myUsername, currentUser.email) });
-            } else {
-                await updateDoc(postRef, { likes: arrayUnion(myUsername) });
-                if (postAuthor !== myUsername) {
-                    await addDoc(collection(db, "notifications"), {
-                        type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp()
-                    });
-                }
+            if (isLiked) { await updateDoc(postRef, { likes: arrayRemove(myUsername, currentUser.email) }); } 
+            else { 
+                await updateDoc(postRef, { likes: arrayUnion(myUsername) }); 
+                if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); }
             }
         };
+
+        // YENİ: SİLME VE DÜZENLEME FONKSİYONLARI
+        window.deletePost = async function(postId) {
+            if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?")) {
+                await deleteDoc(doc(db, "posts", postId));
+            }
+        };
+
+        window.openEditModal = function(postId, currentContent) {
+            currentlyEditingPostId = postId;
+            document.getElementById('edit-post-input').value = currentContent;
+            document.getElementById('edit-post-modal').style.display = 'flex';
+        };
+
+        document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
+            if(!currentlyEditingPostId) return;
+            const newContent = document.getElementById('edit-post-input').value.trim();
+            if(!newContent) return;
+            const btn = document.getElementById('save-edited-post-btn');
+            btn.innerText = "Kaydediliyor..."; btn.disabled = true;
+            try {
+                await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true });
+                document.getElementById('edit-post-modal').style.display = 'none';
+            } catch(e) { alert("Düzenleme başarısız oldu."); } 
+            finally { btn.innerText = "Kaydet"; btn.disabled = false; currentlyEditingPostId = null; }
+        });
 
         function renderFeed() {
             const feedContainer = document.getElementById('feed-container');
             feedContainer.innerHTML = '';
             globalPosts.forEach((post) => {
                 const postData = post.data; const authorData = allUsersData[postData.author] || {};
-                const isPrivate = authorData.isPrivate || false;
-                const amIFollowing = myFollowingList.includes(postData.author);
+                const isPrivate = authorData.isPrivate || false; const amIFollowing = myFollowingList.includes(postData.author);
                 
                 if (currentTab === 'following' && postData.author !== myUsername && !amIFollowing) return;
                 if (currentTab === 'discover' && postData.author !== myUsername && isPrivate && !amIFollowing) return;
 
-                const likesArray = postData.likes || [];
-                const isLiked = likesArray.includes(currentUser.email) || likesArray.includes(myUsername);
-                
+                const likesArray = postData.likes || []; const isLiked = likesArray.includes(currentUser.email) || likesArray.includes(myUsername);
                 const vHtml = authorData.isVerified ? '<span class="verified-small">☑️</span>' : '';
                 const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" class="post-avatar-img">` : `<div class="post-avatar-img" style="display:flex;align-items:center;justify-content:center;background:#eee;">👤</div>`;
+                const isOwner = (postData.author === myUsername); // Bu gönderi benim mi?
+                const editedHtml = postData.isEdited ? '<span class="edited-tag">(Düzenlendi)</span>' : '';
 
                 let commentsHTML = ''; 
                 (postData.comments || []).forEach(comment => { 
-                    const commentAuthorData = allUsersData[comment.author] || {};
-                    const cVHtml = commentAuthorData.isVerified ? '<span class="verified-small">☑️</span>' : '';
-                    commentsHTML += `
-                        <div class="comment-item">
-                            <div><a href="profile.html?user=${comment.author}" class="comment-author">@${comment.author}</a>${cVHtml} <span style="color:#333;">${comment.text}</span></div>
-                        </div>`; 
+                    const cVHtml = (allUsersData[comment.author] || {}).isVerified ? '<span class="verified-small">☑️</span>' : '';
+                    commentsHTML += `<div class="comment-item"><div><a href="profile.html?user=${comment.author}" class="comment-author">@${comment.author}</a>${cVHtml} <span style="color:#333;">${comment.text}</span></div></div>`; 
                 });
+
+                // Tırnak işaretleri yüzünden hata vermemesi için içeriği güvenli hale getiriyoruz
+                const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
                 const postDiv = document.createElement('div'); postDiv.className = 'post';
                 postDiv.innerHTML = `
@@ -238,18 +232,21 @@
                         <div class="post-author-container">
                             ${avatarImg}
                             <a href="profile.html?user=${postData.author}" class="post-author">@${postData.author} ${vHtml}</a>
+                            ${editedHtml}
                         </div>
+                        ${isOwner ? `
+                        <div class="post-owner-actions">
+                            <button class="edit-post-btn" onclick="window.openEditModal('${post.id}', '${safeContentForEdit}')" title="Düzenle">✏️</button>
+                            <button class="delete-post-btn" onclick="window.deletePost('${post.id}')" title="Sil">🗑️</button>
+                        </div>` : ''}
                     </div>
                     <div class="post-content">${formatHashtags(postData.content)}</div>
                     ${postData.imageUrl ? `<img src="${postData.imageUrl}" class="post-image">` : ''}
                     <div class="post-footer">
-                        <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${postData.author}')">
-                            ${isLiked ? '❤️' : '🤍'}
-                        </button>
+                        <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${postData.author}')">${isLiked ? '❤️' : '🤍'}</button>
                         <span class="likes-count" onclick='window.showLikes(${JSON.stringify(likesArray)})'>${likesArray.length} beğeni</span>
                         <button class="action-btn" onclick="window.toggleComments('${post.id}')">💬 ${(postData.comments || []).length} Yorum</button>
                     </div>
-                    
                     <div class="comments-section" id="comments-${post.id}">
                         <div class="comments-list">${commentsHTML}</div>
                         <div class="comment-input-box">
@@ -264,16 +261,10 @@
         
         const shareBtn = document.getElementById('share-btn');
         shareBtn.addEventListener('click', async () => {
-            const text = document.getElementById('post-text').value;
-            const file = document.getElementById('image-input').files[0];
-            if(!text && !file) return; shareBtn.disabled = true; shareBtn.innerText = "...";
-            let url = null;
-            if(file) {
-                const formData = new FormData(); formData.append("image", file);
-                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-                const data = await res.json(); url = data.data.url;
-            }
-            await addDoc(collection(db, "posts"), { content: text, imageUrl: url, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [] });
+            const text = document.getElementById('post-text').value; const file = document.getElementById('image-input').files[0];
+            if(!text && !file) return; shareBtn.disabled = true; shareBtn.innerText = "..."; let url = null;
+            if(file) { const formData = new FormData(); formData.append("image", file); const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const data = await res.json(); url = data.data.url; }
+            await addDoc(collection(db, "posts"), { content: text, imageUrl: url, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false });
             document.getElementById('post-text').value = ''; document.getElementById('image-input').value = ''; document.getElementById('image-preview-text').style.display = 'none'; shareBtn.disabled = false; shareBtn.innerText = "Paylaş";
         });
     </script>
