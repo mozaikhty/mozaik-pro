@@ -34,12 +34,17 @@
         .send-btn:hover { background: #2980b9; transform: scale(1.05); }
 
         /* INBOX KARTLARI CSS */
-        .dm-user-card { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: 12px; text-decoration: none; color: #333; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; }
+        .dm-user-card { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: 12px; text-decoration: none; color: #333; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; position: relative; }
         .dm-user-card:hover { background: #ebf5fb; }
-        .dm-avatar { width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; border: 1px solid #ddd; }
-        .dm-info { flex: 1; }
-        .dm-username { font-weight: bold; font-size: 16px; display: flex; align-items: center; }
-        .dm-subtitle { font-size: 13px; color: #888; margin-top: 3px; }
+        .dm-avatar { width: 50px; height: 50px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; border: 1px solid #ddd; flex-shrink: 0; }
+        .dm-info { flex: 1; overflow: hidden; }
+        .dm-username { font-weight: bold; font-size: 16px; display: flex; align-items: center; margin-bottom: 3px; }
+        .dm-subtitle { font-size: 14px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+        
+        /* YENİ MESAJ BİLDİRİMİ (KIRMIZI NOKTA VE KALIN YAZI) */
+        .unread-text { color: #e74c3c; font-weight: bold; }
+        .unread-dot { width: 10px; height: 10px; background-color: #e74c3c; border-radius: 50%; flex-shrink: 0; }
+        .time-badge { position: absolute; top: 15px; right: 15px; font-size: 11px; color: #aaa; }
 
         /* MODAL (GRUP KURMA EKRANI) */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
@@ -68,7 +73,7 @@
             <button id="open-group-modal" style="background:none; border:none; font-size:14px; font-weight:bold; color:#2980b9; cursor:pointer;">+ Grup</button>
         </div>
         <div style="padding: 20px;">
-            <input type="text" id="dm-search-input" placeholder="Kişi veya grup ara..." style="width:100%; padding:12px 15px; border-radius:20px; border:1px solid #ddd; margin-bottom:20px; box-sizing:border-box; font-size:15px; outline:none;">
+            <input type="text" id="dm-search-input" placeholder="Sohbetlerinde ara..." style="width:100%; padding:12px 15px; border-radius:20px; border:1px solid #ddd; margin-bottom:20px; box-sizing:border-box; font-size:15px; outline:none;">
             <div id="dm-list">Yükleniyor...</div>
         </div>
     </div>
@@ -114,7 +119,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -126,9 +131,12 @@
         
         let allUsersData = {};
         let myFollowing = [];
-        let myGroups = [];
+        
+        // Inbox verileri
+        let activeChats = [];
+        let activeGroups = [];
 
-        // URL Kontrolü: 1-1 mesaj mı, Grup mesajı mı?
+        // URL Kontrolü
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
         const targetGroupId = urlParams.get('group');
@@ -147,26 +155,31 @@
                     myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                     document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
 
-                    // Tüm kullanıcıları çek (Profil fotoları için)
+                    // Tüm kullanıcıların bilgilerini çek (Avatarlar ve İsimler için)
                     onSnapshot(collection(db, "users"), (snapshot) => {
                         allUsersData = {};
                         snapshot.forEach(d => { allUsersData[d.id] = d.data(); });
                         updateInboxDisplay(); 
                     });
 
-                    // Sadece takip ettiklerimi çek
+                    // Sadece takip ettiklerimi çek (Grup kurma ekranı için gerekli)
                     onSnapshot(doc(db, "users", myUsername), (docSnap) => {
-                        if (docSnap.exists()) {
-                            myFollowing = docSnap.data().following || [];
-                            updateInboxDisplay();
-                        }
+                        if (docSnap.exists()) { myFollowing = docSnap.data().following || []; }
                     });
 
-                    // Benim olduğum Grupları çek
+                    // 1. İÇİNDE BULUNDUĞUM BİREBİR SOHBETLERİ ÇEK
+                    const qChats = query(collection(db, "chats"), where("participants", "array-contains", myUsername));
+                    onSnapshot(qChats, (snapshot) => {
+                        activeChats = [];
+                        snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type: 'private' }); });
+                        updateInboxDisplay();
+                    });
+
+                    // 2. İÇİNDE BULUNDUĞUM GRUPLARI ÇEK
                     const qGroups = query(collection(db, "groups"), where("members", "array-contains", myUsername));
                     onSnapshot(qGroups, (snapshot) => {
-                        myGroups = [];
-                        snapshot.forEach(docSnap => { myGroups.push({ id: docSnap.id, ...docSnap.data() }); });
+                        activeGroups = [];
+                        snapshot.forEach(docSnap => { activeGroups.push({ id: docSnap.id, ...docSnap.data(), type: 'group' }); });
                         updateInboxDisplay();
                     });
 
@@ -180,45 +193,77 @@
                 const container = document.getElementById('dm-list');
                 container.innerHTML = '';
 
-                // 1. KİŞİLERİ LİSTELE
-                let filteredFollowing = myFollowing;
-                if(text) filteredFollowing = Object.keys(allUsersData).filter(uid => uid !== myUsername && uid.toLowerCase().includes(text));
+                // Birebir sohbetleri ve Grupları birleştir
+                let allConversations = [...activeChats, ...activeGroups];
 
-                filteredFollowing.forEach(uid => {
-                    const uData = allUsersData[uid] || {};
-                    const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
-                    const vHtml = uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
+                // Son mesaja (updatedAt) göre yeniden eskiye doğru sırala
+                allConversations.sort((a, b) => {
+                    let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0;
+                    let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0;
+                    return timeB - timeA;
+                });
+
+                // Arama filtresi
+                if(text) {
+                    allConversations = allConversations.filter(c => {
+                        if(c.type === 'group') return c.name.toLowerCase().includes(text);
+                        if(c.type === 'private') {
+                            const otherUser = c.participants.find(p => p !== myUsername);
+                            return otherUser && otherUser.toLowerCase().includes(text);
+                        }
+                        return false;
+                    });
+                }
+
+                if (allConversations.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#888; margin-top:30px;">Gösterilecek sohbet bulunamadı.<br><br><small>Yeni bir sohbete başlamak için birinin profiline gidip "Mesaj" butonuna tıklayabilirsin.</small></p>';
+                    return;
+                }
+
+                allConversations.forEach(conv => {
+                    let title = '';
+                    let avatar = '';
+                    let link = '';
                     
+                    // Yeni mesaj kontrolü: Son mesajı atan ben değilsem ve bir mesaj varsa okunmamış sayılır
+                    let isUnread = (conv.lastSender && conv.lastSender !== myUsername); 
+                    
+                    // Saat formatı oluşturma
+                    let timeAgoStr = "";
+                    if(conv.updatedAt) {
+                        const date = conv.updatedAt.toDate();
+                        timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                    }
+
+                    if (conv.type === 'private') {
+                        const otherUser = conv.participants.find(p => p !== myUsername);
+                        const uData = allUsersData[otherUser] || {};
+                        title = `@${otherUser} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px;">☑️</span>' : ''}`;
+                        avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
+                        link = `chat.html?user=${otherUser}`;
+                    } else {
+                        title = conv.name;
+                        avatar = `<div style="background:#2ecc71; color:white; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">👥</div>`;
+                        link = `chat.html?group=${conv.id}`;
+                    }
+
+                    // Son Mesaj Metni ve Yeni Mesaj Görseli
+                    let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı';
+                    let subtitleHtml = isUnread 
+                        ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` 
+                        : `<span>${lastMsgText}</span>`;
+
                     container.innerHTML += `
-                        <a href="chat.html?user=${uid}" class="dm-user-card">
+                        <a href="${link}" class="dm-user-card">
                             <div class="dm-avatar">${avatar}</div>
                             <div class="dm-info">
-                                <div class="dm-username">@${uid} ${vHtml}</div>
-                                <div class="dm-subtitle">Sohbet başlat</div>
+                                <div class="dm-username">${title}</div>
+                                <div class="dm-subtitle">${subtitleHtml}</div>
                             </div>
+                            <div class="time-badge">${timeAgoStr}</div>
                         </a>
                     `;
                 });
-
-                // 2. GRUPLARI LİSTELE
-                let filteredGroups = myGroups;
-                if(text) filteredGroups = myGroups.filter(g => g.name.toLowerCase().includes(text));
-
-                filteredGroups.forEach(group => {
-                    container.innerHTML += `
-                        <a href="chat.html?group=${group.id}" class="dm-user-card" style="background:#f4f9f4;">
-                            <div class="dm-avatar" style="background:#2ecc71; color:white;">👥</div>
-                            <div class="dm-info">
-                                <div class="dm-username">${group.name}</div>
-                                <div class="dm-subtitle">${group.members.length} Üye</div>
-                            </div>
-                        </a>
-                    `;
-                });
-
-                if (filteredFollowing.length === 0 && filteredGroups.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; color:#888;">Sonuç bulunamadı...</p>';
-                }
             }
 
             // GRUP KURMA MODALI İŞLEMLERİ
@@ -255,7 +300,7 @@
                 if(selectedCheckboxes.length === 0) return alert("Gruba eklemek için en az 1 kişi seçmelisin!");
 
                 const selectedUsers = Array.from(selectedCheckboxes).map(cb => cb.value);
-                const members = [myUsername, ...selectedUsers]; // Kendimizi de ekliyoruz
+                const members = [myUsername, ...selectedUsers]; 
 
                 const btn = document.getElementById('create-group-btn');
                 btn.disabled = true; btn.innerText = "Oluşturuluyor...";
@@ -265,7 +310,9 @@
                         name: groupName,
                         members: members,
                         createdBy: myUsername,
-                        createdAt: serverTimestamp()
+                        lastMessage: 'Grup oluşturuldu',
+                        lastSender: myUsername,
+                        updatedAt: serverTimestamp()
                     });
                     window.location.href = `chat.html?group=${newGroupRef.id}`;
                 } catch(e) { alert("Hata oluştu!"); btn.disabled = false; btn.innerText = "Grubu Oluştur"; }
@@ -305,7 +352,6 @@
                             if (gSnap.exists()) {
                                 const gData = gSnap.data();
                                 document.getElementById('chat-username-text').innerText = gData.name;
-                                // Kendisi hariç diğer üyeleri subtitle'a yaz
                                 const otherMembers = gData.members.filter(m => m !== myUsername).join(', ');
                                 document.getElementById('chat-subtitle').innerText = `Sen, ${otherMembers}`;
                             } else {
@@ -336,7 +382,6 @@
                             timeString = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
                         }
 
-                        // Eğer grupsa ve mesaj karşıdan geliyorsa, üstüne ismini yaz
                         let senderNameHtml = '';
                         if (isGroupChat && !isMe) {
                             senderNameHtml = `<div class="msg-sender-name">@${data.sender}</div>`;
@@ -371,6 +416,23 @@
                 try {
                     const messagesRef = collection(db, "chats", chatId, "messages");
                     await addDoc(messagesRef, { text: text, sender: myUsername, createdAt: serverTimestamp() });
+                    
+                    // ANA DOSYAYA SON MESAJI KAYDET (INBOX GÜNCELLEMESİ İÇİN)
+                    if (!isGroupChat) {
+                        await setDoc(doc(db, "chats", chatId), {
+                            participants: [myUsername, targetUsername],
+                            lastMessage: text,
+                            lastSender: myUsername,
+                            updatedAt: serverTimestamp()
+                        }, { merge: true });
+                    } else {
+                        await updateDoc(doc(db, "groups", chatId), {
+                            lastMessage: text,
+                            lastSender: myUsername,
+                            updatedAt: serverTimestamp()
+                        });
+                    }
+
                 } catch (e) { alert("Mesaj gönderilemedi!"); }
                 
                 sendBtn.disabled = false;
