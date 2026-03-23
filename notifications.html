@@ -3,64 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bildirimler - Mozaik</title>
+    <title>Mozaik / Bildirimler</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; padding-bottom: 70px; }
-        .header { background: white; padding: 15px 20px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
-        .header h2 { margin: 0; color: #000; font-size: 22px; letter-spacing: 1px; }
-        .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #fff; margin: 0; padding: 0; color: #0f1419; }
+        * { box-sizing: border-box; }
+        a { text-decoration: none; color: inherit; }
 
-        .requests-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .box-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px; }
+        .app-container { display: flex; justify-content: center; max-width: 1250px; margin: 0 auto; min-height: 100vh; }
         
-        .request-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .request-item:last-child { border-bottom: none; }
-        .req-user-info { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; }
-        .req-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; border: 1px solid #ddd; }
-        .req-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .req-username { font-weight: bold; font-size: 15px; }
-        .req-text { font-size: 12px; color: #888; }
-        .req-actions { display: flex; gap: 5px; }
-        .accept-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .reject-btn { background: #ecf0f1; color: #555; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; }
+        .logo-desktop { font-size: 28px; font-weight: 800; padding: 10px; margin-bottom: 10px; display: inline-block; color: #1da1f2; }
+        .desktop-nav { display: flex; flex-direction: column; gap: 5px; }
+        .desktop-nav-item { display: flex; align-items: center; gap: 15px; font-size: 20px; padding: 12px; border-radius: 30px; transition: 0.2s; cursor: pointer; width: fit-content; font-weight: 500; }
+        .desktop-nav-item:hover { background-color: #e7f5fe; color: #1da1f2; }
+        .desktop-nav-item.active { font-weight: bold; }
+        .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
+        .desktop-post-btn:hover { background: #1a91da; }
 
-        .notification-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eee; text-decoration: none; color: #333; transition: 0.2s; }
-        .notification-item:hover { background: #f9f9f9; border-radius: 8px; padding-left: 10px; }
+        .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; }
+        .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; padding: 15px 20px; }
+        .header-title { font-size: 20px; font-weight: 800; }
+
+        /* BİLDİRİM STİLLERİ */
+        .notification-item { display: flex; padding: 12px 16px; border-bottom: 1px solid #eff3f4; transition: 0.2s; cursor: pointer; text-decoration: none; color: #0f1419; }
+        .notification-item:hover { background: #f7f9f9; }
+        .notif-icon-box { width: 40px; flex-shrink: 0; display: flex; justify-content: flex-end; padding-right: 10px; font-size: 24px; }
         .notif-content { flex: 1; }
-        .notif-main-text { font-size: 14px; }
-        .notif-time { font-size: 11px; color: #888; margin-top: 3px; }
-        .notif-alert { color: #c0392b; }
+        .notif-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; background: #eee; }
+        .notif-text { font-size: 15px; line-height: 1.4; }
+        .notif-alert { color: #e74c3c; font-weight: bold; }
 
-        .empty-text { text-align: center; color: #888; padding: 20px; font-size: 14px; }
+        .empty-text { font-size: 15px; color: #536471; padding: 40px; text-align: center; line-height: 1.5; }
 
-        /* GÜNCEL 5'Lİ ALT MENÜ CSS */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
-        .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
-        .nav-item .icon { font-size: 22px; }
-        .nav-item.active { color: #000; }
+        .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
+        .trends-box { background: #f7f9f9; border-radius: 16px; padding: 15px; margin-top: 10px; }
+
+        .fab-button { display: none; position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; background: #1da1f2; color: white; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 1000; align-items: center; justify-content: center; }
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #eff3f4; z-index: 1000; padding: 10px 0; justify-content: space-around; }
+        .nav-item { color: #536471; font-size: 24px; padding: 5px 20px; border-radius: 30px; transition: 0.2s; }
+        .nav-item.active { color: #0f1419; font-weight: bold; }
+
+        @media (max-width: 1000px) {
+            .sidebar-left, .sidebar-right { display: none; }
+            .feed-main { width: 100%; border: none; padding-bottom: 60px; }
+            .bottom-nav { display: flex; }
+            .fab-button { display: flex; }
+        }
     </style>
 </head>
 <body>
-    <div class="header"><h2>Bildirimler</h2></div>
-    
-    <div class="container">
-        <div class="requests-box" id="requests-wrapper" style="display: none;">
-            <div class="box-title">🔒 Takip İstekleri</div>
-            <div id="requests-container"></div>
-        </div>
+    <div class="app-container">
+        <nav class="sidebar-left">
+            <a href="feed.html" class="logo-desktop">Mozaik</a>
+            <div class="desktop-nav">
+                <a href="feed.html" class="desktop-nav-item">🏠 Anasayfa</a>
+                <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
+                <a href="notifications.html" class="desktop-nav-item active">🔔 Bildirimler</a>
+                <a href="chat.html" class="desktop-nav-item">✉️ Mesajlar</a>
+                <a href="#" class="desktop-nav-item" id="desktop-profile-link">👤 Profil</a>
+            </div>
+            <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
+        </nav>
 
-        <div class="requests-box">
-            <div class="box-title">⚡ Son Etkileşimler</div>
-            <div id="notifications-container"><div class="empty-text">Yükleniyor...</div></div>
-        </div>
+        <main class="feed-main">
+            <div class="header-sticky">
+                <div class="header-title">Bildirimler</div>
+            </div>
+            <div id="requests-container" style="display:none; border-bottom: 10px solid #eff3f4;"></div>
+            <div id="notifications-container"><div class="empty-text">Burada görecek bir şey yok. Henüz...<br><br>Beğeniler, yanıtlar ve çok daha fazlası burada gerçekleşir.</div></div>
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="trends-box">
+                <div style="font-size: 20px; font-weight: 800; margin-bottom: 15px;">Abonelik Al</div>
+                <div style="font-size: 15px; color: #0f1419; margin-bottom: 15px;">Reklamlardan kurtul, yeni özellikleri keşfet.</div>
+                <button style="background:#0f1419; color:white; border:none; padding:10px 20px; border-radius:30px; font-weight:bold; cursor:pointer;">Abone ol</button>
+            </div>
+        </aside>
     </div>
 
+    <button class="fab-button" onclick="window.location.href='feed.html'">+</button>
     <div class="bottom-nav">
-        <a href="feed.html" class="nav-item"><span class="icon">🏠</span><span>Akış</span></a>
-        <a href="search.html" class="nav-item"><span class="icon">🔍</span><span>Ara</span></a>
-        <a href="chat.html" class="nav-item"><span class="icon">💬</span><span>Mesajlar</span></a>
-        <a href="notifications.html" class="nav-item active"><span class="icon">🔔</span><span>Bildirimler</span></a>
-        <a href="#" class="nav-item" id="my-profile-link"><span class="icon">👤</span><span>Profil</span></a>
+        <a href="feed.html" class="nav-item">🏠</a>
+        <a href="search.html" class="nav-item">🔍</a>
+        <a href="chat.html" class="nav-item">✉️</a>
+        <a href="notifications.html" class="nav-item active">🔔</a>
+        <a href="#" class="nav-item" id="mobile-profile-link">👤</a>
     </div>
 
     <script type="module">
@@ -76,7 +104,8 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 myUsername = user.displayName || user.email.split('@')[0];
-                document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
+                document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
+                document.getElementById('mobile-profile-link').href = `profile.html?user=${myUsername}`;
                 loadFollowRequests();
                 loadNotifications(); 
             } else { window.location.href = "index.html"; }
@@ -85,101 +114,69 @@
         function loadFollowRequests() {
             const myRef = doc(db, "users", myUsername);
             onSnapshot(myRef, async (docSnap) => {
-                const wrapper = document.getElementById('requests-wrapper');
                 const container = document.getElementById('requests-container');
-                
                 if (docSnap.exists() && docSnap.data().followRequests && docSnap.data().followRequests.length > 0) {
-                    wrapper.style.display = 'block';
+                    container.style.display = 'block';
                     const requests = docSnap.data().followRequests;
-                    let html = '';
+                    let html = '<div style="padding:15px; font-weight:bold; border-bottom:1px solid #eff3f4;">Takip İstekleri</div>';
                     for (let reqUser of requests) {
                         let avatarHtml = '👤';
-                        try {
-                            const uSnap = await getDoc(doc(db, "users", reqUser));
-                            if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}">`;
-                        } catch(e) {}
+                        try { const uSnap = await getDoc(doc(db, "users", reqUser)); if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}">`; } catch(e) {}
                         html += `
-                            <div class="request-item">
-                                <a href="profile.html?user=${reqUser}" class="req-user-info">
-                                    <div class="req-avatar">${avatarHtml}</div>
-                                    <div><div class="req-username">@${reqUser}</div><div class="req-text">Seni takip etmek istiyor</div></div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom:1px solid #eff3f4;">
+                                <a href="profile.html?user=${reqUser}" style="display:flex; align-items:center; gap:10px; text-decoration:none; color:#0f1419;">
+                                    <div style="width:40px; height:40px; border-radius:50%; overflow:hidden; background:#eee; display:flex; justify-content:center; align-items:center; font-size:20px;">${avatarHtml}</div>
+                                    <div><div style="font-weight:bold;">@${reqUser}</div><div style="font-size:13px; color:#536471;">Seni takip etmek istiyor</div></div>
                                 </a>
-                                <div class="req-actions">
-                                    <button class="accept-btn" onclick="window.acceptRequest('${reqUser}')">Onayla</button>
-                                    <button class="reject-btn" onclick="window.rejectRequest('${reqUser}')">Sil</button>
+                                <div style="display:flex; gap:5px;">
+                                    <button style="background:#0f1419; color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:bold; cursor:pointer;" onclick="window.acceptRequest('${reqUser}')">Onayla</button>
+                                    <button style="background:#eff3f4; color:#0f1419; border:none; padding:6px 15px; border-radius:20px; font-weight:bold; cursor:pointer;" onclick="window.rejectRequest('${reqUser}')">Sil</button>
                                 </div>
                             </div>
                         `;
                     }
                     container.innerHTML = html;
-                } else { wrapper.style.display = 'none'; }
+                } else { container.style.display = 'none'; }
             });
         }
 
         function loadNotifications() {
             const q = query(collection(db, "notifications"), where("recipient", "==", myUsername));
-            
             onSnapshot(q, async (snapshot) => {
                 const container = document.getElementById('notifications-container');
-                if (snapshot.empty) { container.innerHTML = '<div class="empty-text">Henüz yeni bir etkileşim yok. Gönderi paylaşarak dikkatleri üzerine çek! ✨</div>'; return; }
+                if (snapshot.empty) { container.innerHTML = '<div class="empty-text">Burada görecek bir şey yok. Henüz...<br><br>Beğeniler, yanıtlar ve çok daha fazlası burada gerçekleşir.</div>'; return; }
 
-                let notifs = [];
-                snapshot.forEach(docSnap => { notifs.push(docSnap.data()); });
-                
-                notifs.sort((a, b) => {
-                    let timeA = a.createdAt ? a.createdAt.toMillis() : 0; let timeB = b.createdAt ? b.createdAt.toMillis() : 0;
-                    return timeB - timeA;
-                });
+                let notifs = []; snapshot.forEach(docSnap => { notifs.push(docSnap.data()); });
+                notifs.sort((a, b) => { let timeA = a.createdAt ? a.createdAt.toMillis() : 0; let timeB = b.createdAt ? b.createdAt.toMillis() : 0; return timeB - timeA; });
 
                 let html = '';
                 for (const data of notifs) {
                     if (data.sender === myUsername) continue;
+                    let icon = '🔔'; let iconColor = '#1da1f2'; let actionText = ''; let link = `profile.html?user=${data.sender}`; let isAlert = false;
 
-                    let icon = '🔔'; let actionText = ''; let link = `profile.html?user=${data.sender}`;
-                    let isAlert = false;
-
-                    if (data.type === 'like') { icon = '❤️'; actionText = 'gönderini beğendi.'; }
-                    else if (data.type === 'comment') { icon = '💬'; actionText = 'gönderine yorum yaptı.'; }
-                    else if (data.type === 'follow') { icon = '🤝'; actionText = 'seni takip etmeye başladı.'; }
-                    else if (data.type === 'admin_delete') { icon = '🚨'; actionText = 'bir gönderini kurallara uymadığı gerekçesiyle sistemden kaldırdı.'; link = '#'; isAlert = true; }
+                    if (data.type === 'like') { icon = '❤️'; iconColor = '#f91880'; actionText = 'gönderini beğendi'; }
+                    else if (data.type === 'comment') { icon = '💬'; iconColor = '#1da1f2'; actionText = 'gönderini yanıtladı'; }
+                    else if (data.type === 'follow') { icon = '👤'; iconColor = '#1da1f2'; actionText = 'seni takip etmeye başladı'; }
+                    else if (data.type === 'admin_delete') { icon = '🚨'; iconColor = '#e74c3c'; actionText = 'bir gönderini kurallara uymadığı gerekçesiyle sildi.'; link = '#'; isAlert = true; }
 
                     let avatarHtml = '👤';
-                    try {
-                        const uSnap = await getDoc(doc(db, "users", data.sender));
-                        if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}">`;
-                    } catch(e) {}
-
-                    let timeAgo = "Az önce";
-                    if (data.createdAt) {
-                        const seconds = Math.floor((new Date() - data.createdAt.toMillis()) / 1000);
-                        if (seconds > 60) {
-                            const mins = Math.floor(seconds / 60);
-                            if (mins < 60) timeAgo = `${mins} dk önce`;
-                            else if (mins < 1440) timeAgo = `${Math.floor(mins / 60)} saat önce`;
-                            else timeAgo = `${Math.floor(mins / 1440)} gün önce`;
-                        }
-                    }
+                    try { const uSnap = await getDoc(doc(db, "users", data.sender)); if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}" class="notif-avatar">`; else avatarHtml = `<div class="notif-avatar" style="display:flex;justify-content:center;align-items:center;">👤</div>`; } catch(e) {}
 
                     html += `
                         <a href="${link}" class="notification-item">
-                            <div class="req-avatar">${avatarHtml}</div>
+                            <div class="notif-icon-box" style="color:${iconColor};">${icon}</div>
                             <div class="notif-content">
-                                <div class="notif-main-text ${isAlert ? 'notif-alert' : ''}"><b>@${data.sender}</b> ${actionText}</div>
-                                <div class="notif-time">${icon} ${timeAgo}</div>
+                                ${avatarHtml}
+                                <div class="notif-text ${isAlert ? 'notif-alert' : ''}"><b>${data.sender}</b> ${actionText}</div>
                             </div>
                         </a>
                     `;
                 }
-                
-                if(html === '') container.innerHTML = '<div class="empty-text">Henüz yeni bir etkileşim yok. Gönderi paylaşarak dikkatleri üzerine çek! ✨</div>';
-                else container.innerHTML = html;
+                if(html === '') container.innerHTML = '<div class="empty-text">Burada görecek bir şey yok. Henüz...<br><br>Beğeniler, yanıtlar ve çok daha fazlası burada gerçekleşir.</div>'; else container.innerHTML = html;
             });
         }
 
-        window.acceptRequest = async function(reqUser) {
-            const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", reqUser);
-            try { await setDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }, { merge: true }); await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true }); } catch(e) {}
-        };
+        window.acceptRequest = async function(reqUser) { const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", reqUser); try { await setDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }, { merge: true }); await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true }); } catch(e) {} };
         window.rejectRequest = async function(reqUser) { try { await setDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }, { merge: true }); } catch(e) {} };
     </script>
 </body>
