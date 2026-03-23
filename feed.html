@@ -81,7 +81,7 @@
         .verified-badge { color: #1da1f2; font-size: 14px; }
         .post-time { color: #536471; font-size: 14px; margin-left: 4px; }
         
-        /* YENİ: ••• MENÜSÜ */
+        /* ••• MENÜSÜ */
         .post-options-btn { background: none; border: none; color: #536471; cursor: pointer; border-radius: 50%; padding: 5px; transition: 0.2s; width:30px; height:30px; display:flex; justify-content:center; align-items:center;}
         .post-options-btn:hover { background: #e7f5fe; color: #1da1f2; }
         .dropdown-menu { display: none; position: absolute; right: 0; top: 30px; background: white; border: 1px solid #eff3f4; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 200; overflow: hidden; width: 200px; flex-direction: column;}
@@ -107,7 +107,7 @@
         .action-item.like-box:hover .action-icon { background: #fbeef5; }
         .action-item.repost-box:hover .action-icon { background: #def1eb; }
 
-        /* YENİ: İÇ İÇE YORUM (NESTED COMMENTS) AĞACI */
+        /* DETAYLI İNCELEME & YORUM AĞACI */
         .comments-wrapper { padding-top: 15px; border-top: 1px solid #eff3f4; margin-top: 15px; }
         .comment-node { position: relative; margin-top: 15px; }
         .comment-node::before { content: ''; position: absolute; top: 40px; bottom: -10px; left: 19px; width: 2px; background: #cfd9de; z-index: 0; }
@@ -121,7 +121,7 @@
         .comment-actions { display: flex; gap: 15px; margin-top: 5px; color: #536471; font-size: 13px; font-weight: bold; }
         .comment-action-btn { cursor: pointer; transition: 0.2s; }
         .comment-action-btn:hover { color: #1da1f2; }
-        .comment-replies { margin-left: 20px; } /* Sağa kaydırma (Girinti) */
+        .comment-replies { margin-left: 20px; }
 
         /* SAĞ SÜTUN (MASAÜSTÜ) */
         .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
@@ -146,9 +146,10 @@
 
         /* MODALLAR */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; }
-        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;}
+        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: sticky; top: -20px; background: white; z-index: 10; padding-bottom: 10px; border-bottom: 1px solid #eff3f4;}
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
+        
         #mobile-post-modal .modal-content { max-width: 100%; width: 100%; height: 100vh; border-radius: 0; padding-top: 10px; margin: 0; }
         #post-detail-modal .modal-content { max-width: 650px; width: 100%; min-height: 50vh; padding: 0;}
         
@@ -310,7 +311,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, setDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, setDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1"; 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
@@ -380,7 +381,7 @@
         function loadPostsFromDatabase() {
             onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
                 globalPosts = []; snapshot.forEach((postDoc) => { globalPosts.push({ id: postDoc.id, data: postDoc.data() }); }); renderFeed(); 
-                // Eğer detay modali açıksa onu da güncelle
+                
                 const detailModal = document.getElementById('post-detail-modal');
                 if(detailModal.style.display === 'flex' && window.currentOpenPostId) {
                     window.openPostDetail(window.currentOpenPostId);
@@ -477,8 +478,12 @@
             else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } }
         };
 
-        window.showLikes = function(likesArray, event) {
-            event.stopPropagation(); if (!likesArray || likesArray.length === 0) return;
+        window.showLikes = function(postId, event) {
+            event.stopPropagation(); 
+            const postObj = globalPosts.find(p => p.id === postId);
+            if(!postObj) return;
+            const likesArray = postObj.data.likes || [];
+            if(likesArray.length === 0) return;
             window.showUserList("Beğenenler", likesArray);
         };
 
@@ -497,7 +502,7 @@
 
             let html = `
                 <div style="padding: 20px; border-bottom:1px solid #eff3f4;">
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${postData.author}'">
                         <div style="width:48px; height:48px; border-radius:50%; background:#eee; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px;">${avatarImg}</div>
                         <div style="flex:1;">
                             <div style="font-weight:bold; font-size:16px;">${fullName} ${vHtml}</div>
@@ -513,7 +518,7 @@
                     <div style="display:flex; justify-content:space-around; padding:15px 0; border-bottom:1px solid #eff3f4; color:#536471;">
                         <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="document.getElementById('detail-comment-input').focus()"><span class="action-icon">💬</span> ${(postData.comments || []).length}</div>
                         <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="window.repostPost('${postId}', '${postData.author}', event)"><span class="action-icon">🔁</span></div>
-                        <div style="display:flex; align-items:center; gap:8px; cursor:pointer; color:${isLiked ? '#f91880' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}', event)"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> ${likesArray.length}</div>
+                        <div style="display:flex; align-items:center; gap:8px; cursor:pointer; color:${isLiked ? '#f91880' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}', event)"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${postId}', event)">${likesArray.length}</span></div>
                         <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="window.openShareModal('${postId}', event)"><span class="action-icon">📤</span></div>
                     </div>
                 </div>
@@ -539,7 +544,7 @@
         // İÇ İÇE YORUM AĞACI OLUŞTURUCU (RECURSIVE)
         function buildCommentsTree(allComments, parentId, depth = 0) {
             let html = '';
-            const children = allComments.filter(c => c.parentId === parentId).sort((a,b) => a.timestamp - b.timestamp);
+            const children = allComments.filter(c => (c.parentId || null) === (parentId || null)).sort((a,b) => a.timestamp - b.timestamp);
             children.forEach(c => {
                 const cUserData = allUsersData[c.author] || {};
                 const avatarHtml = cUserData.avatarUrl ? `<img src="${cUserData.avatarUrl}">` : `👤`;
@@ -598,7 +603,6 @@
                 if (authorData.isBanned) return; 
 
                 const isPrivate = authorData.isPrivate || false; 
-                // Repost edeni takip ediyorsak da görebilmeliyiz
                 const amIFollowingOriginal = myFollowingList.includes(originalAuthor);
                 const amIFollowingReposter = postData.isRepost ? myFollowingList.includes(postData.author) : false;
                 
@@ -609,7 +613,7 @@
                 const vHtml = authorData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
                 const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : `👤`;
                 const isOwner = (originalAuthor === myUsername); 
-                const isMyRepost = (postData.author === myUsername); // Eğer bu repost benimse silebilirim
+                const isMyRepost = (postData.author === myUsername); 
                 const fullName = authorData.fullName || originalAuthor;
                 
                 let timeAgo = "";
@@ -618,7 +622,6 @@
                     if(secs < 60) timeAgo = `${secs}s`; else if (secs < 3600) timeAgo = `${Math.floor(secs/60)}d`; else if (secs < 86400) timeAgo = `${Math.floor(secs/3600)}sa`; else timeAgo = `${Math.floor(secs/86400)}g`;
                 }
 
-                // Yorum İkonu tıklanınca detay sayfasına atacak (eski comments-section'ı sildim)
                 const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
                 // Repost İbaresi
@@ -629,7 +632,7 @@
                 }
 
                 const postDiv = document.createElement('div'); postDiv.className = 'post';
-                postDiv.onclick = () => window.openPostDetail(post.id); // TIKLANINCA DETAYA GİDER
+                postDiv.onclick = () => window.openPostDetail(post.id); 
 
                 postDiv.innerHTML = `
                     <div style="width:100%; display:flex; flex-direction:column;">
@@ -666,7 +669,7 @@
                                 <div class="post-footer-actions">
                                     <div class="action-item" onclick="event.stopPropagation(); window.openPostDetail('${post.id}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
                                     <div class="action-item repost-box" onclick="window.repostPost('${post.id}', '${originalAuthor}', event)" title="Yeniden Paylaş"><span class="action-icon">🔁</span> </div>
-                                    <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${originalAuthor}', event)" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes(${JSON.stringify(likesArray)}, event)">${likesArray.length || ''}</span></div>
+                                    <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${originalAuthor}', event)" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${post.id}', event)">${likesArray.length || ''}</span></div>
                                     <div class="action-item" onclick="window.openShareModal('${post.id}', event)" title="Direkt Mesaj ile Paylaş"><span class="action-icon">📤</span></div>
                                 </div>
                             </div>
