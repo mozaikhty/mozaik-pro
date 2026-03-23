@@ -12,7 +12,10 @@
         .back-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #3498db; margin-right: 15px; font-weight: bold; text-decoration: none; }
         .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; margin-right: 15px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #ddd; font-size: 20px; }
         .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .chat-username { font-size: 18px; font-weight: bold; color: #333; }
+        .chat-username { font-size: 18px; font-weight: bold; color: #333; display: flex; flex-direction: column; }
+
+        /* YAZIYOR... GÖSTERGESİ İÇİN YENİ CSS */
+        .typing-indicator { font-size: 12px; color: #2ecc71; font-style: italic; font-weight: bold; display: none; margin-top: 2px; }
 
         /* MESAJ ALANI VE BALONCUKLAR */
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-color: #efeae2; }
@@ -24,7 +27,10 @@
         .msg-them { background: white; color: #333; border-top-left-radius: 0; }
         .msg-me { background: #3498db; color: white; border-top-right-radius: 0; }
         .msg-sender-name { font-size: 11px; color: #888; margin-bottom: 3px; font-weight: bold; margin-left: 5px; }
-        .msg-time { font-size: 10px; margin-top: 5px; text-align: right; opacity: 0.7; }
+        
+        .msg-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 5px; }
+        .msg-time { font-size: 10px; opacity: 0.7; }
+        .msg-tick { font-size: 12px; font-weight: bold; text-shadow: 0 0 2px rgba(0,0,0,0.2); }
 
         /* MESAJ YAZMA KUTUSU */
         .chat-input-area { background: white; padding: 15px; display: flex; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); margin-bottom: 60px; }
@@ -41,12 +47,11 @@
         .dm-username { font-weight: bold; font-size: 16px; display: flex; align-items: center; margin-bottom: 3px; }
         .dm-subtitle { font-size: 14px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
         
-        /* YENİ MESAJ BİLDİRİMİ (KIRMIZI NOKTA VE KALIN YAZI) */
         .unread-text { color: #e74c3c; font-weight: bold; }
         .unread-dot { width: 10px; height: 10px; background-color: #e74c3c; border-radius: 50%; flex-shrink: 0; }
         .time-badge { position: absolute; top: 15px; right: 15px; font-size: 11px; color: #aaa; }
 
-        /* MODAL (GRUP KURMA EKRANI) */
+        /* MODAL */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
@@ -85,6 +90,7 @@
             <div class="chat-username">
                 <div id="chat-username-text" style="line-height:1.2;">Yükleniyor...</div>
                 <div id="chat-subtitle" style="font-size:11px; color:#888; font-weight:normal;"></div>
+                <div id="typing-indicator" class="typing-indicator">yazıyor...</div>
             </div>
         </div>
         <div class="chat-messages" id="chat-messages"></div>
@@ -102,8 +108,7 @@
             </div>
             <input type="text" id="group-name-input" placeholder="Grup Adı (Örn: Kankalar)" style="width:100%; padding:10px; margin-bottom:15px; border-radius:6px; border:1px solid #ddd; box-sizing:border-box; font-size:15px; outline:none;">
             <div style="font-weight:bold; font-size:13px; margin-bottom:10px; color:#555;">Kişileri Seç (Takip Ettiklerin):</div>
-            <div id="group-users-list" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px;">
-                </div>
+            <div id="group-users-list" style="max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius:6px;"></div>
             <button class="create-group-btn" id="create-group-btn">Grubu Oluştur</button>
         </div>
     </div>
@@ -119,7 +124,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        // YENİ: Okundu işlemleri için arrayUnion eklendi
+        import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -132,18 +138,16 @@
         let allUsersData = {};
         let myFollowing = [];
         
-        // Inbox verileri
         let activeChats = [];
         let activeGroups = [];
 
-        // URL Kontrolü
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
         const targetGroupId = urlParams.get('group');
 
         if (!targetUsername && !targetGroupId) {
             // ==========================================
-            // INBOX (MESAJ KUTUSU) MODU
+            // GELEN KUTUSU
             // ==========================================
             document.getElementById('inbox-view').style.display = 'flex';
             document.getElementById('inbox-view').style.flexDirection = 'column';
@@ -155,19 +159,15 @@
                     myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                     document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
 
-                    // Tüm kullanıcıların bilgilerini çek
                     onSnapshot(collection(db, "users"), (snapshot) => {
-                        allUsersData = {};
-                        snapshot.forEach(d => { allUsersData[d.id] = d.data(); });
+                        allUsersData = {}; snapshot.forEach(d => { allUsersData[d.id] = d.data(); });
                         updateInboxDisplay(); 
                     });
 
-                    // Takip ettiklerimi çek (Grup kurma ekranı için gerekli)
                     onSnapshot(doc(db, "users", myUsername), (docSnap) => {
                         if (docSnap.exists()) { myFollowing = docSnap.data().following || []; }
                     });
 
-                    // 1. İÇİNDE BULUNDUĞUM BİREBİR SOHBETLERİ ÇEK
                     const qChats = query(collection(db, "chats"), where("participants", "array-contains", myUsername));
                     onSnapshot(qChats, (snapshot) => {
                         activeChats = [];
@@ -175,7 +175,6 @@
                         updateInboxDisplay();
                     });
 
-                    // 2. İÇİNDE BULUNDUĞUM GRUPLARI ÇEK
                     const qGroups = query(collection(db, "groups"), where("members", "array-contains", myUsername));
                     onSnapshot(qGroups, (snapshot) => {
                         activeGroups = [];
@@ -193,17 +192,13 @@
                 const container = document.getElementById('dm-list');
                 container.innerHTML = '';
 
-                // Birebir sohbetleri ve Grupları birleştir
                 let allConversations = [...activeChats, ...activeGroups];
-
-                // Son mesaja göre yeniden eskiye doğru sırala
                 allConversations.sort((a, b) => {
                     let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0;
                     let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0;
                     return timeB - timeA;
                 });
 
-                // Arama filtresi
                 let filteredConversations = allConversations;
                 if(text) {
                     filteredConversations = allConversations.filter(c => {
@@ -216,15 +211,11 @@
                     });
                 }
 
-                // 1. MEVCUT SOHBETLERİ BAS
                 if (filteredConversations.length > 0) {
                     if (text) container.innerHTML += '<div style="font-size:12px; font-weight:bold; color:#888; margin-bottom:10px; margin-left:5px;">MEVCUT SOHBETLER</div>';
                     
                     filteredConversations.forEach(conv => {
-                        let title = '';
-                        let avatar = '';
-                        let link = '';
-                        
+                        let title = ''; let avatar = ''; let link = '';
                         let isUnread = (conv.lastSender && conv.lastSender !== myUsername); 
                         
                         let timeAgoStr = "";
@@ -263,16 +254,10 @@
                     });
                 }
 
-                // 2. YENİ KİŞİLERİ BAS (Sadece arama kutusu doluysa çalışır)
                 if (text) {
-                    // Aktif sohbetlerdeki kullanıcı isimlerini topla
                     const activeUsernames = activeChats.map(c => c.participants.find(p => p !== myUsername));
-                    
-                    // Tüm kullanıcılar içinde ara (Kendimiz ve aktif sohbetimiz olanlar hariç)
                     const searchResults = Object.keys(allUsersData).filter(uid => 
-                        uid !== myUsername && 
-                        !activeUsernames.includes(uid) && 
-                        uid.toLowerCase().includes(text)
+                        uid !== myUsername && !activeUsernames.includes(uid) && uid.toLowerCase().includes(text)
                     );
 
                     if (searchResults.length > 0) {
@@ -295,36 +280,26 @@
                     }
                 }
 
-                // EĞER HİÇBİR ŞEY BULUNAMADIYSA
                 if (container.innerHTML === '') {
-                    if (!text) {
-                        container.innerHTML = '<p style="text-align:center; color:#888; margin-top:30px;">Gösterilecek sohbet bulunamadı.<br><br><small>Arama kutusunu kullanarak yeni bir sohbete başlayabilirsin.</small></p>';
-                    } else {
-                        container.innerHTML = '<p style="text-align:center; color:#888; margin-top:30px;">Kullanıcı veya sohbet bulunamadı...</p>';
-                    }
+                    if (!text) { container.innerHTML = '<p style="text-align:center; color:#888; margin-top:30px;">Gösterilecek sohbet bulunamadı.<br><br><small>Arama kutusunu kullanarak yeni bir sohbete başlayabilirsin.</small></p>'; } 
+                    else { container.innerHTML = '<p style="text-align:center; color:#888; margin-top:30px;">Kullanıcı veya sohbet bulunamadı...</p>'; }
                 }
             }
 
-            // GRUP KURMA MODALI İŞLEMLERİ
+            // Grup Kurma Modalı
             document.getElementById('open-group-modal').addEventListener('click', () => {
                 document.getElementById('group-modal').style.display = 'flex';
                 const listDiv = document.getElementById('group-users-list');
                 listDiv.innerHTML = '';
                 
-                if(myFollowing.length === 0) {
-                    listDiv.innerHTML = '<div style="padding:10px; color:#888; text-align:center;">Önce birilerini takip etmelisin!</div>';
-                    return;
-                }
+                if(myFollowing.length === 0) { listDiv.innerHTML = '<div style="padding:10px; color:#888; text-align:center;">Önce birilerini takip etmelisin!</div>'; return; }
 
                 myFollowing.forEach(uid => {
                     const uData = allUsersData[uid] || {};
                     const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
                     listDiv.innerHTML += `
                         <label class="user-select-row">
-                            <div class="user-select-info">
-                                <div class="user-select-avatar">${avatar}</div>
-                                @${uid}
-                            </div>
+                            <div class="user-select-info"><div class="user-select-avatar">${avatar}</div>@${uid}</div>
                             <input type="checkbox" class="group-member-checkbox" value="${uid}" style="width:18px; height:18px; cursor:pointer;">
                         </label>
                     `;
@@ -340,30 +315,23 @@
 
                 const selectedUsers = Array.from(selectedCheckboxes).map(cb => cb.value);
                 const members = [myUsername, ...selectedUsers]; 
-
-                const btn = document.getElementById('create-group-btn');
-                btn.disabled = true; btn.innerText = "Oluşturuluyor...";
+                const btn = document.getElementById('create-group-btn'); btn.disabled = true; btn.innerText = "Oluşturuluyor...";
 
                 try {
-                    const newGroupRef = await addDoc(collection(db, "groups"), {
-                        name: groupName,
-                        members: members,
-                        createdBy: myUsername,
-                        lastMessage: 'Grup oluşturuldu',
-                        lastSender: myUsername,
-                        updatedAt: serverTimestamp()
-                    });
+                    const newGroupRef = await addDoc(collection(db, "groups"), { name: groupName, members: members, createdBy: myUsername, lastMessage: 'Grup oluşturuldu', lastSender: myUsername, updatedAt: serverTimestamp() });
                     window.location.href = `chat.html?group=${newGroupRef.id}`;
                 } catch(e) { alert("Hata oluştu!"); btn.disabled = false; btn.innerText = "Grubu Oluştur"; }
             });
 
         } else {
             // ==========================================
-            // SOHBET ODASI (1-1 veya GRUP)
+            // AKTİF SOHBET PENCERESİ
             // ==========================================
             document.getElementById('inbox-view').style.display = 'none';
             document.getElementById('chat-view').style.display = 'flex';
             
+            let typingTimeout = null;
+
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     currentUser = user;
@@ -371,7 +339,6 @@
                     document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
                     
                     if (targetUsername) {
-                        // 1-1 SOHBET
                         isGroupChat = false;
                         if (targetUsername === myUsername) window.location.href = `profile.html?user=${myUsername}`;
                         chatId = [myUsername, targetUsername].sort().join('_');
@@ -382,7 +349,6 @@
                         } catch(e) {}
 
                     } else if (targetGroupId) {
-                        // GRUP SOHBETİ
                         isGroupChat = true;
                         chatId = targetGroupId;
                         document.getElementById('chat-avatar').innerHTML = `👥`;
@@ -393,16 +359,43 @@
                                 document.getElementById('chat-username-text').innerText = gData.name;
                                 const otherMembers = gData.members.filter(m => m !== myUsername).join(', ');
                                 document.getElementById('chat-subtitle').innerText = `Sen, ${otherMembers}`;
-                            } else {
-                                alert("Grup bulunamadı!"); window.location.href = "chat.html";
-                            }
+                            } else { alert("Grup bulunamadı!"); window.location.href = "chat.html"; }
                         } catch(e) {}
                     }
+
+                    // YAZIYOR... DİNLEYİCİSİ (TYPING INDICATOR LİSTENER)
+                    const chatDocRef = doc(db, isGroupChat ? "groups" : "chats", chatId);
+                    onSnapshot(chatDocRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            const typingObj = data.typing || {};
+                            let typingUsers = [];
+                            for (let usr in typingObj) {
+                                if (usr !== myUsername && typingObj[usr] === true) {
+                                    typingUsers.push(usr);
+                                }
+                            }
+                            
+                            const indicator = document.getElementById('typing-indicator');
+                            const subtitle = document.getElementById('chat-subtitle');
+                            
+                            if (typingUsers.length > 0) {
+                                subtitle.style.display = 'none';
+                                indicator.style.display = 'block';
+                                if(isGroupChat) indicator.innerText = `${typingUsers.join(', ')} yazıyor...`;
+                                else indicator.innerText = "yazıyor...";
+                            } else {
+                                indicator.style.display = 'none';
+                                subtitle.style.display = 'block';
+                            }
+                        }
+                    });
 
                     loadMessages();
                 } else { window.location.href = "index.html"; }
             });
 
+            // MESAJLARI YÜKLE VE OKUNDU YAP
             function loadMessages() {
                 const messagesRef = collection(db, "chats", chatId, "messages");
                 const q = query(messagesRef, orderBy("createdAt", "asc"));
@@ -415,6 +408,15 @@
                         const data = docSnap.data();
                         const isMe = data.sender === myUsername;
                         
+                        // YENİ: OKUNDU BİLDİRİMİ GÖNDERME MANTIĞI
+                        if (!isMe) {
+                            if (!isGroupChat && !data.isRead) {
+                                updateDoc(doc(messagesRef, docSnap.id), { isRead: true }).catch(e=>{});
+                            } else if (isGroupChat && (!data.readBy || !data.readBy.includes(myUsername))) {
+                                updateDoc(doc(messagesRef, docSnap.id), { readBy: arrayUnion(myUsername) }).catch(e=>{});
+                            }
+                        }
+                        
                         let timeString = '';
                         if (data.createdAt) {
                             const date = data.createdAt.toDate();
@@ -422,8 +424,17 @@
                         }
 
                         let senderNameHtml = '';
-                        if (isGroupChat && !isMe) {
-                            senderNameHtml = `<div class="msg-sender-name">@${data.sender}</div>`;
+                        if (isGroupChat && !isMe) senderNameHtml = `<div class="msg-sender-name">@${data.sender}</div>`;
+
+                        // YENİ: OKUNDU TİKLERİNİ OLUŞTURMA (Mavi baloncukta yeşil, diğerinde gri)
+                        let tickHtml = '';
+                        if (isMe) {
+                            let isRead = false;
+                            if (isGroupChat) isRead = data.readBy && data.readBy.length > 0;
+                            else isRead = data.isRead === true;
+                            
+                            // ✓✓ (Çift Tik = Okundu), ✓ (Tek Tik = İletildi)
+                            tickHtml = `<span class="msg-tick" style="color:${isRead ? '#2ecc71' : 'rgba(255,255,255,0.7)'};">${isRead ? '✓✓' : '✓'}</span>`;
                         }
 
                         const msgDiv = document.createElement('div');
@@ -432,7 +443,10 @@
                             ${senderNameHtml}
                             <div class="message-bubble ${isMe ? 'msg-me' : 'msg-them'}">
                                 <div>${data.text}</div>
-                                <div class="msg-time">${timeString}</div>
+                                <div class="msg-meta">
+                                    <div class="msg-time">${timeString}</div>
+                                    ${tickHtml}
+                                </div>
                             </div>
                         `;
                         messagesContainer.appendChild(msgDiv);
@@ -445,6 +459,17 @@
             const msgInput = document.getElementById('msg-input');
             const sendBtn = document.getElementById('send-btn');
 
+            // YAZIYOR TETİKLEYİCİSİ (TYPING EVENT)
+            msgInput.addEventListener('input', () => {
+                const chatRef = doc(db, isGroupChat ? "groups" : "chats", chatId);
+                updateDoc(chatRef, { [`typing.${myUsername}`]: true }).catch(e=>{});
+                
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
+                }, 1500);
+            });
+
             async function sendMessage() {
                 const text = msgInput.value.trim();
                 if (!text) return;
@@ -453,23 +478,17 @@
                 msgInput.value = '';
 
                 try {
+                    const chatRef = doc(db, isGroupChat ? "groups" : "chats", chatId);
                     const messagesRef = collection(db, "chats", chatId, "messages");
-                    await addDoc(messagesRef, { text: text, sender: myUsername, createdAt: serverTimestamp() });
                     
-                    // ANA DOSYAYA SON MESAJI KAYDET (INBOX GÜNCELLEMESİ İÇİN)
+                    // Mesajı gönder ve yazıyor'u kapat
+                    await addDoc(messagesRef, { text: text, sender: myUsername, createdAt: serverTimestamp() });
+                    await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
+                    
                     if (!isGroupChat) {
-                        await setDoc(doc(db, "chats", chatId), {
-                            participants: [myUsername, targetUsername],
-                            lastMessage: text,
-                            lastSender: myUsername,
-                            updatedAt: serverTimestamp()
-                        }, { merge: true });
+                        await setDoc(chatRef, { participants: [myUsername, targetUsername], lastMessage: text, lastSender: myUsername, updatedAt: serverTimestamp() }, { merge: true });
                     } else {
-                        await updateDoc(doc(db, "groups", chatId), {
-                            lastMessage: text,
-                            lastSender: myUsername,
-                            updatedAt: serverTimestamp()
-                        });
+                        await updateDoc(chatRef, { lastMessage: text, lastSender: myUsername, updatedAt: serverTimestamp() });
                     }
 
                 } catch (e) { alert("Mesaj gönderilemedi!"); }
