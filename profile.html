@@ -25,7 +25,6 @@
         .profile-username { font-size: 15px; color: #666; margin-top: 2px; font-weight: bold; }
         .profile-bio { font-size: 15px; color: #333; margin: 15px 0; font-style: italic; }
         
-        /* YENİ: DETAYLI BİLGİ ALANI */
         .profile-details-badge { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 10px 0; font-size: 12px; color: #555; }
         .detail-item { background: #f0f2f5; padding: 5px 10px; border-radius: 15px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
 
@@ -54,7 +53,6 @@
         .private-lock-icon { font-size: 60px; margin-bottom: 10px; }
         .private-title { font-size: 18px; font-weight: bold; color: #000; margin: 0 0 5px 0; }
 
-        /* POST, BEĞENİ VE YORUM */
         .post { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; text-align: left;}
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .post-author { font-weight: bold; font-size: 15px; color: #2980b9; text-decoration: none; display: flex; align-items: center; gap: 4px; }
@@ -79,7 +77,6 @@
         .comment-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none; }
         .comment-send-btn { background: #000; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 
-        /* MODALLAR */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
         .list-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; position: sticky; top: -25px; background: white; z-index: 10; }
@@ -95,13 +92,7 @@
         .modal-actions { display: flex; justify-content: space-between; margin-top: 20px; }
         .modal-btn-cancel { background: #eee; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; color: #333; flex: 1; margin-right: 10px; }
         .modal-btn-save { background: #27ae60; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; flex: 2; }
-        .hashtag { color: #3498db; text-decoration: none; font-weight: bold; }
-
-        .settings-option { display: block; width: 100%; text-align: left; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #eee; background: #f9f9f9; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
-        .settings-option:hover { background: #f0f2f5; }
-        .settings-danger { color: #c0392b; border-color: #f5b7b1; background: #fadbd8; }
-        .settings-danger:hover { background: #f5b7b1; }
-
+        
         /* ALT MENÜ */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
@@ -177,9 +168,14 @@
         <div class="modal-content">
             <div class="list-header"><h3 style="margin:0;">Profili Düzenle</h3><button class="close-btn" id="cancel-edit-btn-top">&times;</button></div>
             
-            <label class="modal-label" style="display:flex; align-items:center; gap:10px; cursor:pointer; background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;">
-                <input type="checkbox" id="edit-private-input" style="width:18px; height:18px; cursor:pointer;">🔒 Hesabımı Gizli Yap
-            </label>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; background:#f9f9f9; padding:12px; border-radius:8px; border:1px solid #ddd;">
+                    <input type="checkbox" id="edit-private-input" style="width:18px; height:18px; cursor:pointer;"> 🔒 Hesabımı Gizli Yap
+                </label>
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; background:#fef9e7; padding:12px; border-radius:8px; border:1px solid #f39c12;">
+                    <input type="checkbox" id="edit-hideinfo-input" style="width:18px; height:18px; cursor:pointer;"> 👁️‍🗨️ Detaylı Bilgilerimi Gizle
+                </label>
+            </div>
             
             <label class="modal-label">Profil Fotoğrafı:</label>
             <input type="file" id="edit-avatar-input" class="modal-input" accept="image/*" style="padding: 8px;">
@@ -296,7 +292,6 @@
             }
         };
 
-        // YENİ AYARLAR VE HAMBURGER MENÜ MANTIĞI
         const hamburgerBtn = document.getElementById('hamburger-btn'); const settingsMenu = document.getElementById('settings-menu');
         hamburgerBtn.addEventListener('click', () => { settingsMenu.style.display = settingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', (e) => { if (e.target !== hamburgerBtn && !settingsMenu.contains(e.target)) { settingsMenu.style.display = 'none'; } });
@@ -307,12 +302,9 @@
             document.getElementById('advanced-settings-modal').style.display = 'flex'; 
         });
 
-        // AYARLAR -> PROFİL DÜZENLE AÇILIŞI VE VERİLERİ DOLDURMA
         document.getElementById('open-edit-profile-modal-btn').addEventListener('click', async () => {
             document.getElementById('advanced-settings-modal').style.display = 'none';
             document.getElementById('edit-modal').style.display = 'flex'; 
-            
-            // Mevcut verileri veritabanından çekip form içine yerleştiriyoruz
             const mySnap = await getDoc(doc(db, "users", myUsername));
             if(mySnap.exists()) {
                 const d = mySnap.data();
@@ -322,13 +314,14 @@
                 document.getElementById('edit-location-input').value = d.location || '';
                 document.getElementById('edit-bio-input').value = d.bio !== "Merhaba, ben Mozaik'te yeniyim!" ? d.bio : '';
                 document.getElementById('edit-private-input').checked = d.isPrivate || false;
+                document.getElementById('edit-hideinfo-input').checked = d.hideInfo || false;
             }
         });
 
         document.getElementById('trigger-delete-account-btn').addEventListener('click', async () => {
-            if(confirm("DİKKAT: Hesabınızı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
-                try { await deleteDoc(doc(db, "users", myUsername)); await deleteUser(currentUser); alert("Hesabınız başarıyla silindi. Sizi özleyeceğiz!"); window.location.href = "index.html"; } 
-                catch (error) { alert("Hesap silinirken hata oluştu. Lütfen çıkış yapıp tekrar deneyin. (Güvenlik gereği yakın zamanda giriş yapmış olmanız istenir)."); }
+            if(confirm("DİKKAT: Hesabınızı kalıcı olarak silmek istediğinize emin misiniz?")) {
+                try { await deleteDoc(doc(db, "users", myUsername)); await deleteUser(currentUser); window.location.href = "index.html"; } 
+                catch (error) { alert("Hata oluştu, lütfen tekrar giriş yapıp deneyin."); }
             }
         });
 
@@ -344,7 +337,7 @@
         }
 
         document.getElementById('follow-btn').addEventListener('click', async () => {
-            const followBtn = document.getElementById('follow-btn'); followBtn.disabled = true; followBtn.innerText = "...";
+            const followBtn = document.getElementById('follow-btn'); followBtn.disabled = true;
             const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", targetUsername);
             try {
                 if(isFollowing) { await setDoc(myRef, { following: arrayRemove(targetUsername) }, { merge: true }); await setDoc(targetRef, { followers: arrayRemove(myUsername) }, { merge: true }); isFollowing = false; } 
@@ -358,63 +351,63 @@
             followBtn.disabled = false;
         });
 
-        // DESTEK - ŞİKAYET MODALI
         document.getElementById('open-support-btn').addEventListener('click', () => { document.getElementById('support-modal').style.display = 'flex'; });
         document.getElementById('cancel-support-btn').addEventListener('click', () => { document.getElementById('support-modal').style.display = 'none'; });
         document.getElementById('send-support-btn').addEventListener('click', async () => {
             const msg = document.getElementById('support-msg-input').value.trim();
-            if(!msg) return alert("Lütfen bir açıklama yazın.");
-            const btn = document.getElementById('send-support-btn'); btn.disabled = true; btn.innerText = "Gönderiliyor...";
+            if(!msg) return alert("Açıklama yazın.");
+            const btn = document.getElementById('send-support-btn'); btn.disabled = true;
             try {
                 await addDoc(collection(db, "tickets"), { sender: myUsername, reportedProfile: targetUsername, message: msg, createdAt: serverTimestamp() });
-                alert("Şikayetiniz sistem yöneticilerine başarıyla iletildi.");
-                document.getElementById('support-modal').style.display = 'none';
-            } catch(e) {} finally { btn.disabled = false; btn.innerText = "Gönder"; document.getElementById('support-msg-input').value = ''; }
+                alert("Şikayet iletildi."); document.getElementById('support-modal').style.display = 'none';
+            } catch(e) {} finally { btn.disabled = false; }
         });
 
         function loadUserProfileData() {
             onSnapshot(doc(db, "users", targetUsername), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    
-                    // YENİ ALANLARI EKRANA BAS
-                    document.getElementById('display-fullname').innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span class="verified-badge" title="Onaylı Hesap">☑️</span>' : ''}`;
+                    const isMe = (targetUsername === myUsername);
+                    const isInfoHidden = data.hideInfo || false;
+
+                    document.getElementById('display-fullname').innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span class="verified-badge">☑️</span>' : ''}`;
                     document.getElementById('display-username').innerText = `@${targetUsername}`;
                     
+                    // BİLGİ GİZLEME MANTIĞI
                     let detailsHtml = '';
-                    if(data.location) detailsHtml += `<div class="detail-item">📍 ${data.location}</div>`;
-                    if(data.birthDate) {
-                        // Yaş hesaplama
-                        const birth = new Date(data.birthDate);
-                        const today = new Date();
-                        let age = today.getFullYear() - birth.getFullYear();
-                        const m = today.getMonth() - birth.getMonth();
-                        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) { age--; }
-                        detailsHtml += `<div class="detail-item">🎂 ${age} Yaşında</div>`;
+                    if (!isInfoHidden || isMe) {
+                        if(data.location) detailsHtml += `<div class="detail-item">📍 ${data.location}</div>`;
+                        if(data.birthDate) {
+                            const birth = new Date(data.birthDate);
+                            const today = new Date();
+                            let age = today.getFullYear() - birth.getFullYear();
+                            if (new Date(today.getFullYear(), today.getMonth(), today.getDate()) < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) age--;
+                            detailsHtml += `<div class="detail-item">🎂 ${age} Yaşında</div>`;
+                        }
+                        if(data.gender && data.gender !== "Belirtmek İstemiyorum") detailsHtml += `<div class="detail-item">👤 ${data.gender}</div>`;
+                    } else if (isInfoHidden && !isMe) {
+                        detailsHtml = '<div style="font-size:11px; color:#aaa; font-style:italic;">Kullanıcı bilgilerini gizledi.</div>';
                     }
-                    if(data.gender && data.gender !== "Belirtmek İstemiyorum") detailsHtml += `<div class="detail-item">👤 ${data.gender}</div>`;
                     
                     document.getElementById('display-details').innerHTML = detailsHtml;
-                    
                     if (data.bio) document.getElementById('display-bio').innerText = data.bio;
                     if (data.avatarUrl) { document.getElementById('avatar-emoji').style.display = 'none'; document.getElementById('avatar-img').style.display = 'inline-block'; document.getElementById('avatar-img').src = data.avatarUrl; }
                     
                     currentProfileFollowers = data.followers || []; currentProfileFollowing = data.following || [];
                     document.getElementById('followers-count').innerText = currentProfileFollowers.length; document.getElementById('following-count').innerText = currentProfileFollowing.length;
                     isTargetPrivate = data.isPrivate || false; isTargetVerified = data.isVerified || false; isRequested = (data.followRequests || []).includes(myUsername);
-                    const isMe = (targetUsername === myUsername); const amIFollowing = currentProfileFollowers.includes(myUsername);
+                    const amIFollowing = currentProfileFollowers.includes(myUsername);
 
                     if(isTargetPrivate) document.getElementById('private-badge').style.display = 'block'; else document.getElementById('private-badge').style.display = 'none';
                     updateFollowButtonUI(); 
 
-                    // KULLANICI LİSTELERİ (Tıklanabilir Takipçi Kutu)
                     document.getElementById('followers-box').onclick = () => {
-                        if(isTargetPrivate && !isMe && !amIFollowing) return alert("Bu hesap gizli olduğu için takipçilerini göremezsin.");
+                        if(isTargetPrivate && !isMe && !amIFollowing) return alert("Hesap gizli.");
                         showUserList("Takipçiler", currentProfileFollowers);
                     };
                     document.getElementById('following-box').onclick = () => {
-                        if(isTargetPrivate && !isMe && !amIFollowing) return alert("Bu hesap gizli olduğu için takip ettiklerini göremezsin.");
-                        showUserList("Takip Edilenler", currentProfileFollowing);
+                        if(isTargetPrivate && !isMe && !amIFollowing) return alert("Hesap gizli.");
+                        showUserList("Takip", currentProfileFollowing);
                     };
 
                     const feedContainer = document.getElementById('profile-feed-container');
@@ -426,36 +419,21 @@
             });
         }
 
-        // LİSTE GÖSTERİCİ (Takipçi ve Takip Edilenler İçin)
         function showUserList(title, userArray) {
             document.getElementById('users-list-title').innerText = title;
             const container = document.getElementById('users-list-container');
             container.innerHTML = '';
-            
-            if(userArray.length === 0) {
-                container.innerHTML = '<p style="text-align:center; color:#888;">Liste boş.</p>';
-            } else {
+            if(userArray.length === 0) container.innerHTML = '<p style="text-align:center; color:#888;">Liste boş.</p>';
+            else {
                 userArray.forEach(uname => {
                     let uData = allUsersData[uname] || {};
                     let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`;
-                    let vHtml = uData.isVerified ? '<span class="verified-small">☑️</span>' : '';
-                    let fullNameText = uData.fullName || uname;
-                    
-                    container.innerHTML += `
-                        <a href="profile.html?user=${uname}" class="user-row">
-                            <div class="row-avatar">${avatarHtml}</div>
-                            <div>
-                                <div style="font-weight:bold; color:#000;">${fullNameText} ${vHtml}</div>
-                                <div style="font-size:12px; color:#888;">@${uname}</div>
-                            </div>
-                        </a>
-                    `;
+                    container.innerHTML += `<a href="profile.html?user=${uname}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:bold; color:#000;">${uData.fullName || uname}</div><div style="font-size:12px; color:#888;">@${uname}</div></div></a>`;
                 });
             }
             document.getElementById('users-list-modal').style.display = 'flex';
         }
         document.getElementById('close-list-btn').onclick = () => { document.getElementById('users-list-modal').style.display = 'none'; };
-
 
         const editModal = document.getElementById('edit-modal'); 
         document.getElementById('cancel-edit-btn').addEventListener('click', () => { editModal.style.display = 'none'; });
@@ -463,59 +441,35 @@
         
         document.getElementById('save-edit-btn').addEventListener('click', async () => {
             const saveBtn = document.getElementById('save-edit-btn'); saveBtn.innerText = "Kaydediliyor..."; saveBtn.disabled = true;
-            
-            // Yeni verileri topla
             const newFullName = document.getElementById('edit-fullname-input').value.trim();
             const newBirthDate = document.getElementById('edit-birthdate-input').value;
             const newGender = document.getElementById('edit-gender-input').value;
             const newLocation = document.getElementById('edit-location-input').value.trim();
             const newBio = document.getElementById('edit-bio-input').value; 
             const isPrivateChecked = document.getElementById('edit-private-input').checked; 
+            const isHideInfoChecked = document.getElementById('edit-hideinfo-input').checked; 
             const file = document.getElementById('edit-avatar-input').files[0]; 
-            
-            if(!newFullName) { alert("Ad Soyad kısmı boş bırakılamaz!"); saveBtn.innerText = "Bilgilerimi Kaydet"; saveBtn.disabled = false; return; }
-
+            if(!newFullName) { alert("Ad Soyad zorunludur!"); saveBtn.disabled = false; return; }
             let newAvatarUrl = document.getElementById('avatar-img').src; 
-            
             try {
                 if (file) { const formData = new FormData(); formData.append("image", file); const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const data = await res.json(); if(data.success) newAvatarUrl = data.data.url; }
-                
                 await setDoc(doc(db, "users", myUsername), { 
-                    fullName: newFullName,
-                    birthDate: newBirthDate,
-                    gender: newGender,
-                    location: newLocation,
-                    bio: newBio, 
-                    isPrivate: isPrivateChecked, 
-                    avatarUrl: newAvatarUrl === window.location.href ? null : newAvatarUrl 
+                    fullName: newFullName, birthDate: newBirthDate, gender: newGender, location: newLocation, bio: newBio, 
+                    isPrivate: isPrivateChecked, hideInfo: isHideInfoChecked, avatarUrl: newAvatarUrl === window.location.href ? null : newAvatarUrl 
                 }, { merge: true });
-                
                 editModal.style.display = 'none';
             } catch (e) {} finally { saveBtn.innerText = "Bilgilerimi Kaydet"; saveBtn.disabled = false; }
         });
 
-        window.deletePost = async function(postId) {
-            if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?")) {
-                await deleteDoc(doc(db, "posts", postId));
-            }
-        };
-
+        window.deletePost = async function(postId) { if(confirm("Silinsin mi?")) await deleteDoc(doc(db, "posts", postId)); };
         window.openEditModal = function(postId, currentContent) {
-            currentlyEditingPostId = postId;
-            document.getElementById('edit-post-input').value = currentContent;
-            document.getElementById('edit-post-modal').style.display = 'flex';
+            currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex';
         };
-
         document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
             if(!currentlyEditingPostId) return;
             const newContent = document.getElementById('edit-post-input').value.trim();
             if(!newContent) return;
-            const btn = document.getElementById('save-edited-post-btn');
-            btn.innerText = "Kaydediliyor..."; btn.disabled = true;
-            try {
-                await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true });
-                document.getElementById('edit-post-modal').style.display = 'none';
-            } catch(e) {} finally { btn.innerText = "Kaydet"; btn.disabled = false; currentlyEditingPostId = null; }
+            try { await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true }); document.getElementById('edit-post-modal').style.display = 'none'; } catch(e) {}
         });
 
         function loadUserPosts() {
@@ -524,43 +478,21 @@
                 snapshot.forEach((postDoc) => {
                     const postData = postDoc.data();
                     if (postData.author === targetUsername) {
-                        userPostCount++; const postId = postDoc.id; const likesArray = postData.likes || []; const isLiked = likesArray.includes(currentUser.email) || likesArray.includes(myUsername); const isOwner = postData.authorEmail === currentUser.email;
-                        const editedHtml = postData.isEdited ? '<span class="edited-tag">(Düzenlendi)</span>' : '';
-
-                        let commentsHTML = ''; 
-                        (postData.comments || []).forEach(comment => { 
-                            const cVHtml = (allUsersData[comment.author] || {}).isVerified ? '<span class="verified-small">☑️</span>' : '';
-                            commentsHTML += `<div class="comment-item"><div><a href="profile.html?user=${comment.author}" class="comment-author">@${comment.author}</a>${cVHtml} <span style="color:#333;">${comment.text}</span></div></div>`; 
-                        });
-
-                        const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
-
+                        userPostCount++;
+                        const postId = postDoc.id;
+                        const isLiked = postData.likes?.includes(myUsername);
+                        const isOwner = postData.author === myUsername;
                         const postDiv = document.createElement('div'); postDiv.className = 'post';
                         postDiv.innerHTML = `
                             <div class="post-header">
-                                <div>
-                                    <a href="profile.html?user=${postData.author}" class="post-author">@${postData.author} ${isTargetVerified ? '<span class="verified-small">☑️</span>' : ''}</a>
-                                    ${editedHtml}
-                                </div>
-                                ${isOwner ? `
-                                <div class="post-owner-actions">
-                                    <button class="edit-post-btn" onclick="window.openEditModal('${postId}', '${safeContentForEdit}')" title="Düzenle">✏️</button>
-                                    <button class="delete-post-btn" onclick="window.deletePost('${postId}')" title="Sil">🗑️</button>
-                                </div>` : ''}
+                                <a href="profile.html?user=${postData.author}" class="post-author">@${postData.author}</a>
+                                ${isOwner ? `<button onclick="window.deletePost('${postId}')">🗑️</button>` : ''}
                             </div>
                             <div class="post-content">${formatHashtags(postData.content)}</div>
                             ${postData.imageUrl ? `<img src="${postData.imageUrl}" class="post-image">` : ''}
                             <div class="post-footer">
-                                <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}')">${isLiked ? '❤️' : '🤍'}</button>
-                                <span class="likes-count" onclick='window.showLikes(${JSON.stringify(likesArray)})'>${likesArray.length} beğeni</span>
-                                <button class="action-btn" onclick="window.toggleComments('${postId}')">💬 ${(postData.comments || []).length} Yorum</button>
-                            </div>
-                            <div class="comments-section" id="comments-${postId}">
-                                <div class="comments-list">${commentsHTML}</div>
-                                <div class="comment-input-box">
-                                    <input type="text" class="comment-input" id="input-${postId}" placeholder="Bir yorum bırak...">
-                                    <button class="comment-send-btn" onclick="window.addComment('${postId}', '${postData.author}')">Gönder</button>
-                                </div>
+                                <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}')">❤️ ${postData.likes?.length || 0}</button>
+                                <button class="action-btn" onclick="window.toggleComments('${postId}')">💬 ${(postData.comments || []).length}</button>
                             </div>
                         `;
                         feedContainer.appendChild(postDiv);
