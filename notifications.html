@@ -25,7 +25,7 @@
         .accept-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .reject-btn { background: #ecf0f1; color: #555; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
 
-        /* YENİ: Etkileşimler Tasarımı */
+        /* Etkileşimler Tasarımı */
         .notification-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eee; text-decoration: none; color: #333; transition: 0.2s; }
         .notification-item:hover { background: #f9f9f9; border-radius: 8px; padding-left: 10px; }
         .notif-icon { font-size: 20px; }
@@ -42,9 +42,7 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h2>Bildirimler</h2>
-    </div>
+    <div class="header"><h2>Bildirimler</h2></div>
     
     <div class="container">
         <div class="requests-box" id="requests-wrapper" style="display: none;">
@@ -54,9 +52,7 @@
 
         <div class="requests-box">
             <div class="box-title">⚡ Son Etkileşimler</div>
-            <div id="notifications-container">
-                <div class="empty-text">Yükleniyor...</div>
-            </div>
+            <div id="notifications-container"><div class="empty-text">Yükleniyor...</div></div>
         </div>
     </div>
 
@@ -70,7 +66,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, collection, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        // YENİ: orderBy'ı sildik
+        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -82,11 +79,10 @@
                 myUsername = user.displayName || user.email.split('@')[0];
                 document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
                 loadFollowRequests();
-                loadNotifications(); // YENİ ETKİLEŞİM MOTORU ÇALIŞTI
+                loadNotifications(); 
             } else { window.location.href = "index.html"; }
         });
 
-        // 1. TAKİP İSTEKLERİNİ YÜKLE
         function loadFollowRequests() {
             const myRef = doc(db, "users", myUsername);
             onSnapshot(myRef, async (docSnap) => {
@@ -117,15 +113,14 @@
                         `;
                     }
                     container.innerHTML = html;
-                } else {
-                    wrapper.style.display = 'none'; // İstek yoksa kutuyu tamamen gizle
-                }
+                } else { wrapper.style.display = 'none'; }
             });
         }
 
-        // 2. YENİ: ETKİLEŞİMLERİ (BEĞENİ, YORUM, TAKİP) YÜKLE
+        // FİREBASE İNDEX HATASINI ÇÖZEN YENİ BİLDİRİM FONKSİYONU
         function loadNotifications() {
-            const q = query(collection(db, "notifications"), where("recipient", "==", myUsername), orderBy("createdAt", "desc"));
+            // Firebase'den sadece veriyi çek (Sıralamayı Firebase'e yaptırma)
+            const q = query(collection(db, "notifications"), where("recipient", "==", myUsername));
             
             onSnapshot(q, async (snapshot) => {
                 const container = document.getElementById('notifications-container');
@@ -134,30 +129,35 @@
                     return;
                 }
 
+                // JS ile verileri diziye al ve kendimiz sıralayalım
+                let notifs = [];
+                snapshot.forEach(docSnap => { notifs.push(docSnap.data()); });
+                
+                // Tarihe göre yeniden eskiye doğru sırala
+                notifs.sort((a, b) => {
+                    let timeA = a.createdAt ? a.createdAt.toMillis() : 0;
+                    let timeB = b.createdAt ? b.createdAt.toMillis() : 0;
+                    return timeB - timeA;
+                });
+
                 let html = '';
-                for (const docSnap of snapshot.docs) {
-                    const data = docSnap.data();
-                    
-                    // Kendi kendine attığın bildirimleri görme
+                for (const data of notifs) {
                     if (data.sender === myUsername) continue;
 
                     let icon = '🔔'; let actionText = ''; let link = `profile.html?user=${data.sender}`;
-                    
                     if (data.type === 'like') { icon = '❤️'; actionText = 'gönderini beğendi.'; }
                     else if (data.type === 'comment') { icon = '💬'; actionText = 'gönderine yorum yaptı.'; }
                     else if (data.type === 'follow') { icon = '🤝'; actionText = 'seni takip etmeye başladı.'; }
 
-                    // Gönderenin resmini çek
                     let avatarHtml = '👤';
                     try {
                         const uSnap = await getDoc(doc(db, "users", data.sender));
                         if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}">`;
                     } catch(e) {}
 
-                    // Zamanı hesapla
                     let timeAgo = "Az önce";
                     if (data.createdAt) {
-                        const seconds = Math.floor((new Date() - data.createdAt.toDate()) / 1000);
+                        const seconds = Math.floor((new Date() - data.createdAt.toMillis()) / 1000);
                         if (seconds > 60) {
                             const mins = Math.floor(seconds / 60);
                             if (mins < 60) timeAgo = `${mins} dk önce`;
@@ -182,13 +182,12 @@
             });
         }
 
-        // İSTEK ONAYLAMA FONKSİYONLARI
         window.acceptRequest = async function(reqUser) {
             const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", reqUser);
             try {
                 await setDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }, { merge: true });
                 await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true });
-            } catch(e) { alert("Hata oluştu."); }
+            } catch(e) {}
         };
         window.rejectRequest = async function(reqUser) {
             try { await setDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }, { merge: true }); } catch(e) {}
