@@ -14,21 +14,29 @@
         .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .chat-username { font-size: 18px; font-weight: bold; color: #333; }
 
-        /* MESAJ ALANI */
+        /* MESAJ ALANI VE BALONCUKLAR */
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-color: #efeae2; }
-        
         .message-bubble { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .msg-them { align-self: flex-start; background: white; color: #333; border-top-left-radius: 0; }
         .msg-me { align-self: flex-end; background: #3498db; color: white; border-top-right-radius: 0; }
         .msg-time { font-size: 10px; margin-top: 5px; text-align: right; opacity: 0.7; }
 
-        /* MESAJ YAZMA KUTUSU (Alt menü ile çakışmaması için margin eklendi) */
-        .chat-input-area { background: white; padding: 15px; display: flex; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); margin-bottom: 60px; }
+        /* MESAJ YAZMA KUTUSU */
+        .chat-input-area { background: white; padding: 15px; display: flex; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); margin-bottom: 60px; /* Alt menü ile çakışmaması için */ }
         .chat-input { flex: 1; padding: 12px 20px; border: 1px solid #ddd; border-radius: 30px; font-size: 15px; outline: none; background: #f9f9f9; transition: 0.2s; }
         .chat-input:focus { border-color: #3498db; background: white; }
         .send-btn { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; margin-left: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 20px; transition: 0.2s; }
         .send-btn:hover { background: #2980b9; transform: scale(1.05); }
         .send-btn:disabled { background: #ccc; cursor: not-allowed; transform: scale(1); }
+
+        /* INBOX KARTLARI CSS */
+        .dm-user-card { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: 12px; text-decoration: none; color: #333; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; }
+        .dm-user-card:hover { background: #ebf5fb; }
+        .dm-avatar { width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; border: 1px solid #ddd; }
+        .dm-info { flex: 1; }
+        .dm-username { font-weight: bold; font-size: 16px; display: flex; align-items: center; }
+        .dm-subtitle { font-size: 13px; color: #888; margin-top: 3px; }
+        .dm-icon { color: #3498db; font-size: 20px; }
 
         /* GÜNCELLENMİŞ 5'Lİ ALT MENÜ CSS */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
@@ -39,17 +47,29 @@
 </head>
 <body>
     
-    <div class="chat-header">
-        <a href="#" class="back-btn" id="back-link">⬅</a>
-        <div class="chat-avatar" id="chat-avatar">👤</div>
-        <div class="chat-username" id="chat-username">Yükleniyor...</div>
+    <div id="inbox-view" style="display: none; flex: 1; overflow-y: auto; padding-bottom: 70px;">
+        <div class="chat-header" style="justify-content: center;">
+            <h2 style="margin:0; font-size:20px; color:#333;">Mesajlar</h2>
+        </div>
+        <div style="padding: 20px;">
+            <input type="text" id="dm-search-input" placeholder="Kullanıcı ara..." style="width:100%; padding:12px 15px; border-radius:20px; border:1px solid #ddd; margin-bottom:20px; box-sizing:border-box; font-size:15px; outline:none;">
+            <div id="dm-list">Yükleniyor...</div>
+        </div>
     </div>
 
-    <div class="chat-messages" id="chat-messages"></div>
+    <div id="chat-view" style="display: none; flex: 1; flex-direction: column;">
+        <div class="chat-header">
+            <a href="chat.html" class="back-btn" id="back-link">⬅</a>
+            <div class="chat-avatar" id="chat-avatar">👤</div>
+            <div class="chat-username" id="chat-username">Yükleniyor...</div>
+        </div>
 
-    <div class="chat-input-area">
-        <input type="text" id="msg-input" class="chat-input" placeholder="Bir mesaj yaz..." autocomplete="off">
-        <button id="send-btn" class="send-btn">➤</button>
+        <div class="chat-messages" id="chat-messages"></div>
+
+        <div class="chat-input-area">
+            <input type="text" id="msg-input" class="chat-input" placeholder="Bir mesaj yaz..." autocomplete="off">
+            <button id="send-btn" class="send-btn">➤</button>
+        </div>
     </div>
 
     <div class="bottom-nav">
@@ -68,91 +88,175 @@
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        let currentUser = null; let myUsername = null; let chatId = null;
+        let currentUser = null; 
+        let myUsername = null; 
+        let chatId = null;
+        let allUsers = [];
+        let myFollowing = [];
 
+        // URL'de bir kullanıcı adı var mı kontrol et
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
 
-        if (!targetUsername) window.location.href = "feed.html";
-        
-        document.getElementById('chat-username').innerText = `@${targetUsername}`;
-        document.getElementById('back-link').href = `profile.html?user=${targetUsername}`;
+        if (!targetUsername) {
+            // ==========================================
+            // INBOX (MESAJ KUTUSU) MODU
+            // ==========================================
+            document.getElementById('inbox-view').style.display = 'flex';
+            document.getElementById('inbox-view').style.flexDirection = 'column';
+            document.getElementById('chat-view').style.display = 'none';
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                myUsername = currentUser.displayName || currentUser.email.split('@')[0];
-                document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
-                
-                if (targetUsername === myUsername) window.location.href = `profile.html?user=${myUsername}`;
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                    document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
 
-                chatId = [myUsername, targetUsername].sort().join('_');
+                    // Tüm kullanıcıları çek (Arama ve profil fotoları için)
+                    onSnapshot(collection(db, "users"), (snapshot) => {
+                        allUsers = [];
+                        snapshot.forEach(d => { if (d.id !== myUsername) allUsers.push({ id: d.id, ...d.data() }); });
+                        updateInboxDisplay(); 
+                    });
 
-                loadTargetUserInfo();
-                loadMessages();
-            } else {
-                window.location.href = "index.html";
-            }
-        });
-
-        async function loadTargetUserInfo() {
-            try {
-                const uSnap = await getDoc(doc(db, "users", targetUsername));
-                if (uSnap.exists() && uSnap.data().avatarUrl) {
-                    document.getElementById('chat-avatar').innerHTML = `<img src="${uSnap.data().avatarUrl}">`;
-                }
-            } catch(e) {}
-        }
-
-        function loadMessages() {
-            const messagesRef = collection(db, "chats", chatId, "messages");
-            const q = query(messagesRef, orderBy("createdAt", "asc"));
-
-            onSnapshot(q, (snapshot) => {
-                const messagesContainer = document.getElementById('chat-messages');
-                messagesContainer.innerHTML = ''; 
-
-                snapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    const isMe = data.sender === myUsername;
-                    
-                    let timeString = '';
-                    if (data.createdAt) {
-                        const date = data.createdAt.toDate();
-                        timeString = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
-                    }
-
-                    const msgDiv = document.createElement('div');
-                    msgDiv.className = `message-bubble ${isMe ? 'msg-me' : 'msg-them'}`;
-                    msgDiv.innerHTML = `<div>${data.text}</div><div class="msg-time">${timeString}</div>`;
-                    messagesContainer.appendChild(msgDiv);
-                });
-
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    // Sadece kendi takip ettiklerimi çek
+                    onSnapshot(doc(db, "users", myUsername), (docSnap) => {
+                        if (docSnap.exists()) {
+                            myFollowing = docSnap.data().following || [];
+                            updateInboxDisplay();
+                        }
+                    });
+                } else { window.location.href = "index.html"; }
             });
-        }
 
-        const msgInput = document.getElementById('msg-input');
-        const sendBtn = document.getElementById('send-btn');
+            document.getElementById('dm-search-input').addEventListener('input', updateInboxDisplay);
 
-        async function sendMessage() {
-            const text = msgInput.value.trim();
-            if (!text) return;
+            function updateInboxDisplay() {
+                const text = document.getElementById('dm-search-input').value.toLowerCase().trim();
+                let displayList = [];
+                let isSearch = false;
 
-            sendBtn.disabled = true;
-            msgInput.value = '';
+                if (text) {
+                    isSearch = true;
+                    // Arama yapılıyorsa tüm kullanıcılarda filtrele
+                    displayList = allUsers.filter(u => u.id.toLowerCase().includes(text)).map(u => u.id);
+                } else {
+                    // Arama yoksa sadece takip ettiklerimi göster
+                    displayList = myFollowing;
+                }
 
-            try {
-                const messagesRef = collection(db, "chats", chatId, "messages");
-                await addDoc(messagesRef, { text: text, sender: myUsername, createdAt: serverTimestamp() });
-            } catch (e) { alert("Mesaj gönderilemedi!"); }
+                const container = document.getElementById('dm-list');
+                container.innerHTML = '';
+
+                if (displayList.length === 0) {
+                    container.innerHTML = isSearch ? '<p style="text-align:center; color:#888; margin-top:20px;">Kullanıcı bulunamadı...</p>' : '<p style="text-align:center; color:#888; margin-top:20px;">Henüz kimseyi takip etmiyorsun. Yukarıdan arama yaparak mesaj atmaya başlayabilirsin!</p>';
+                    return;
+                }
+
+                displayList.forEach(uid => {
+                    const uData = allUsers.find(u => u.id === uid) || {};
+                    const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
+                    const vHtml = uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;" title="Onaylı Hesap">☑️</span>' : '';
+                    
+                    container.innerHTML += `
+                        <a href="chat.html?user=${uid}" class="dm-user-card">
+                            <div class="dm-avatar">${avatar}</div>
+                            <div class="dm-info">
+                                <div class="dm-username">@${uid} ${vHtml}</div>
+                                <div class="dm-subtitle">Sohbet etmek için tıkla</div>
+                            </div>
+                            <div class="dm-icon">💬</div>
+                        </a>
+                    `;
+                });
+            }
+
+        } else {
+            // ==========================================
+            // SOHBET ODASI (CHAT) MODU
+            // ==========================================
+            document.getElementById('inbox-view').style.display = 'none';
+            document.getElementById('chat-view').style.display = 'flex';
             
-            sendBtn.disabled = false;
-            msgInput.focus();
-        }
+            document.getElementById('chat-username').innerText = `@${targetUsername}`;
 
-        sendBtn.addEventListener('click', sendMessage);
-        msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUser = user;
+                    myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                    document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
+                    
+                    if (targetUsername === myUsername) window.location.href = `profile.html?user=${myUsername}`;
+
+                    // İki kişi için benzersiz oda ID'si oluştur
+                    chatId = [myUsername, targetUsername].sort().join('_');
+
+                    loadTargetUserInfo();
+                    loadMessages();
+                } else {
+                    window.location.href = "index.html";
+                }
+            });
+
+            async function loadTargetUserInfo() {
+                try {
+                    const uSnap = await getDoc(doc(db, "users", targetUsername));
+                    if (uSnap.exists() && uSnap.data().avatarUrl) {
+                        document.getElementById('chat-avatar').innerHTML = `<img src="${uSnap.data().avatarUrl}">`;
+                    }
+                } catch(e) {}
+            }
+
+            function loadMessages() {
+                const messagesRef = collection(db, "chats", chatId, "messages");
+                const q = query(messagesRef, orderBy("createdAt", "asc"));
+
+                onSnapshot(q, (snapshot) => {
+                    const messagesContainer = document.getElementById('chat-messages');
+                    messagesContainer.innerHTML = ''; 
+
+                    snapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        const isMe = data.sender === myUsername;
+                        
+                        let timeString = '';
+                        if (data.createdAt) {
+                            const date = data.createdAt.toDate();
+                            timeString = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                        }
+
+                        const msgDiv = document.createElement('div');
+                        msgDiv.className = `message-bubble ${isMe ? 'msg-me' : 'msg-them'}`;
+                        msgDiv.innerHTML = `<div>${data.text}</div><div class="msg-time">${timeString}</div>`;
+                        messagesContainer.appendChild(msgDiv);
+                    });
+
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                });
+            }
+
+            const msgInput = document.getElementById('msg-input');
+            const sendBtn = document.getElementById('send-btn');
+
+            async function sendMessage() {
+                const text = msgInput.value.trim();
+                if (!text) return;
+
+                sendBtn.disabled = true;
+                msgInput.value = '';
+
+                try {
+                    const messagesRef = collection(db, "chats", chatId, "messages");
+                    await addDoc(messagesRef, { text: text, sender: myUsername, createdAt: serverTimestamp() });
+                } catch (e) { alert("Mesaj gönderilemedi!"); }
+                
+                sendBtn.disabled = false;
+                msgInput.focus();
+            }
+
+            sendBtn.addEventListener('click', sendMessage);
+            msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        }
     </script>
 </body>
 </html>
