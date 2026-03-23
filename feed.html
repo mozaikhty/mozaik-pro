@@ -8,15 +8,36 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; padding-bottom: 70px; }
         .header { background: white; padding: 15px 20px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
         .header h2 { margin: 0; color: #000; font-size: 22px; letter-spacing: 1px; }
-        .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; }
         
+        /* === HİKAYELER (STORIES) CSS === */
+        .stories-wrapper { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 10px; border-bottom: 1px solid #ddd; -ms-overflow-style: none; scrollbar-width: none; }
+        .stories-wrapper::-webkit-scrollbar { display: none; }
+        .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 65px; gap: 5px; }
+        .story-ring { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); display: flex; justify-content: center; align-items: center; }
+        .story-ring.add-btn { background: #ddd; border: 2px dashed #aaa; padding: 0; }
+        .story-avatar { width: 100%; height: 100%; border-radius: 50%; border: 2px solid white; object-fit: cover; background: white; display: flex; justify-content: center; align-items: center; font-size: 24px;}
+        .story-username { font-size: 12px; color: #333; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; text-align: center; }
+        
+        /* HİKAYE İZLEME EKRANI (FULL SCREEN) */
+        .story-view-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 3000; flex-direction: column; }
+        .story-progress-bar { display: flex; gap: 4px; padding: 10px 10px 0 10px; position: absolute; top: 0; width: 100%; box-sizing: border-box; z-index: 20; }
+        .story-progress-item { flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 3px; overflow: hidden; }
+        .story-progress-fill { width: 0%; height: 100%; background: white; }
+        .story-view-header { display: flex; justify-content: space-between; align-items: center; padding: 25px 15px 15px 15px; color: white; position: absolute; top:0; width:100%; box-sizing: border-box; z-index: 30; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
+        .story-view-content { flex: 1; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; padding: 20px; text-align: center; background-size: contain; background-repeat: no-repeat; background-position: center; position: relative;}
+        .story-text-overlay { background: rgba(0,0,0,0.6); padding: 15px 20px; border-radius: 12px; font-weight: bold; line-height: 1.4; max-width: 80%; }
+        .story-nav-area { position: absolute; top:0; height:100%; width: 50%; z-index: 10; cursor: pointer; }
+        .story-nav-left { left: 0; }
+        .story-nav-right { right: 0; }
+
+        /* === GÖNDERİ KUTUSU VE AKIŞ CSS === */
         .post-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
         textarea { width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 6px; padding: 10px; box-sizing: border-box; resize: none; font-size: 15px; font-family: inherit; }
         .post-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
         .share-btn { background: #000; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .image-upload-label { cursor: pointer; color: #2980b9; font-weight: bold; font-size: 14px; background: #ebf5fb; padding: 8px 12px; border-radius: 20px; }
         
-        /* YENİ: EMOJİ SEÇİCİ TASARIMI */
         .emoji-btn { background: #f0f2f5; color: #333; border: none; padding: 8px 12px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .emoji-btn:hover { background: #e4e6e9; }
         .emoji-picker { display: none; background: white; border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-top: 10px; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -42,7 +63,7 @@
 
         .post-content { font-size: 16px; color: #333; line-height: 1.4; word-wrap: break-word; }
         .hashtag { color: #3498db; text-decoration: none; font-weight: bold; }
-        .post-image { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+        .post-image { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #eee; }
 
         .post-footer { margin-top: 12px; border-top: 1px solid #eee; padding-top: 10px; display: flex; align-items: center; gap: 15px; }
         .action-btn { background: none; border: none; cursor: pointer; font-size: 14px; color: #666; display: flex; align-items: center; gap: 6px; font-weight: bold; padding:0; }
@@ -65,7 +86,7 @@
         .user-row:hover { background: #ebf5fb; }
         .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; }
         
-        /* GÜNCELLENMİŞ 5'Lİ ALT MENÜ */
+        /* 5'Lİ ALT MENÜ */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
         .nav-item .icon { font-size: 22px; }
@@ -74,7 +95,10 @@
 </head>
 <body>
     <div class="header"><h2>Mozaik</h2></div>
+    
     <div class="container">
+        <div class="stories-wrapper" id="stories-wrapper"></div>
+
         <div class="post-box">
             <textarea id="post-text" placeholder="Neler düşünüyorsun?" maxlength="280"></textarea>
             <input type="file" id="image-input" accept="image/*" style="display: none;">
@@ -104,6 +128,35 @@
         <div id="feed-container"></div> 
     </div>
 
+    <div class="story-view-modal" id="view-story-modal">
+        <div class="story-progress-bar" id="story-progress-bar"></div>
+        <div class="story-view-header">
+            <div style="display:flex; align-items:center; gap:10px; z-index:30;">
+                <div class="story-avatar" id="view-story-avatar" style="width:40px; height:40px; border:none;">👤</div>
+                <span id="view-story-username" style="font-weight:bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);"></span>
+                <span id="view-story-time" style="font-size:12px; color:#ddd; margin-left:10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);"></span>
+            </div>
+            <button style="background:none; border:none; color:white; font-size:35px; cursor:pointer; z-index:30; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);" onclick="window.closeStory()">&times;</button>
+        </div>
+        <div class="story-view-content" id="view-story-content"></div>
+        <div class="story-nav-area story-nav-left" onclick="window.prevStory()"></div>
+        <div class="story-nav-area story-nav-right" onclick="window.nextStory()"></div>
+    </div>
+
+    <div class="modal-overlay" id="add-story-modal">
+        <div class="modal-content" style="background: #2c3e50; color: white; border: 1px solid #444;">
+            <div class="modal-header" style="border-bottom: 1px solid #444;">
+                <h3 style="margin:0;">Hikaye Paylaş</h3>
+                <button class="close-btn" style="color:white;" onclick="document.getElementById('add-story-modal').style.display='none'">&times;</button>
+            </div>
+            <textarea id="story-text-input" placeholder="Bir şeyler yaz..." style="width:100%; height:80px; margin-bottom:15px; border-radius:6px; padding:10px; background:#1a252f; color:white; border:1px solid #555; box-sizing:border-box; font-family:inherit; resize:none; font-size:15px;"></textarea>
+            <input type="file" id="story-image-upload" accept="image/*" style="display: none;">
+            <label for="story-image-upload" class="image-upload-label" style="display:inline-block; margin-bottom:15px; background:#e74c3c; color:white;">📸 Galeriden Fotoğraf Seç</label>
+            <div id="story-image-preview-msg" style="color:#2ecc71; font-size:13px; margin-bottom:15px; display:none; font-weight:bold;">✓ Fotoğraf Başarıyla Seçildi</div>
+            <button id="share-story-btn" style="width:100%; padding:12px; background:#3498db; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:15px;">24 Saatlik Hikayemi Paylaş</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="likes-modal"><div class="modal-content"><div class="modal-header"><h3>Beğenenler</h3><button class="close-btn" id="close-likes-modal">&times;</button></div><div id="likes-list-container"></div></div></div>
     <div class="modal-overlay" id="edit-post-modal"><div class="modal-content"><div class="modal-header"><h3>Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div><textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit;"></textarea><div style="display:flex; justify-content:space-between; margin-top:15px;"><button style="padding:8px 15px; border:none; background:#eee; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button><button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#2980b9; color:white; border-radius:6px; font-weight:bold; cursor:pointer;">Kaydet</button></div></div></div>
 
@@ -125,8 +178,15 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
         let currentUser = null; let myUsername = null; let currentTab = 'following'; let myFollowingList = []; let globalPosts = []; let allUsersData = {}; let currentlyEditingPostId = null; 
+        
+        // HİKAYE DEĞİŞKENLERİ
+        let allStories = [];
+        let groupedStories = {};
+        let currentStoryUser = null;
+        let currentStoryIndex = 0;
+        let storyTimer = null;
 
-        // Emoji Seçici Mantığı
+        // EMOJİ SEÇİCİ
         document.getElementById('emoji-btn').addEventListener('click', () => {
             const picker = document.getElementById('emoji-picker');
             picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
@@ -138,6 +198,7 @@
             });
         });
 
+        // AKIŞ SEKMELERİ
         document.getElementById('tab-following').addEventListener('click', () => { currentTab = 'following'; document.getElementById('tab-following').classList.add('active'); document.getElementById('tab-discover').classList.remove('active'); renderFeed(); });
         document.getElementById('tab-discover').addEventListener('click', () => { currentTab = 'discover'; document.getElementById('tab-discover').classList.add('active'); document.getElementById('tab-following').classList.remove('active'); renderFeed(); });
 
@@ -149,11 +210,184 @@
                 onSnapshot(doc(db, "users", myUsername), (docSnap) => {
                     if (docSnap.exists() && docSnap.data().following) myFollowingList = docSnap.data().following;
                     renderFeed(); 
+                    renderStoriesStrip(); // Takip ettiklerim değişince hikaye listesi de yenilenir
                 });
-                onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); }); renderFeed(); });
+                onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); }); renderFeed(); renderStoriesStrip(); });
                 loadPostsFromDatabase(); 
+                loadStoriesFromDatabase(); // HİKAYELERİ ÇEK
             } else { window.location.href = "index.html"; }
         });
+
+        /* ==========================================
+           HİKAYE (STORY) SİSTEMİ MANTIĞI
+           ========================================== */
+        
+        function loadStoriesFromDatabase() {
+            // Sadece son 24 saatin hikayelerini alacağız (Milisaniye hesabı)
+            const oneDayAgoMillis = Date.now() - (24 * 60 * 60 * 1000);
+            
+            onSnapshot(query(collection(db, "stories"), orderBy("createdAt", "asc")), (snapshot) => {
+                allStories = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    // Firebase timestamp'i JS milisaniyesine çevirip kontrol et
+                    if(data.createdAt) {
+                        if(data.createdAt.toMillis() > oneDayAgoMillis) {
+                            allStories.push({ id: docSnap.id, ...data });
+                        }
+                    } else {
+                        // Yeni atıldıysa timestamp henüz oluşmamış olabilir
+                        allStories.push({ id: docSnap.id, ...data, isPending: true });
+                    }
+                });
+                renderStoriesStrip();
+            });
+        }
+
+        function renderStoriesStrip() {
+            if (!myUsername) return;
+            groupedStories = {};
+            
+            // Hikayeleri kullanıcılara göre grupla (Sadece benim ve takip ettiklerimin)
+            allStories.forEach(story => {
+                if(story.author === myUsername || myFollowingList.includes(story.author)) {
+                    if(!groupedStories[story.author]) groupedStories[story.author] = [];
+                    groupedStories[story.author].push(story);
+                }
+            });
+
+            const wrapper = document.getElementById('stories-wrapper');
+            let myAvatarHtml = allUsersData[myUsername]?.avatarUrl ? `<img src="${allUsersData[myUsername].avatarUrl}" class="story-avatar">` : `<div class="story-avatar">👤</div>`;
+            
+            // 1. Kutu: Her Zaman "Hikaye Ekle" Butonu
+            let html = `
+                <div class="story-item" onclick="document.getElementById('add-story-modal').style.display='flex'">
+                    <div class="story-ring add-btn">${myAvatarHtml}</div>
+                    <div class="story-username">Sen</div>
+                </div>
+            `;
+
+            // 2. Kutular: Hikayesi olan kullanıcılar
+            for(let author in groupedStories) {
+                if(groupedStories[author].length === 0) continue;
+                
+                let uData = allUsersData[author] || {};
+                let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" class="story-avatar">` : `<div class="story-avatar">👤</div>`;
+                
+                html += `
+                    <div class="story-item" onclick="window.openStory('${author}')">
+                        <div class="story-ring">${avatarHtml}</div>
+                        <div class="story-username">${author === myUsername ? 'Hikayen' : '@'+author}</div>
+                    </div>
+                `;
+            }
+            wrapper.innerHTML = html;
+        }
+
+        // Hikaye İleri/Geri ve Görüntüleme Motoru
+        window.openStory = function(author) {
+            currentStoryUser = author;
+            currentStoryIndex = 0;
+            document.getElementById('view-story-modal').style.display = 'flex';
+            showCurrentStorySlide();
+        };
+
+        window.closeStory = function() {
+            document.getElementById('view-story-modal').style.display = 'none';
+            clearTimeout(storyTimer);
+        };
+
+        window.nextStory = function() {
+            currentStoryIndex++;
+            if(currentStoryIndex >= groupedStories[currentStoryUser].length) {
+                window.closeStory(); // Bu kişinin hikayeleri bitti, kapat.
+            } else {
+                showCurrentStorySlide();
+            }
+        };
+
+        window.prevStory = function() {
+            currentStoryIndex--;
+            if(currentStoryIndex < 0) currentStoryIndex = 0;
+            showCurrentStorySlide();
+        };
+
+        function showCurrentStorySlide() {
+            clearTimeout(storyTimer);
+            const story = groupedStories[currentStoryUser][currentStoryIndex];
+            const uData = allUsersData[currentStoryUser] || {};
+            
+            document.getElementById('view-story-username').innerText = '@' + currentStoryUser;
+            document.getElementById('view-story-avatar').innerHTML = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : '👤';
+            
+            // Kaç saat önce atılmış?
+            let timeAgo = "Az önce";
+            if(story.createdAt && !story.isPending) {
+                const mins = Math.floor((Date.now() - story.createdAt.toMillis()) / 60000);
+                if(mins < 60) timeAgo = `${mins}d`;
+                else timeAgo = `${Math.floor(mins/60)}s`;
+            }
+            document.getElementById('view-story-time').innerText = timeAgo;
+
+            // İçeriği Bas
+            const contentDiv = document.getElementById('view-story-content');
+            contentDiv.style.backgroundImage = story.imageUrl ? `url(${story.imageUrl})` : 'none';
+            contentDiv.innerHTML = story.text ? `<div class="story-text-overlay">${story.text}</div>` : '';
+
+            // Üstteki İlerleme Çubukları (Progress Bar)
+            const barContainer = document.getElementById('story-progress-bar');
+            barContainer.innerHTML = '';
+            for(let i=0; i<groupedStories[currentStoryUser].length; i++) {
+                barContainer.innerHTML += `<div class="story-progress-item"><div class="story-progress-fill" id="story-fill-${i}" style="width:${i < currentStoryIndex ? '100%' : '0%'};"></div></div>`;
+            }
+
+            // Animasyonu tetikle (CSS Transition)
+            setTimeout(() => {
+                const currentFill = document.getElementById(`story-fill-${currentStoryIndex}`);
+                if(currentFill) {
+                    currentFill.style.transition = 'width 5s linear';
+                    currentFill.style.width = '100%';
+                }
+            }, 50);
+
+            // 5 Saniye sonra otomatik diğerine geç
+            storyTimer = setTimeout(window.nextStory, 5000); 
+        }
+
+        // Hikaye Ekleme İşlemi (ImgBB Entegreli)
+        document.getElementById('story-image-upload').addEventListener('change', (e) => {
+            if(e.target.files.length > 0) document.getElementById('story-image-preview-msg').style.display = 'block';
+        });
+
+        document.getElementById('share-story-btn').addEventListener('click', async () => {
+            const text = document.getElementById('story-text-input').value.trim(); 
+            const file = document.getElementById('story-image-upload').files[0];
+            if(!text && !file) return; 
+            
+            const btn = document.getElementById('share-story-btn');
+            btn.disabled = true; btn.innerText = "Yükleniyor, Bekleyin..."; 
+            let url = null;
+            
+            try {
+                if(file) { 
+                    const formData = new FormData(); formData.append("image", file); 
+                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
+                    const data = await res.json(); 
+                    url = data.data.url; 
+                }
+                await addDoc(collection(db, "stories"), { text: text, imageUrl: url, author: myUsername, createdAt: serverTimestamp() });
+                
+                document.getElementById('add-story-modal').style.display = 'none';
+                document.getElementById('story-text-input').value = ''; 
+                document.getElementById('story-image-upload').value = ''; 
+                document.getElementById('story-image-preview-msg').style.display = 'none';
+            } catch (e) { alert("Hikaye yüklenirken bir hata oluştu!"); }
+            finally { btn.disabled = false; btn.innerText = "24 Saatlik Hikayemi Paylaş"; }
+        });
+
+        /* ==========================================
+           NORMAL GÖNDERİ (POST) SİSTEMİ MANTIĞI
+           ========================================== */
 
         function loadPostsFromDatabase() {
             onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
@@ -262,6 +496,10 @@
             });
         }
         
+        document.getElementById('image-input').addEventListener('change', (e) => {
+            if(e.target.files.length > 0) document.getElementById('image-preview-text').style.display = 'block';
+        });
+
         const shareBtn = document.getElementById('share-btn');
         shareBtn.addEventListener('click', async () => {
             const text = document.getElementById('post-text').value; const file = document.getElementById('image-input').files[0];
