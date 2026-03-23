@@ -54,7 +54,6 @@
         .user-row:hover { background: #ebf5fb; }
         .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; }
 
-        /* GÜNCELLENMİŞ ALT MENÜ (SABİT BOYUT VE 4 BUTON) */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
         .nav-item .icon { font-size: 22px; }
@@ -99,8 +98,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1"; 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
@@ -155,21 +154,13 @@
             const modal = document.getElementById('likes-modal');
             const container = document.getElementById('likes-list-container');
             modal.style.display = 'flex';
-            
             let html = '';
             likesArray.forEach(liker => {
                 let username = liker.includes('@') ? liker.split('@')[0] : liker;
                 let userData = allUsersData[username] || {};
-                
                 let avatarHtml = userData.avatarUrl ? `<img src="${userData.avatarUrl}" class="row-avatar">` : `<div class="row-avatar">👤</div>`;
                 let vHtml = userData.isVerified ? '<span class="verified-small">☑️</span>' : '';
-                
-                html += `
-                    <a href="profile.html?user=${username}" class="user-row">
-                        ${avatarHtml}
-                        <div style="font-weight:bold;">@${username} ${vHtml}</div>
-                    </a>
-                `;
+                html += `<a href="profile.html?user=${username}" class="user-row">${avatarHtml}<div style="font-weight:bold;">@${username} ${vHtml}</div></a>`;
             });
             container.innerHTML = html;
         };
@@ -181,27 +172,36 @@
             section.style.display = section.style.display === 'none' ? 'block' : 'none';
         };
 
-        window.addComment = async function(postId) {
+        // YENİ: YORUM YAPINCA BİLDİRİM GÖNDER (KENDİ POSTUN DEĞİLSE)
+        window.addComment = async function(postId, postAuthor) {
             const input = document.getElementById(`input-${postId}`);
             const text = input.value.trim();
             if (!text) return;
             
             await updateDoc(doc(db, "posts", postId), { 
-                comments: arrayUnion({ 
-                    text: text, 
-                    author: myUsername, 
-                    timestamp: Date.now() 
-                }) 
+                comments: arrayUnion({ text: text, author: myUsername, timestamp: Date.now() }) 
             });
             input.value = '';
+
+            if (postAuthor !== myUsername) {
+                await addDoc(collection(db, "notifications"), {
+                    type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp()
+                });
+            }
         };
 
-        window.toggleLike = async function(postId, isLiked) {
+        // YENİ: BEĞENİNCE BİLDİRİM GÖNDER (KENDİ POSTUN DEĞİLSE)
+        window.toggleLike = async function(postId, isLiked, postAuthor) {
             const postRef = doc(db, "posts", postId);
             if (isLiked) {
                 await updateDoc(postRef, { likes: arrayRemove(myUsername, currentUser.email) });
             } else {
                 await updateDoc(postRef, { likes: arrayUnion(myUsername) });
+                if (postAuthor !== myUsername) {
+                    await addDoc(collection(db, "notifications"), {
+                        type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp()
+                    });
+                }
             }
         };
 
@@ -228,10 +228,7 @@
                     const cVHtml = commentAuthorData.isVerified ? '<span class="verified-small">☑️</span>' : '';
                     commentsHTML += `
                         <div class="comment-item">
-                            <div>
-                                <a href="profile.html?user=${comment.author}" class="comment-author">@${comment.author}</a>${cVHtml} 
-                                <span style="color:#333;">${comment.text}</span>
-                            </div>
+                            <div><a href="profile.html?user=${comment.author}" class="comment-author">@${comment.author}</a>${cVHtml} <span style="color:#333;">${comment.text}</span></div>
                         </div>`; 
                 });
 
@@ -246,7 +243,7 @@
                     <div class="post-content">${formatHashtags(postData.content)}</div>
                     ${postData.imageUrl ? `<img src="${postData.imageUrl}" class="post-image">` : ''}
                     <div class="post-footer">
-                        <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked})">
+                        <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${postData.author}')">
                             ${isLiked ? '❤️' : '🤍'}
                         </button>
                         <span class="likes-count" onclick='window.showLikes(${JSON.stringify(likesArray)})'>${likesArray.length} beğeni</span>
@@ -257,7 +254,7 @@
                         <div class="comments-list">${commentsHTML}</div>
                         <div class="comment-input-box">
                             <input type="text" class="comment-input" id="input-${post.id}" placeholder="Bir yorum bırak...">
-                            <button class="comment-send-btn" onclick="window.addComment('${post.id}')">Gönder</button>
+                            <button class="comment-send-btn" onclick="window.addComment('${post.id}', '${postData.author}')">Gönder</button>
                         </div>
                     </div>
                 `;

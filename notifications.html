@@ -10,27 +10,31 @@
         .header h2 { margin: 0; color: #000; font-size: 22px; letter-spacing: 1px; }
         .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
 
-        .requests-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .box-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333; }
+        .requests-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .box-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px; }
         
+        /* İstekler Tasarımı */
         .request-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
         .request-item:last-child { border-bottom: none; }
-        
         .req-user-info { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; }
         .req-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; border: 1px solid #ddd; }
         .req-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .req-username { font-weight: bold; font-size: 15px; }
         .req-text { font-size: 12px; color: #888; }
-
         .req-actions { display: flex; gap: 5px; }
         .accept-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .accept-btn:hover { background: #2980b9; }
         .reject-btn { background: #ecf0f1; color: #555; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .reject-btn:hover { background: #e0e0e0; color: #e74c3c; }
 
-        .empty-text { text-align: center; color: #888; padding: 30px; font-size: 14px; }
+        /* YENİ: Etkileşimler Tasarımı */
+        .notification-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eee; text-decoration: none; color: #333; transition: 0.2s; }
+        .notification-item:hover { background: #f9f9f9; border-radius: 8px; padding-left: 10px; }
+        .notif-icon { font-size: 20px; }
+        .notif-content { flex: 1; }
+        .notif-main-text { font-size: 14px; }
+        .notif-time { font-size: 11px; color: #888; margin-top: 3px; }
 
-        /* GÜNCELLENMİŞ ALT MENÜ (SABİT BOYUT VE 4 BUTON) */
+        .empty-text { text-align: center; color: #888; padding: 20px; font-size: 14px; }
+
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
         .nav-item .icon { font-size: 22px; }
@@ -39,13 +43,18 @@
 </head>
 <body>
     <div class="header">
-        <h2>Mozaik Bildirimler</h2>
+        <h2>Bildirimler</h2>
     </div>
     
     <div class="container">
+        <div class="requests-box" id="requests-wrapper" style="display: none;">
+            <div class="box-title">🔒 Takip İstekleri</div>
+            <div id="requests-container"></div>
+        </div>
+
         <div class="requests-box">
-            <div class="box-title">Takip İstekleri</div>
-            <div id="requests-container">
+            <div class="box-title">⚡ Son Etkileşimler</div>
+            <div id="notifications-container">
                 <div class="empty-text">Yükleniyor...</div>
             </div>
         </div>
@@ -61,7 +70,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, collection, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -73,35 +82,32 @@
                 myUsername = user.displayName || user.email.split('@')[0];
                 document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
                 loadFollowRequests();
+                loadNotifications(); // YENİ ETKİLEŞİM MOTORU ÇALIŞTI
             } else { window.location.href = "index.html"; }
         });
 
-        // BENİM KENDİ PROFİL BİLGİLERİMİ (VE İSTEKLERİMİ) DİNLE
+        // 1. TAKİP İSTEKLERİNİ YÜKLE
         function loadFollowRequests() {
             const myRef = doc(db, "users", myUsername);
             onSnapshot(myRef, async (docSnap) => {
+                const wrapper = document.getElementById('requests-wrapper');
                 const container = document.getElementById('requests-container');
+                
                 if (docSnap.exists() && docSnap.data().followRequests && docSnap.data().followRequests.length > 0) {
-                    
+                    wrapper.style.display = 'block';
                     const requests = docSnap.data().followRequests;
                     let html = '';
-
-                    // İstek atan her kişinin fotoğrafını çek
                     for (let reqUser of requests) {
                         let avatarHtml = '👤';
                         try {
                             const uSnap = await getDoc(doc(db, "users", reqUser));
                             if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}">`;
                         } catch(e) {}
-
                         html += `
                             <div class="request-item">
                                 <a href="profile.html?user=${reqUser}" class="req-user-info">
                                     <div class="req-avatar">${avatarHtml}</div>
-                                    <div>
-                                        <div class="req-username">@${reqUser}</div>
-                                        <div class="req-text">Seni takip etmek istiyor</div>
-                                    </div>
+                                    <div><div class="req-username">@${reqUser}</div><div class="req-text">Seni takip etmek istiyor</div></div>
                                 </a>
                                 <div class="req-actions">
                                     <button class="accept-btn" onclick="window.acceptRequest('${reqUser}')">Onayla</button>
@@ -112,31 +118,80 @@
                     }
                     container.innerHTML = html;
                 } else {
-                    container.innerHTML = '<div class="empty-text">Bekleyen takip isteğin yok. ☕</div>';
+                    wrapper.style.display = 'none'; // İstek yoksa kutuyu tamamen gizle
                 }
             });
         }
 
-        // KÜRESEL FONKSİYONLAR (Butonlardan erişebilmek için window'a ekliyoruz)
-        window.acceptRequest = async function(reqUser) {
-            const myRef = doc(db, "users", myUsername);
-            const targetRef = doc(db, "users", reqUser);
-            try {
-                // 1. İsteği listeden sil
-                await setDoc(myRef, { followRequests: arrayRemove(reqUser) }, { merge: true });
-                // 2. Beni takipçi listesine ekle
-                await setDoc(myRef, { followers: arrayUnion(reqUser) }, { merge: true });
-                // 3. Karşı tarafın takip edilenler listesine beni ekle
-                await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true });
-            } catch(e) { alert("Onaylanırken hata oluştu."); }
-        };
+        // 2. YENİ: ETKİLEŞİMLERİ (BEĞENİ, YORUM, TAKİP) YÜKLE
+        function loadNotifications() {
+            const q = query(collection(db, "notifications"), where("recipient", "==", myUsername), orderBy("createdAt", "desc"));
+            
+            onSnapshot(q, async (snapshot) => {
+                const container = document.getElementById('notifications-container');
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="empty-text">Henüz yeni bir etkileşim yok. Gönderi paylaşarak dikkatleri üzerine çek! ✨</div>';
+                    return;
+                }
 
-        window.rejectRequest = async function(reqUser) {
-            const myRef = doc(db, "users", myUsername);
+                let html = '';
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data();
+                    
+                    // Kendi kendine attığın bildirimleri görme
+                    if (data.sender === myUsername) continue;
+
+                    let icon = '🔔'; let actionText = ''; let link = `profile.html?user=${data.sender}`;
+                    
+                    if (data.type === 'like') { icon = '❤️'; actionText = 'gönderini beğendi.'; }
+                    else if (data.type === 'comment') { icon = '💬'; actionText = 'gönderine yorum yaptı.'; }
+                    else if (data.type === 'follow') { icon = '🤝'; actionText = 'seni takip etmeye başladı.'; }
+
+                    // Gönderenin resmini çek
+                    let avatarHtml = '👤';
+                    try {
+                        const uSnap = await getDoc(doc(db, "users", data.sender));
+                        if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}">`;
+                    } catch(e) {}
+
+                    // Zamanı hesapla
+                    let timeAgo = "Az önce";
+                    if (data.createdAt) {
+                        const seconds = Math.floor((new Date() - data.createdAt.toDate()) / 1000);
+                        if (seconds > 60) {
+                            const mins = Math.floor(seconds / 60);
+                            if (mins < 60) timeAgo = `${mins} dk önce`;
+                            else if (mins < 1440) timeAgo = `${Math.floor(mins / 60)} saat önce`;
+                            else timeAgo = `${Math.floor(mins / 1440)} gün önce`;
+                        }
+                    }
+
+                    html += `
+                        <a href="${link}" class="notification-item">
+                            <div class="req-avatar">${avatarHtml}</div>
+                            <div class="notif-content">
+                                <div class="notif-main-text"><b>@${data.sender}</b> ${actionText}</div>
+                                <div class="notif-time">${icon} ${timeAgo}</div>
+                            </div>
+                        </a>
+                    `;
+                }
+                
+                if(html === '') container.innerHTML = '<div class="empty-text">Henüz yeni bir etkileşim yok. Gönderi paylaşarak dikkatleri üzerine çek! ✨</div>';
+                else container.innerHTML = html;
+            });
+        }
+
+        // İSTEK ONAYLAMA FONKSİYONLARI
+        window.acceptRequest = async function(reqUser) {
+            const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", reqUser);
             try {
-                // Sadece isteği listeden sil
-                await setDoc(myRef, { followRequests: arrayRemove(reqUser) }, { merge: true });
-            } catch(e) {}
+                await setDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }, { merge: true });
+                await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true });
+            } catch(e) { alert("Hata oluştu."); }
+        };
+        window.rejectRequest = async function(reqUser) {
+            try { await setDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }, { merge: true }); } catch(e) {}
         };
     </script>
 </body>
