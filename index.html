@@ -3,111 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mozaik Sosyal Medya</title>
+    <title>Mozaik - Giriş Yap</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
-        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-        h2 { color: #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        #username { display: none; } /* Başlangıçta gizli tutuyoruz */
-        button { width: 100%; padding: 12px; background-color: #000000; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; margin-top: 10px; }
-        button:hover { background-color: #333333; }
-        .switch { margin-top: 20px; font-size: 14px; color: #666; }
-        .switch span { color: #000000; font-weight: bold; cursor: pointer; text-decoration: underline; }
-        #error-msg { color: red; font-size: 13px; margin-top: 10px; min-height: 15px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background: white; padding: 40px 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
+        .logo { font-size: 32px; font-weight: bold; color: #2980b9; margin-bottom: 10px; letter-spacing: 2px; }
+        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+        
+        input { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; background: #f9f9f9; }
+        input:focus { border-color: #2980b9; background: white; }
+        
+        button { width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #333; }
+        button:disabled { background: #888; cursor: not-allowed; }
+
+        .toggle-link { margin-top: 20px; font-size: 13px; color: #666; }
+        .toggle-link a { color: #2980b9; text-decoration: none; font-weight: bold; cursor: pointer; }
+        .toggle-link a:hover { text-decoration: underline; }
+
+        .forgot-pass { margin-top: 15px; font-size: 12px; }
+        .forgot-pass a { color: #e74c3c; text-decoration: none; font-weight: bold; cursor: pointer; }
+
+        .error-msg { color: #e74c3c; font-size: 13px; margin-bottom: 15px; display: none; font-weight: bold; }
+        .success-msg { color: #2ecc71; font-size: 13px; margin-bottom: 15px; display: none; font-weight: bold; }
+
+        /* MODAL TASARIMI */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; width: auto; padding: 0; margin: 0; }
+        .close-btn:hover { background: none; color: #000; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2 id="form-title">Mozaik'e Giriş Yap</h2>
-        <input type="text" placeholder="Kullanıcı Adın (Örn: @mozaik)" id="username">
-        <input type="email" placeholder="E-posta adresin" id="email">
-        <input type="password" placeholder="Şifren (En az 6 hane)" id="password">
-        <button id="action-btn">Giriş Yap</button>
-        <div id="error-msg"></div>
-        <div class="switch" id="switch-text">Hesabın yok mu? <span id="toggle-btn">Kayıt Ol</span></div>
+
+    <div class="login-box">
+        <div class="logo">MOZAİK</div>
+        <div class="subtitle" id="form-subtitle">Dünyana bağlan.</div>
+
+        <div id="error-message" class="error-msg"></div>
+        <div id="success-message" class="success-msg"></div>
+
+        <div id="login-section">
+            <input type="email" id="login-email" placeholder="E-posta Adresi" required>
+            <input type="password" id="login-pass" placeholder="Şifre" required>
+            <button id="login-btn">Giriş Yap</button>
+            <div class="forgot-pass">Şifreni mi unuttun? <a id="open-forgot-modal">Sıfırla</a></div>
+            <div class="toggle-link">Hesabın yok mu? <a id="show-register">Kayıt Ol</a></div>
+        </div>
+
+        <div id="register-section" style="display: none;">
+            <input type="text" id="reg-username" placeholder="Kullanıcı Adı (Boşluksuz, küçük harf)" required>
+            <input type="email" id="reg-email" placeholder="E-posta Adresi" required>
+            <input type="password" id="reg-pass" placeholder="Şifre (En az 6 hane)" required>
+            <button id="register-btn">Kayıt Ol</button>
+            <div class="toggle-link">Zaten hesabın var mı? <a id="show-login">Giriş Yap</a></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="forgot-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size:18px;">Şifremi Unuttum</h3>
+                <button class="close-btn" id="close-forgot-modal">&times;</button>
+            </div>
+            <p style="font-size:13px; color:#666; margin-bottom:15px;">Kayıtlı e-posta adresinizi girin. Size bir şifre sıfırlama bağlantısı göndereceğiz.</p>
+            <input type="email" id="forgot-email" placeholder="E-posta Adresiniz">
+            <button id="send-reset-btn" style="background:#2980b9;">Sıfırlama Linki Gönder</button>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        // updateProfile komutunu ekledik!
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        // YENİ: sendPasswordResetEmail eklendi
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-          apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k",
-          authDomain: "mozaiksosyalmedya.firebaseapp.com",
-          projectId: "mozaiksosyalmedya",
-          storageBucket: "mozaiksosyalmedya.firebasestorage.app",
-          messagingSenderId: "492534131254",
-          appId: "1:492534131254:web:6644008a553294be05c697"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        // Zaten giriş yaptıysa direkt feed'e yönlendir
+        onAuthStateChanged(auth, (user) => { if (user) window.location.href = "feed.html"; });
 
-        const usernameInput = document.getElementById('username');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const actionBtn = document.getElementById('action-btn');
-        const formTitle = document.getElementById('form-title');
-        const switchText = document.getElementById('switch-text');
-        const toggleBtn = document.getElementById('toggle-btn');
-        const errorMsg = document.getElementById('error-msg');
+        const loginSection = document.getElementById('login-section');
+        const registerSection = document.getElementById('register-section');
+        const errorMsg = document.getElementById('error-message');
+        const successMsg = document.getElementById('success-message');
+        const subtitle = document.getElementById('form-subtitle');
 
-        let isLoginMode = true;
+        function showError(msg) { errorMsg.innerText = msg; errorMsg.style.display = 'block'; successMsg.style.display = 'none'; }
+        function showSuccess(msg) { successMsg.innerText = msg; successMsg.style.display = 'block'; errorMsg.style.display = 'none'; }
 
-        toggleBtn.addEventListener('click', () => {
-            isLoginMode = !isLoginMode;
-            errorMsg.innerText = ""; 
-            if(isLoginMode) {
-                formTitle.innerText = "Mozaik'e Giriş Yap";
-                actionBtn.innerText = "Giriş Yap";
-                usernameInput.style.display = 'none'; // Giriş yaparken gizle
-                switchText.innerHTML = 'Hesabın yok mu? <span id="toggle-btn" style="color:#000; font-weight:bold; cursor:pointer; text-decoration:underline;">Kayıt Ol</span>';
-            } else {
-                formTitle.innerText = "Mozaik'e Katıl";
-                actionBtn.innerText = "Kayıt Ol";
-                usernameInput.style.display = 'block'; // Kayıt olurken göster!
-                switchText.innerHTML = 'Zaten hesabın var mı? <span id="toggle-btn" style="color:#000; font-weight:bold; cursor:pointer; text-decoration:underline;">Giriş Yap</span>';
-            }
-            document.getElementById('toggle-btn').addEventListener('click', () => toggleBtn.click());
+        document.getElementById('show-register').addEventListener('click', () => { loginSection.style.display = 'none'; registerSection.style.display = 'block'; errorMsg.style.display = 'none'; subtitle.innerText = "Aramıza katıl."; });
+        document.getElementById('show-login').addEventListener('click', () => { registerSection.style.display = 'none'; loginSection.style.display = 'block'; errorMsg.style.display = 'none'; subtitle.innerText = "Dünyana bağlan."; });
+
+        // GİRİŞ YAPMA İŞLEMİ
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const email = document.getElementById('login-email').value; const pass = document.getElementById('login-pass').value;
+            if(!email || !pass) return showError("Lütfen tüm alanları doldurun.");
+            const btn = document.getElementById('login-btn'); btn.disabled = true; btn.innerText = "Bekleyin...";
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                // Başarılı olursa onAuthStateChanged bizi feed.html'e atacak
+            } catch (error) { showError("E-posta veya şifre hatalı."); btn.disabled = false; btn.innerText = "Giriş Yap"; }
         });
 
-        actionBtn.addEventListener('click', () => {
-            const email = emailInput.value;
-            const password = passwordInput.value;
-            const username = usernameInput.value;
+        // KAYIT OLMA İŞLEMİ
+        document.getElementById('register-btn').addEventListener('click', async () => {
+            let username = document.getElementById('reg-username').value.trim().toLowerCase();
+            const email = document.getElementById('reg-email').value; const pass = document.getElementById('reg-pass').value;
+            
+            if(!username || !email || !pass) return showError("Lütfen tüm alanları doldurun.");
+            if(username.includes(' ')) return showError("Kullanıcı adında boşluk olamaz.");
+            if(pass.length < 6) return showError("Şifre en az 6 karakter olmalıdır.");
 
-            // Kayıt modundaysa ve kullanıcı adı boşsa hata ver
-            if(!email || !password || (!isLoginMode && !username)) {
-                errorMsg.innerText = "Lütfen tüm kutuları doldurun.";
-                return;
+            const btn = document.getElementById('register-btn'); btn.disabled = true; btn.innerText = "Kaydediliyor...";
+            
+            try {
+                const userRef = doc(db, "users", username); const docSnap = await getDoc(userRef);
+                if (docSnap.exists()) { btn.disabled = false; btn.innerText = "Kayıt Ol"; return showError("Bu kullanıcı adı zaten alınmış!"); }
+
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+                await updateProfile(user, { displayName: username });
+                
+                await setDoc(doc(db, "users", username), {
+                    email: email, followers: [], following: [], followRequests: [], bio: "Merhaba, ben Mozaik'te yeniyim!", 
+                    isPrivate: false, isVerified: false, isBanned: false, createdAt: serverTimestamp()
+                });
+                
+            } catch (error) { 
+                if(error.code === 'auth/email-already-in-use') showError("Bu e-posta adresi zaten kullanılıyor.");
+                else showError("Kayıt sırasında bir hata oluştu.");
+                btn.disabled = false; btn.innerText = "Kayıt Ol"; 
             }
+        });
 
-            actionBtn.innerText = "İşlem yapılıyor...";
-            errorMsg.innerText = "";
-
-            if(isLoginMode) {
-                signInWithEmailAndPassword(auth, email, password)
-                    .then(() => { window.location.href = "feed.html"; })
-                    .catch(() => {
-                        errorMsg.innerText = "Giriş başarısız. Şifre veya e-posta hatalı olabilir.";
-                        actionBtn.innerText = "Giriş Yap";
-                    });
-            } else {
-                createUserWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        // KAYIT BAŞARILIYSA İSMİ PROFİLE İŞLE
-                        updateProfile(userCredential.user, {
-                            displayName: username
-                        }).then(() => {
-                            window.location.href = "feed.html";
-                        });
-                    })
-                    .catch(() => {
-                        errorMsg.innerText = "Kayıt hatası: Bu e-posta zaten kullanılıyor veya şifre çok kısa.";
-                        actionBtn.innerText = "Kayıt Ol";
-                    });
+        // ŞİFRE SIFIRLAMA (ŞİFREMİ UNUTTUM) İŞLEMLERİ
+        const forgotModal = document.getElementById('forgot-modal');
+        document.getElementById('open-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'flex'; });
+        document.getElementById('close-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'none'; });
+        
+        document.getElementById('send-reset-btn').addEventListener('click', async () => {
+            const email = document.getElementById('forgot-email').value.trim();
+            if(!email) return alert("Lütfen e-posta adresinizi girin.");
+            
+            const btn = document.getElementById('send-reset-btn');
+            btn.disabled = true; btn.innerText = "Gönderiliyor...";
+            
+            try {
+                await sendPasswordResetEmail(auth, email);
+                forgotModal.style.display = 'none';
+                showSuccess("Şifre sıfırlama linki e-postanıza gönderildi! (Gereksiz/Spam kutusunu kontrol etmeyi unutmayın).");
+            } catch(error) {
+                alert("Hata: " + error.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "Sıfırlama Linki Gönder";
+                document.getElementById('forgot-email').value = '';
             }
         });
     </script>
