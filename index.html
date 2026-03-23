@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mozaik Sosyal Medya</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        #username { display: none; } /* Başlangıçta gizli tutuyoruz */
+        button { width: 100%; padding: 12px; background-color: #000000; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; margin-top: 10px; }
+        button:hover { background-color: #333333; }
+        .switch { margin-top: 20px; font-size: 14px; color: #666; }
+        .switch span { color: #000000; font-weight: bold; cursor: pointer; text-decoration: underline; }
+        #error-msg { color: red; font-size: 13px; margin-top: 10px; min-height: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 id="form-title">Mozaik'e Giriş Yap</h2>
+        <input type="text" placeholder="Kullanıcı Adın (Örn: @mozaik)" id="username">
+        <input type="email" placeholder="E-posta adresin" id="email">
+        <input type="password" placeholder="Şifren (En az 6 hane)" id="password">
+        <button id="action-btn">Giriş Yap</button>
+        <div id="error-msg"></div>
+        <div class="switch" id="switch-text">Hesabın yok mu? <span id="toggle-btn">Kayıt Ol</span></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        // updateProfile komutunu ekledik!
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k",
+          authDomain: "mozaiksosyalmedya.firebaseapp.com",
+          projectId: "mozaiksosyalmedya",
+          storageBucket: "mozaiksosyalmedya.firebasestorage.app",
+          messagingSenderId: "492534131254",
+          appId: "1:492534131254:web:6644008a553294be05c697"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const actionBtn = document.getElementById('action-btn');
+        const formTitle = document.getElementById('form-title');
+        const switchText = document.getElementById('switch-text');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const errorMsg = document.getElementById('error-msg');
+
+        let isLoginMode = true;
+
+        toggleBtn.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            errorMsg.innerText = ""; 
+            if(isLoginMode) {
+                formTitle.innerText = "Mozaik'e Giriş Yap";
+                actionBtn.innerText = "Giriş Yap";
+                usernameInput.style.display = 'none'; // Giriş yaparken gizle
+                switchText.innerHTML = 'Hesabın yok mu? <span id="toggle-btn" style="color:#000; font-weight:bold; cursor:pointer; text-decoration:underline;">Kayıt Ol</span>';
+            } else {
+                formTitle.innerText = "Mozaik'e Katıl";
+                actionBtn.innerText = "Kayıt Ol";
+                usernameInput.style.display = 'block'; // Kayıt olurken göster!
+                switchText.innerHTML = 'Zaten hesabın var mı? <span id="toggle-btn" style="color:#000; font-weight:bold; cursor:pointer; text-decoration:underline;">Giriş Yap</span>';
+            }
+            document.getElementById('toggle-btn').addEventListener('click', () => toggleBtn.click());
+        });
+
+        actionBtn.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const username = usernameInput.value;
+
+            // Kayıt modundaysa ve kullanıcı adı boşsa hata ver
+            if(!email || !password || (!isLoginMode && !username)) {
+                errorMsg.innerText = "Lütfen tüm kutuları doldurun.";
+                return;
+            }
+
+            actionBtn.innerText = "İşlem yapılıyor...";
+            errorMsg.innerText = "";
+
+            if(isLoginMode) {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then(() => { window.location.href = "feed.html"; })
+                    .catch(() => {
+                        errorMsg.innerText = "Giriş başarısız. Şifre veya e-posta hatalı olabilir.";
+                        actionBtn.innerText = "Giriş Yap";
+                    });
+            } else {
+                createUserWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        // KAYIT BAŞARILIYSA İSMİ PROFİLE İŞLE
+                        updateProfile(userCredential.user, {
+                            displayName: username
+                        }).then(() => {
+                            window.location.href = "feed.html";
+                        });
+                    })
+                    .catch(() => {
+                        errorMsg.innerText = "Kayıt hatası: Bu e-posta zaten kullanılıyor veya şifre çok kısa.";
+                        actionBtn.innerText = "Kayıt Ol";
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bildirimler - Mozaik</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; padding-bottom: 70px; }
+        .header { background: white; padding: 15px 20px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .header h2 { margin: 0; color: #000; font-size: 22px; letter-spacing: 1px; }
+        .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
+
+        .requests-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .box-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333; }
+        
+        .request-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .request-item:last-child { border-bottom: none; }
+        
+        .req-user-info { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; }
+        .req-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; border: 1px solid #ddd; }
+        .req-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .req-username { font-weight: bold; font-size: 15px; }
+        .req-text { font-size: 12px; color: #888; }
+
+        .req-actions { display: flex; gap: 5px; }
+        .accept-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .accept-btn:hover { background: #2980b9; }
+        .reject-btn { background: #ecf0f1; color: #555; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .reject-btn:hover { background: #e0e0e0; color: #e74c3c; }
+
+        .empty-text { text-align: center; color: #888; padding: 30px; font-size: 14px; }
+
+        /* GÜNCELLENMİŞ ALT MENÜ (SABİT BOYUT VE 4 BUTON) */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
+        .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
+        .nav-item .icon { font-size: 22px; }
+        .nav-item.active { color: #000; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Mozaik Bildirimler</h2>
+    </div>
+    
+    <div class="container">
+        <div class="requests-box">
+            <div class="box-title">Takip İstekleri</div>
+            <div id="requests-container">
+                <div class="empty-text">Yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="feed.html" class="nav-item"><span class="icon">🏠</span><span>Akış</span></a>
+        <a href="search.html" class="nav-item"><span class="icon">🔍</span><span>Ara</span></a>
+        <a href="notifications.html" class="nav-item active"><span class="icon">🔔</span><span>Bildirimler</span></a>
+        <a href="#" class="nav-item" id="my-profile-link"><span class="icon">👤</span><span>Profil</span></a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+        let myUsername = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                myUsername = user.displayName || user.email.split('@')[0];
+                document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
+                loadFollowRequests();
+            } else { window.location.href = "index.html"; }
+        });
+
+        // BENİM KENDİ PROFİL BİLGİLERİMİ (VE İSTEKLERİMİ) DİNLE
+        function loadFollowRequests() {
+            const myRef = doc(db, "users", myUsername);
+            onSnapshot(myRef, async (docSnap) => {
+                const container = document.getElementById('requests-container');
+                if (docSnap.exists() && docSnap.data().followRequests && docSnap.data().followRequests.length > 0) {
+                    
+                    const requests = docSnap.data().followRequests;
+                    let html = '';
+
+                    // İstek atan her kişinin fotoğrafını çek
+                    for (let reqUser of requests) {
+                        let avatarHtml = '👤';
+                        try {
+                            const uSnap = await getDoc(doc(db, "users", reqUser));
+                            if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}">`;
+                        } catch(e) {}
+
+                        html += `
+                            <div class="request-item">
+                                <a href="profile.html?user=${reqUser}" class="req-user-info">
+                                    <div class="req-avatar">${avatarHtml}</div>
+                                    <div>
+                                        <div class="req-username">@${reqUser}</div>
+                                        <div class="req-text">Seni takip etmek istiyor</div>
+                                    </div>
+                                </a>
+                                <div class="req-actions">
+                                    <button class="accept-btn" onclick="window.acceptRequest('${reqUser}')">Onayla</button>
+                                    <button class="reject-btn" onclick="window.rejectRequest('${reqUser}')">Sil</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-text">Bekleyen takip isteğin yok. ☕</div>';
+                }
+            });
+        }
+
+        // KÜRESEL FONKSİYONLAR (Butonlardan erişebilmek için window'a ekliyoruz)
+        window.acceptRequest = async function(reqUser) {
+            const myRef = doc(db, "users", myUsername);
+            const targetRef = doc(db, "users", reqUser);
+            try {
+                // 1. İsteği listeden sil
+                await setDoc(myRef, { followRequests: arrayRemove(reqUser) }, { merge: true });
+                // 2. Beni takipçi listesine ekle
+                await setDoc(myRef, { followers: arrayUnion(reqUser) }, { merge: true });
+                // 3. Karşı tarafın takip edilenler listesine beni ekle
+                await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true });
+            } catch(e) { alert("Onaylanırken hata oluştu."); }
+        };
+
+        window.rejectRequest = async function(reqUser) {
+            const myRef = doc(db, "users", myUsername);
+            try {
+                // Sadece isteği listeden sil
+                await setDoc(myRef, { followRequests: arrayRemove(reqUser) }, { merge: true });
+            } catch(e) {}
+        };
+    </script>
+</body>
+</html>
