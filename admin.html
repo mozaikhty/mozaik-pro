@@ -17,10 +17,15 @@
 
         .container { max-width: 800px; margin: 0 auto; }
         
-        /* ARAMA KUTUSU */
-        .admin-search-box { margin-bottom: 20px; position: relative; }
-        .admin-search-input { width: 100%; box-sizing: border-box; padding: 12px 15px; border-radius: 8px; border: 1px solid #444; background: #2c3e50; color: white; font-size: 15px; outline: none; }
+        /* ARAMA KUTULARI */
+        .admin-search-box { margin-bottom: 20px; position: relative; display: flex; gap: 10px; }
+        .admin-search-input { flex: 1; box-sizing: border-box; padding: 12px 15px; border-radius: 8px; border: 1px solid #444; background: #2c3e50; color: white; font-size: 15px; outline: none; }
         .admin-search-input:focus { border-color: #3498db; }
+        
+        .action-btn-primary { background: #3498db; color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
+        .action-btn-primary:hover { background: #2980b9; }
+        .action-btn-danger { background: #e74c3c; color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
+        .action-btn-danger:hover { background: #c0392b; }
 
         /* KULLANICI LİSTESİ */
         .list-item { background: #2c3e50; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -37,13 +42,15 @@
         .btn-posts { background: #9b59b6; }
         .btn-delete { background: #c0392b; }
 
-        /* CANLI AKTİVİTE LOGLARI */
+        /* CANLI AKTİVİTE LOGLARI & KATEGORİLER */
+        .act-category-title { background: #34495e; color: white; padding: 10px 15px; border-radius: 8px; margin: 20px 0 10px 0; font-weight: bold; font-size: 15px; border-left: 4px solid #3498db; display: flex; align-items: center; gap: 8px;}
+        
         .activity-item { background: #2c3e50; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; border-left: 4px solid transparent; }
-        .act-post { border-left-color: #3498db; } /* Gönderiler Mavi */
-        .act-like { border-left-color: #e74c3c; } /* Beğeniler Kırmızı */
-        .act-comment { border-left-color: #2ecc71; } /* Yorumlar Yeşil */
-        .act-follow { border-left-color: #9b59b6; } /* Takipler Mor */
-        .act-admin { border-left-color: #f39c12; } /* Admin İşlemleri Turuncu */
+        .act-post { border-left-color: #3498db; }
+        .act-like { border-left-color: #e74c3c; } 
+        .act-comment { border-left-color: #2ecc71; } 
+        .act-follow { border-left-color: #9b59b6; } 
+        .act-admin { border-left-color: #f39c12; } 
         
         .act-icon { font-size: 18px; flex-shrink: 0; }
         .act-content { flex: 1; line-height: 1.4; }
@@ -79,21 +86,30 @@
 
     <div class="tabs">
         <button class="tab-btn active" id="tab-users-btn">👥 Kullanıcılar</button>
-        <button class="tab-btn" id="tab-activity-btn">📡 Canlı Aktivite</button>
+        <button class="tab-btn" id="tab-activity-btn">📡 Aktivite Logları</button>
         <button class="tab-btn" id="tab-tickets-btn">📬 Destek Talepleri</button>
     </div>
 
     <div class="container">
         <div id="users-section">
-            <div class="admin-search-box"><input type="text" id="admin-user-search" class="admin-search-input" placeholder="Kullanıcı adı ile ara..."></div>
+            <div class="admin-search-box">
+                <input type="text" id="admin-user-search" class="admin-search-input" placeholder="Kullanıcı adı ile ara...">
+            </div>
             <div id="users-list">Yükleniyor...</div>
         </div>
         
         <div id="activity-section" style="display:none;">
-            <div style="background:#2c3e50; padding:15px; border-radius:8px; margin-bottom:15px; text-align:center; font-size:13px; color:#aaa;">
-                Bu ekran platformdaki son 100 etkileşimi (Post, Beğeni, Yorum, Takip) canlı olarak gösterir.
+            <div class="admin-search-box">
+                <input type="text" id="activity-search-input" class="admin-search-input" placeholder="İncelemek istediğin kullanıcı adını yaz...">
+                <button id="activity-search-btn" class="action-btn-primary">Listele</button>
+                <button id="activity-clear-btn" class="action-btn-danger" style="display:none;">Temizle</button>
             </div>
-            <div id="activity-list">Aktviteler yükleniyor...</div>
+            
+            <div id="activity-info-text" style="background:#2c3e50; padding:15px; border-radius:8px; margin-bottom:15px; text-align:center; font-size:13px; color:#aaa;">
+                Arama yapmadığınızda tüm sistemin genel akışını görürsünüz. Belirli bir kişiyi aratırsanız veriler dosyalanarak gösterilir.
+            </div>
+            
+            <div id="activity-list">Aktiviteler yükleniyor...</div>
         </div>
 
         <div id="tickets-section" style="display:none;">
@@ -131,6 +147,7 @@
         let allUsers = []; 
         let recentPostsLog = [];
         let recentNotifsLog = [];
+        let activeActivityFilter = ""; // Kullanıcı filtreleme değişkeni
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -140,7 +157,7 @@
                 
                 loadUsers(); 
                 loadTickets();
-                loadActivityStream(); // Canlı Logları Başlat
+                loadActivityStream(); 
             } else { window.location.href = "index.html"; }
         });
 
@@ -240,19 +257,42 @@
 
 
         // ==========================================
-        // 2. CANLI AKTİVİTE (LOGLAR) SİSTEMİ
+        // 2. AKTİVİTE (LOGLAR) SİSTEMİ & DOSYALAMA
         // ==========================================
+        
+        document.getElementById('activity-search-btn').addEventListener('click', () => {
+            activeActivityFilter = document.getElementById('activity-search-input').value.toLowerCase().trim();
+            if (activeActivityFilter) {
+                document.getElementById('activity-clear-btn').style.display = 'block';
+                document.getElementById('activity-info-text').innerHTML = `Şu an <b>@${activeActivityFilter}</b> adlı kullanıcının dosyasını inceliyorsunuz.`;
+            }
+            renderActivityList();
+        });
+
+        document.getElementById('activity-clear-btn').addEventListener('click', () => {
+            document.getElementById('activity-search-input').value = '';
+            activeActivityFilter = "";
+            document.getElementById('activity-clear-btn').style.display = 'none';
+            document.getElementById('activity-info-text').innerHTML = "Arama yapmadığınızda tüm sistemin genel akışını görürsünüz. Belirli bir kişiyi aratırsanız veriler dosyalanarak gösterilir.";
+            renderActivityList();
+        });
+
+        // Klavyeden enter ile listeleme
+        document.getElementById('activity-search-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') document.getElementById('activity-search-btn').click();
+        });
+
         function loadActivityStream() {
-            // Son 50 Gönderiyi dinle
-            const qPosts = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
+            // Son 200 Gönderiyi dinle (Filtreleme için daha geniş havuz)
+            const qPosts = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(200));
             onSnapshot(qPosts, (snapshot) => {
                 recentPostsLog = [];
                 snapshot.forEach(docSnap => { recentPostsLog.push({ id: docSnap.id, _actType: 'post', ...docSnap.data() }); });
                 renderActivityList();
             });
 
-            // Son 50 Bildirimi (Beğeni, Yorum, Takip) dinle
-            const qNotifs = query(collection(db, "notifications"), orderBy("createdAt", "desc"), limit(50));
+            // Son 300 Bildirimi dinle
+            const qNotifs = query(collection(db, "notifications"), orderBy("createdAt", "desc"), limit(300));
             onSnapshot(qNotifs, (snapshot) => {
                 recentNotifsLog = [];
                 snapshot.forEach(docSnap => { recentNotifsLog.push({ id: docSnap.id, _actType: 'notif', ...docSnap.data() }); });
@@ -260,65 +300,102 @@
             });
         }
 
+        // Tekil Log HTML Üretici
+        function createLogHtml(log) {
+            let timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Az önce';
+            if (log._actType === 'post') {
+                let contentPreview = log.content ? (log.content.length > 50 ? log.content.substring(0, 50) + '...' : log.content) : '(Sadece Fotoğraf)';
+                return `
+                    <div class="activity-item act-post">
+                        <div class="act-icon">📝</div>
+                        <div class="act-content">
+                            <b>@${log.author}</b> yeni bir gönderi paylaştı: <i>"${contentPreview}"</i>
+                            <span class="act-time">${timeStr}</span>
+                        </div>
+                    </div>`;
+            } else {
+                let icon = '🔔'; let actionText = ''; let cssClass = '';
+                if (log.type === 'like') { icon = '❤️'; actionText = 'gönderisini beğendi.'; cssClass = 'act-like'; }
+                else if (log.type === 'comment') { icon = '💬'; actionText = 'gönderisine yorum yaptı.'; cssClass = 'act-comment'; }
+                else if (log.type === 'follow') { icon = '🤝'; actionText = 'takip etmeye başladı.'; cssClass = 'act-follow'; }
+                else if (log.type === 'admin_delete') { icon = '🚨'; actionText = 'gönderisini sildi (Sistem İşlemi).'; cssClass = 'act-admin'; }
+
+                if(log.sender === log.recipient && log.type !== 'admin_delete') return ''; // Kendine bildirim atmışsa gizle
+
+                return `
+                    <div class="activity-item ${cssClass}">
+                        <div class="act-icon">${icon}</div>
+                        <div class="act-content">
+                            <b>@${log.sender}</b>, <b>@${log.recipient}</b> adlı kullanıcının ${actionText}
+                            <span class="act-time">${timeStr}</span>
+                        </div>
+                    </div>`;
+            }
+        }
+
         function renderActivityList() {
-            // Postları ve Bildirimleri birleştir
             let combinedLogs = [...recentPostsLog, ...recentNotifsLog];
             
-            // Tarihe göre yeniden eskiye (desc) sırala
             combinedLogs.sort((a, b) => {
                 let timeA = a.createdAt ? a.createdAt.toMillis() : 0;
                 let timeB = b.createdAt ? b.createdAt.toMillis() : 0;
                 return timeB - timeA;
             });
 
-            // En güncel 100 olayı göster
-            combinedLogs = combinedLogs.slice(0, 100);
-
             const listDiv = document.getElementById('activity-list');
-            if(combinedLogs.length === 0) { listDiv.innerHTML = '<p style="color:#aaa; text-align:center;">Henüz bir aktivite yok.</p>'; return; }
+            listDiv.innerHTML = '';
 
-            let html = '';
-            combinedLogs.forEach(log => {
-                let timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Az önce';
+            // 1. EĞER FİLTRELEME YOKSA: GENEL KARIŞIK AKIŞ (Son 100 işlem)
+            if (!activeActivityFilter) {
+                combinedLogs = combinedLogs.slice(0, 100);
+                if(combinedLogs.length === 0) { listDiv.innerHTML = '<p style="color:#aaa; text-align:center;">Henüz bir aktivite yok.</p>'; return; }
                 
-                if (log._actType === 'post') {
-                    // YENİ GÖNDERİ LOGU
-                    let contentPreview = log.content ? (log.content.length > 50 ? log.content.substring(0, 50) + '...' : log.content) : '(Sadece Fotoğraf)';
-                    html += `
-                        <div class="activity-item act-post">
-                            <div class="act-icon">📝</div>
-                            <div class="act-content">
-                                <b>@${log.author}</b> yeni bir gönderi paylaştı: <i>"${contentPreview}"</i>
-                                <span class="act-time">${timeStr}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // ETKİLEŞİM BİLDİRİMİ LOGU
-                    let icon = '🔔'; let actionText = ''; let cssClass = '';
-                    
-                    if (log.type === 'like') { icon = '❤️'; actionText = 'gönderisini beğendi.'; cssClass = 'act-like'; }
-                    else if (log.type === 'comment') { icon = '💬'; actionText = 'gönderisine yorum yaptı.'; cssClass = 'act-comment'; }
-                    else if (log.type === 'follow') { icon = '🤝'; actionText = 'takip etmeye başladı.'; cssClass = 'act-follow'; }
-                    else if (log.type === 'admin_delete') { icon = '🚨'; actionText = 'gönderisini sildi (Sistem İşlemi).'; cssClass = 'act-admin'; }
+                let html = '';
+                combinedLogs.forEach(log => { html += createLogHtml(log); });
+                listDiv.innerHTML = html;
+                return;
+            }
 
-                    // Kendi kendine attığı (sistem hatası olabilecek) bildirimleri filtrele
-                    if(log.sender === log.recipient && log.type !== 'admin_delete') return;
-
-                    html += `
-                        <div class="activity-item ${cssClass}">
-                            <div class="act-icon">${icon}</div>
-                            <div class="act-content">
-                                <b>@${log.sender}</b>, <b>@${log.recipient}</b> adlı kullanıcının ${actionText}
-                                <span class="act-time">${timeStr}</span>
-                            </div>
-                        </div>
-                    `;
-                }
+            // 2. EĞER KULLANICI ARATILMIŞSA: DOSYALANMIŞ KATEGORİK GÖRÜNÜM
+            let filteredLogs = combinedLogs.filter(log => {
+                let u1 = log.author ? log.author.toLowerCase() : "";
+                let u2 = log.sender ? log.sender.toLowerCase() : "";
+                let u3 = log.recipient ? log.recipient.toLowerCase() : "";
+                return (u1 === activeActivityFilter || u2 === activeActivityFilter || u3 === activeActivityFilter);
             });
-            listDiv.innerHTML = html;
-        }
 
+            if(filteredLogs.length === 0) {
+                listDiv.innerHTML = `<p style="color:#aaa; text-align:center; padding:20px;"><b>@${activeActivityFilter}</b> isimli kullanıcıya ait yakın zamanda hiçbir işlem bulunamadı.</p>`;
+                return;
+            }
+
+            // Kategorilere Ayırma (Dosyalama)
+            let catPosts = filteredLogs.filter(l => l._actType === 'post');
+            let catLikes = filteredLogs.filter(l => l._actType === 'notif' && l.type === 'like');
+            let catComments = filteredLogs.filter(l => l._actType === 'notif' && l.type === 'comment');
+            let catFollows = filteredLogs.filter(l => l._actType === 'notif' && l.type === 'follow');
+            
+            let finalHtml = '';
+
+            if(catPosts.length > 0) {
+                finalHtml += `<div class="act-category-title">📂 Paylaşılan Gönderiler (${catPosts.length})</div>`;
+                catPosts.forEach(l => finalHtml += createLogHtml(l));
+            }
+            if(catLikes.length > 0) {
+                finalHtml += `<div class="act-category-title" style="border-left-color:#e74c3c;">📂 Beğeni Hareketleri (${catLikes.length})</div>`;
+                catLikes.forEach(l => finalHtml += createLogHtml(l));
+            }
+            if(catComments.length > 0) {
+                finalHtml += `<div class="act-category-title" style="border-left-color:#2ecc71;">📂 Yorum Hareketleri (${catComments.length})</div>`;
+                catComments.forEach(l => finalHtml += createLogHtml(l));
+            }
+            if(catFollows.length > 0) {
+                finalHtml += `<div class="act-category-title" style="border-left-color:#9b59b6;">📂 Takip Hareketleri (${catFollows.length})</div>`;
+                catFollows.forEach(l => finalHtml += createLogHtml(l));
+            }
+
+            listDiv.innerHTML = finalHtml;
+        }
 
         // ==========================================
         // 3. DESTEK TALEPLERİ
