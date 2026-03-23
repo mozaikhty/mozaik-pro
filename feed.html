@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mozaik / Anasayfa</title>
     <style>
-        /* GENEL SIFIRLAMA VE X RENKLERİ */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #fff; margin: 0; padding: 0; color: #0f1419; }
         * { box-sizing: border-box; }
         a { text-decoration: none; color: inherit; }
 
         .app-container { display: flex; justify-content: center; max-width: 1250px; margin: 0 auto; min-height: 100vh; }
         
-        .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; }
+        .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; flex-shrink: 0;}
         .logo-desktop { font-size: 28px; font-weight: 800; padding: 10px; margin-bottom: 10px; display: inline-block; color: #1da1f2; }
         .desktop-nav { display: flex; flex-direction: column; gap: 5px; }
         .desktop-nav-item { display: flex; align-items: center; gap: 15px; font-size: 20px; padding: 12px; border-radius: 30px; transition: 0.2s; cursor: pointer; width: fit-content; font-weight: 500; }
@@ -20,7 +19,7 @@
         .desktop-nav-item.active { font-weight: bold; }
         .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
 
-        .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; }
+        .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; flex-shrink:0;}
         
         .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; }
         .mobile-header-top { display: none; padding: 12px 20px; align-items: center; justify-content: space-between; }
@@ -33,19 +32,27 @@
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; transition: 0.2s; width: 60px; display: none; }
         .feed-tab.active .tab-indicator { display: block; }
 
-        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; }
-        .mobile-sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: white; z-index: 4001; transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
+        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; cursor: pointer; }
+        .mobile-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100%; background: white; z-index: 4001; transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
         .mobile-sidebar.open { left: 0; }
-        .sidebar-header-mobile { padding: 20px; border-bottom: 1px solid #eff3f4; }
-        .sidebar-avatar-mobile { width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 10px; cursor: pointer; border: 1px solid #ddd; }
+        .sidebar-header-mobile { padding: 20px; border-bottom: 1px solid #eff3f4; display: flex; flex-direction: column; }
+        .sidebar-top-icons { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .sidebar-avatar-mobile { width: 48px; height: 48px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; cursor: pointer; border: 1px solid #eff3f4; }
         .sidebar-avatar-mobile img { width: 100%; height: 100%; object-fit: cover; }
-        .sidebar-name-mobile { font-weight: 800; font-size: 18px; color: #0f1419; margin-bottom: 2px; }
+        .sidebar-extra-icons { display: flex; gap: 10px; color: #0f1419; }
+        .s-icon-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #cfd9de; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .s-icon-btn:hover { background: #eff3f4; }
+        .sidebar-name-mobile { font-weight: 800; font-size: 19px; color: #0f1419; margin-top: 5px; line-height: 1.2;}
         .sidebar-handle-mobile { color: #536471; font-size: 15px; margin-bottom: 15px; }
-        .sidebar-stats-mobile { display: flex; gap: 15px; font-size: 14px; color: #536471; }
+        .sidebar-stats-mobile { display: flex; gap: 15px; font-size: 15px; color: #536471; }
         .sidebar-stats-mobile b { color: #0f1419; }
         .sidebar-menu-mobile { display: flex; flex-direction: column; padding: 10px 0; }
-        .sidebar-menu-item { padding: 15px 20px; font-size: 20px; font-weight: bold; color: #0f1419; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.2s; }
+        .sidebar-menu-item { padding: 15px 20px; font-size: 19px; font-weight: bold; color: #0f1419; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.2s; }
         .sidebar-menu-item:hover { background: #eff3f4; }
+        .sidebar-menu-item .menu-icon { font-size: 22px; width: 30px; text-align: center; }
+        .sidebar-divider { height: 1px; background: #eff3f4; margin: 10px 0; }
+        .sidebar-bottom-menu { padding: 10px 20px; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar-bottom-item { text-decoration: none; color: #0f1419; font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 15px; }
 
         .post-input-box { display: flex; gap: 10px; padding: 15px; border-bottom: 1px solid #eff3f4; }
         .input-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; flex-shrink: 0; overflow: hidden; cursor: pointer; }
@@ -59,18 +66,19 @@
         .share-btn { background: #1da1f2; color: white; border: none; padding: 8px 16px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 15px; opacity: 0.5; }
         .share-btn.active { opacity: 1; }
 
-        /* POST GÜNCELLENDİ: Yazı çizgisi çıkmasını engeller */
+        /* POST ZIRHI: Metin seçimi engellendi, tıklama hatasız */
         .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; position: relative; -webkit-tap-highlight-color: transparent;}
+        .post * { cursor: pointer !important; }
         .post:hover { background: #f7f9f9; }
         .post-left { flex-shrink: 0; }
         .post-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         .post-avatar-img img { width: 100%; height: 100%; object-fit: cover; }
         .post-right { flex: 1; overflow: hidden; }
         
-        .repost-indicator { font-size: 13px; color: #536471; font-weight: bold; display: flex; align-items: center; gap: 5px; margin-bottom: 4px; margin-left: 30px; user-select: none; -webkit-user-select: none; cursor: pointer;}
+        .repost-indicator { font-size: 13px; color: #536471; font-weight: bold; display: flex; align-items: center; gap: 5px; margin-bottom: 4px; margin-left: 30px; user-select: none; -webkit-user-select: none; }
         
         .post-header-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; position:relative;}
-        .author-group { display: flex; align-items: center; gap: 4px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; -webkit-user-select: none; cursor: pointer;}
+        .author-group { display: flex; align-items: center; gap: 4px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; -webkit-user-select: none; }
         .author-name { font-weight: bold; color: #0f1419; text-decoration: none; }
         .author-username { color: #536471; text-decoration: none; }
         .verified-badge { color: #1da1f2; font-size: 14px; }
@@ -83,19 +91,23 @@
         .dropdown-item:hover { background: #f7f9f9; }
         .dropdown-item.danger { color: #f4212e; }
 
-        /* YAZI SEÇİMİ ENGELLENDİ: user-select ve cursor eklendi */
-        .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; user-select: none; -webkit-user-select: none; cursor: pointer !important; }
+        .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; user-select: none; -webkit-user-select: none; }
         .hashtag { color: #1da1f2; text-decoration: none; }
         .hashtag:hover { text-decoration: underline; }
         .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; }
-        .post-image { width: 100%; max-height: 400px; object-fit: cover; display: block; pointer-events: none;} /* Resimde seçimi engeller */
+        .post-image { width: 100%; max-height: 400px; object-fit: cover; display: block; pointer-events: none;}
 
         .post-footer-actions { display: flex; justify-content: space-between; max-width: 425px; margin-top: 10px; color: #536471; }
         .action-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; user-select: none;}
         .action-item:hover { color: #1da1f2; }
+        .action-item.like-box:hover { color: #f91880; }
         .action-item.liked { color: #f91880; }
+        .action-item.repost-box:hover { color: #00ba7c; }
         .action-item.reposted { color: #00ba7c; }
         .action-icon { padding: 8px; border-radius: 50%; transition: 0.2s; }
+        .action-item:hover .action-icon { background: #e7f5fe; }
+        .action-item.like-box:hover .action-icon { background: #fbeef5; }
+        .action-item.repost-box:hover .action-icon { background: #def1eb; }
 
         .comments-wrapper { padding-top: 15px; border-top: 1px solid #eff3f4; margin-top: 15px; }
         .comment-node { position: relative; margin-top: 15px; }
@@ -131,10 +143,11 @@
             .fab-button { display: flex; }
         }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; overflow-y: auto;}
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; overflow-y: auto;}
         .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: sticky; top: -20px; background: white; z-index: 10; padding-bottom: 10px; border-bottom: 1px solid #eff3f4;}
-        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; display:flex; justify-content:center; align-items:center; width:40px; height:40px; border-radius:50%;}
+        .close-btn:hover { background:#eff3f4; }
         #mobile-post-modal .modal-content { max-width: 100%; width: 100%; height: 100vh; border-radius: 0; padding-top: 10px; margin: 0; }
         #post-detail-modal .modal-content { max-width: 650px; width: 100%; min-height: 50vh; padding: 0;}
         
@@ -152,20 +165,35 @@
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
-            <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
+            <div class="sidebar-top-icons">
+                <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
+                <div class="sidebar-extra-icons">
+                    <div class="s-icon-btn" title="Başka hesap ekle" style="font-size: 20px;">+</div>
+                    <div class="s-icon-btn" title="Seçenekler" style="font-size: 14px;">•••</div>
+                </div>
+            </div>
             <div class="sidebar-name-mobile" id="sidebar-name-mobile">Yükleniyor...</div>
             <div class="sidebar-handle-mobile" id="sidebar-handle-mobile">@bekleniyor</div>
             <div class="sidebar-stats-mobile">
-                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Takip edilen</div>
-                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçi</div>
+                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Takip ediliyor</div>
+                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçiler</div>
             </div>
         </div>
         <div class="sidebar-menu-mobile">
-            <a href="#" class="sidebar-menu-item" onclick="window.goToMyProfile()">👤 Profil</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Premium (Abonelik) sistemi yakında!')">✨ Premium</a>
+            <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()"><span class="menu-icon">👤</span> Profil</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Premium yakında!')"><span class="menu-icon">✖️</span> Premium</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Topluluklar yakında!')"><span class="menu-icon">👥</span> Topluluklar</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Yer İşaretleri yakında!')"><span class="menu-icon">🔖</span> Yer İşaretleri</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Listeler yakında!')"><span class="menu-icon">📋</span> Listeler</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Sohbet Odaları yakında!')"><span class="menu-icon">🎤</span> Sohbet Odaları</a>
+            
             <div class="sidebar-divider"></div>
-            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal;" onclick="alert('Ayarlar yakında!')">⚙️ Ayarlar ve gizlilik</a>
-            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal; color: #e74c3c;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            
+            <div class="sidebar-bottom-menu">
+                <a href="#" class="sidebar-bottom-item" onclick="alert('Ayarlar yakında!')">⚙️ Ayarlar ve gizlilik</a>
+                <a href="#" class="sidebar-bottom-item" onclick="alert('Yardım Merkezi yakında!')">❓ Yardım Merkezi</a>
+                <a href="#" class="sidebar-bottom-item" style="color: #e74c3c; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            </div>
         </div>
     </div>
 
@@ -177,7 +205,6 @@
                 <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item">✉️ Mesajlar</a>
-                <a href="#" class="desktop-nav-item" onclick="window.goToMyProfile()">👤 Profil</a>
             </div>
             <button class="desktop-post-btn" onclick="document.getElementById('post-text').focus()">Gönderi Yayınla</button>
         </nav>
@@ -186,6 +213,7 @@
             <div class="header-sticky">
                 <div class="mobile-header-top">
                     <div id="mobile-avatar-header" style="width:32px; height:32px; border-radius:50%; background:#eee; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">👤</div>
+                    <div class="mobile-logo-text">𝕏</div>
                     <div style="width:32px;"></div>
                 </div>
                 <div class="feed-tabs">
@@ -294,7 +322,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, setDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, setDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1"; 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
@@ -303,13 +331,11 @@
         let currentUser = null; let myUsername = null; let currentTab = 'discover'; let myFollowingList = []; let globalPosts = []; let allUsersData = {}; let currentlyEditingPostId = null;
         let postToShare = null; let activeReplyParentId = null;
 
-        // GLOBAL TIKLAMA YAKALAYICI: Hem Dropdown Menüleri hem de Arka Plan (Overlay) kapatmak için
+        // GLOBAL TIKLAMA YAKALAYICI (Hatasız Pencereler)
         document.addEventListener('click', function(event) {
-            // Dropdown Menüleri Kapat
             if (!event.target.classList.contains('post-options-btn')) {
                 document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
             }
-            // Overlay Arka Plan (Boşluk) Kapatma
             if (event.target.classList.contains('modal-overlay')) {
                 event.target.style.display = 'none';
                 if(event.target.id === 'post-detail-modal') {
@@ -465,7 +491,6 @@
             else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } }
         };
 
-        // BEĞENENLERİ GÖSTERME (HATASIZ)
         window.showLikes = function(postId, event) {
             event.stopPropagation(); 
             const postObj = globalPosts.find(p => p.id === postId);
@@ -493,7 +518,6 @@
             const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
             const fullName = authorData.fullName || postData.author;
             
-            // HATA KORUMALI ZAMAN (FAIL-SAFE)
             let timeString = "";
             if (postData.createdAt) {
                 if (typeof postData.createdAt.toMillis === 'function') {
@@ -544,14 +568,22 @@
             document.getElementById('post-detail-modal').style.display = 'flex';
         };
 
+        // İÇ İÇE YORUM AĞACI OLUŞTURUCU (HATA KORUMALI)
         function buildCommentsTree(allComments, parentId, depth = 0) {
+            if (depth > 15) return ''; // Sonsuz Döngü Engelleyici Kalkan!
             let html = '';
-            const children = allComments.filter(c => (c.parentId || null) === (parentId || null)).sort((a,b) => a.timestamp - b.timestamp);
+            const safeParentId = parentId || null;
+            
+            const children = allComments.filter(c => (c.parentId || null) === safeParentId).sort((a,b) => a.timestamp - b.timestamp);
+            
             children.forEach(c => {
                 const cUserData = allUsersData[c.author] || {};
                 const avatarHtml = cUserData.avatarUrl ? `<img src="${cUserData.avatarUrl}">` : `👤`;
                 const vHtml = cUserData.isVerified ? `<span class="verified-badge" style="font-size:12px;">☑️</span>` : '';
                 
+                // ESKİ YORUMLAR İÇİN SAHTE ID ATAMASI (Çökme Önleyici)
+                const safeCommentId = c.id || ('legacy_' + Math.random().toString(36).substr(2, 9));
+
                 html += `
                     <div class="comment-node">
                         <div class="comment-header">
@@ -560,12 +592,12 @@
                                 <div><a href="profile.html?user=${c.author}" class="comment-author-name">${cUserData.fullName || c.author}</a> ${vHtml} <span style="color:#536471; font-size:14px; font-weight:normal;">@${c.author}</span></div>
                                 <div class="comment-text">${c.text}</div>
                                 <div class="comment-actions">
-                                    <div class="comment-action-btn" onclick="window.setDetailReply('${c.id}', '${c.author}')">💬 Yanıtla</div>
+                                    <div class="comment-action-btn" onclick="window.setDetailReply('${safeCommentId}', '${c.author}')">💬 Yanıtla</div>
                                 </div>
                             </div>
                         </div>
                         <div class="comment-replies">
-                            ${buildCommentsTree(allComments, c.id, depth + 1)}
+                            ${buildCommentsTree(allComments, safeCommentId, depth + 1)}
                         </div>
                     </div>
                 `;
