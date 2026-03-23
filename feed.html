@@ -28,8 +28,7 @@
         
         /* ÜST HEADER VE SEKMELER */
         .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; }
-        .mobile-header-top { display: none; padding: 12px 20px; align-items: center; justify-content: space-between; }
-        .mobile-logo-text { font-size: 22px; font-weight: 900; letter-spacing: 1px; color: #0f1419; }
+        .mobile-header-top { display: none; padding: 12px 20px; align-items: center; }
         
         .feed-tabs { display: flex; width: 100%; height: 53px; }
         .feed-tab { flex: 1; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: 500; color: #536471; transition: 0.2s; position: relative; }
@@ -38,7 +37,7 @@
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; transition: 0.2s; width: 60px; display: none; }
         .feed-tab.active .tab-indicator { display: block; }
 
-        /* YENİ: MOBİL SOL ÇEKMECE MENÜSÜ (DRAWER) */
+        /* MOBİL SOL ÇEKMECE MENÜSÜ (DRAWER) */
         .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; }
         .mobile-sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: white; z-index: 4001; transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
         .mobile-sidebar.open { left: 0; }
@@ -59,6 +58,7 @@
         .stories-wrapper::-webkit-scrollbar { display: none; }
         .story-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 60px; gap: 4px; }
         .story-ring { width: 60px; height: 60px; border-radius: 50%; padding: 2px; background: #1da1f2; display: flex; justify-content: center; align-items: center; }
+        .story-ring.add-btn { background: transparent; border: 2px dashed #cfd9de; padding: 0; }
         .story-avatar { width: 100%; height: 100%; border-radius: 50%; border: 2px solid white; object-fit: cover; background: white; display: flex; justify-content: center; align-items: center; font-size: 20px;}
         .story-username { font-size: 12px; color: #536471; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60px; text-align: center; }
 
@@ -136,8 +136,8 @@
 
         /* MODALLAR VE EMOJI PICKER */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; }
-        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: sticky; top: -20px; background: white; z-index: 10; padding-bottom: 10px; border-bottom: 1px solid #eff3f4;}
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
         #mobile-post-modal .modal-content { max-width: 100%; width: 100%; height: 100vh; border-radius: 0; padding-top: 10px; margin: 0; }
         
@@ -163,8 +163,8 @@
             <div class="sidebar-name-mobile" id="sidebar-name-mobile">Yükleniyor...</div>
             <div class="sidebar-handle-mobile" id="sidebar-handle-mobile">@bekleniyor</div>
             <div class="sidebar-stats-mobile">
-                <div onclick="window.goToMyProfile()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Takip edilen</div>
-                <div onclick="window.goToMyProfile()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçi</div>
+                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Takip edilen</div>
+                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçi</div>
             </div>
         </div>
         <div class="sidebar-menu-mobile">
@@ -196,8 +196,6 @@
             <div class="header-sticky">
                 <div class="mobile-header-top">
                     <div id="mobile-avatar-header" style="width:32px; height:32px; border-radius:50%; background:#eee; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">👤</div>
-                    <div class="mobile-logo-text">𝕏</div>
-                    <div style="width:32px;"></div>
                 </div>
                 <div class="feed-tabs">
                     <div class="feed-tab active" id="tab-discover">Sana özel <div class="tab-indicator"></div></div>
@@ -261,7 +259,6 @@
         <a href="search.html" class="nav-item">🔍</a>
         <a href="chat.html" class="nav-item">✉️</a>
         <a href="notifications.html" class="nav-item">🔔</a>
-        <a href="#" class="nav-item" id="mobile-profile-link-bottom">👤</a>
     </div>
 
     <div class="modal-overlay" id="mobile-post-modal">
@@ -285,7 +282,15 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="likes-modal" style="align-items:center;"><div class="modal-content"><div class="modal-header"><h3 style="margin:0;">Beğenenler</h3><button class="close-btn" id="close-likes-modal">&times;</button></div><div id="likes-list-container"></div></div></div>
+    <div class="modal-overlay" id="users-list-modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 id="users-list-title" style="margin:0;">Liste</h3>
+                <button class="close-btn" id="close-list-btn">&times;</button>
+            </div>
+            <div id="users-list-container"></div>
+        </div>
+    </div>
     
     <div class="modal-overlay" id="edit-post-modal" style="align-items:center;"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 style="margin:0;">Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div><textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit; outline:none;"></textarea><div style="display:flex; justify-content:space-between; margin-top:15px;"><button style="padding:8px 15px; border:none; background:#eff3f4; border-radius:30px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button><button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#1da1f2; color:white; border-radius:30px; font-weight:bold; cursor:pointer;">Kaydet</button></div></div></div>
 
@@ -300,6 +305,9 @@
 
         let currentUser = null; let myUsername = null; let currentTab = 'discover'; let myFollowingList = []; let globalPosts = []; let allUsersData = {}; let currentlyEditingPostId = null;
 
+        // YÖNLENDİRME
+        window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
+
         // ÇEKMECE MENÜ (DRAWER) FONKSİYONLARI VE ÇIKIŞ
         window.openMobileSidebar = function() {
             document.getElementById('mobile-sidebar-overlay').style.display = 'block';
@@ -312,7 +320,46 @@
         window.logoutUser = function() {
             signOut(auth).then(() => { window.location.href = "index.html"; });
         };
-        window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
+
+        // LİSTE (MODAL) YÖNETİMİ: Takipçi, Takip Edilen, Beğenenler İçin Ortak
+        window.showUserList = function(title, userArray) {
+            document.getElementById('users-list-title').innerText = title;
+            const container = document.getElementById('users-list-container');
+            container.innerHTML = '';
+            if(userArray.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#536471; padding:20px;">Henüz kimse yok.</p>';
+            } else {
+                userArray.forEach(uname => {
+                    let uData = allUsersData[uname] || {};
+                    let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`;
+                    let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
+                    container.innerHTML += `
+                        <a href="profile.html?user=${uname}" class="user-row">
+                            <div class="row-avatar">${avatarHtml}</div>
+                            <div>
+                                <div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname} ${vHtml}</div>
+                                <div style="font-size:14px; color:#536471;">@${uname}</div>
+                            </div>
+                        </a>`;
+                });
+            }
+            document.getElementById('users-list-modal').style.display = 'flex';
+        };
+        document.getElementById('close-list-btn').onclick = () => { document.getElementById('users-list-modal').style.display = 'none'; };
+
+        // SOL MENÜDEN LİSTE AÇMA FONKSİYONLARI
+        window.showMyFollowing = function() {
+            window.closeMobileSidebar();
+            if (allUsersData[myUsername]) {
+                window.showUserList("Takip Edilenler", allUsersData[myUsername].following || []);
+            }
+        };
+        window.showMyFollowers = function() {
+            window.closeMobileSidebar();
+            if (allUsersData[myUsername]) {
+                window.showUserList("Takipçiler", allUsersData[myUsername].followers || []);
+            }
+        };
 
         // SEKME MANTIĞI
         document.getElementById('tab-discover').addEventListener('click', () => { 
@@ -345,13 +392,13 @@
             if (user) {
                 currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                 document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
-                document.getElementById('mobile-profile-link-bottom').href = `profile.html?user=${myUsername}`;
                 document.getElementById('sidebar-profile-link').href = `profile.html?user=${myUsername}`;
 
                 onSnapshot(doc(db, "users", myUsername), (docSnap) => {
                     if (docSnap.exists() && docSnap.data().following) myFollowingList = docSnap.data().following;
                     renderFeed(); 
                 });
+                
                 onSnapshot(collection(db, "users"), (snapshot) => { 
                     allUsersData = {}; 
                     snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); });
@@ -445,17 +492,12 @@
         };
         window.repostAlert = function() { alert("🔁 Yeniden Paylaş özelliği yakında aktif olacak!"); };
 
+        // BEĞENENLERİ GÖSTER BUTONU
         window.showLikes = function(likesArray) {
             if (!likesArray || likesArray.length === 0) return;
-            document.getElementById('likes-modal').style.display = 'flex'; let html = '';
-            likesArray.forEach(liker => {
-                let username = liker.includes('@') ? liker.split('@')[0] : liker; let userData = allUsersData[username] || {};
-                let avatarHtml = userData.avatarUrl ? `<img src="${userData.avatarUrl}" class="row-avatar">` : `<div class="row-avatar">👤</div>`; let vHtml = userData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
-                html += `<a href="profile.html?user=${username}" class="user-row">${avatarHtml}<div style="font-weight:bold; color:#0f1419;">@${username} ${vHtml}</div></a>`;
-            });
-            document.getElementById('likes-list-container').innerHTML = html;
+            const userNames = likesArray.map(l => l.includes('@') ? l.split('@')[0] : l);
+            window.showUserList("Beğenenler", userNames);
         };
-        document.getElementById('close-likes-modal').onclick = () => { document.getElementById('likes-modal').style.display = 'none'; };
 
         window.openEditModal = function(postId, currentContent) { currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex'; };
         document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
