@@ -227,7 +227,7 @@
                     <div class="search-box-inbox" style="margin-bottom:15px;">
                         <span>🔍</span><input type="text" id="new-chat-search" placeholder="Kişi ara...">
                     </div>
-                    <button class="desktop-post-btn" style="width:100%; background:#fff; color:#1da1f2; border:1px solid #1da1f2; margin:0 0 20px 0;" onclick="document.getElementById('group-modal').style.display='flex'">+ Grup Oluştur</button>
+                    <button id="open-group-modal" class="desktop-post-btn" style="width:100%; background:#fff; color:#1da1f2; border:1px solid #1da1f2; margin:0 0 20px 0;">+ Grup Oluştur</button>
                     <div id="new-chat-results" style="border-top:1px solid #eff3f4;"></div>
                 </div>
             </div>
@@ -254,7 +254,7 @@
                 
                 <div class="reply-preview-box" id="reply-preview-box">
                     <div class="reply-preview-text"><b>Yanıtlanıyor (@<span id="reply-preview-sender"></span>):</b> <span id="reply-preview-msg"></span></div>
-                    <button class="cancel-reply-btn" onclick="window.cancelReply()">&times;</button>
+                    <button class="cancel-reply-btn" id="cancel-reply-btn">&times;</button>
                 </div>
 
                 <div class="chat-input-area">
@@ -341,7 +341,7 @@
         let currentUser = null; let myUsername = null; let chatId = null; let isGroupChat = false;
         let allUsersData = {}; let activeChats = []; let myFollowing = [];
         let currentReplyData = null; let typingTimeout = null;
-        let currentInboxTab = 'all'; // Filtreleme için değişken
+        let currentInboxTab = 'all'; 
 
         let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let isCallVideo = false;
         const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
@@ -351,6 +351,7 @@
         const targetUsername = urlParams.get('user');
         const targetGroupId = urlParams.get('group');
 
+        // YENİ EKRAN YÖNETİMİ MANTIĞI
         window.showNewChatScreen = function() {
             document.getElementById('chat-empty-state').style.display = 'none';
             document.getElementById('chat-view').style.display = 'none';
@@ -370,12 +371,12 @@
                 const target = e.currentTarget;
                 target.classList.add('active');
                 currentInboxTab = target.getAttribute('data-tab');
-                updateInboxDisplay(); // Sekme değiştiğinde listeyi güncelle
+                updateInboxDisplay();
             });
         });
 
-        // EMOJI PICKER (SOHBET İÇİ)
-        document.getElementById('open-emoji-btn').addEventListener('click', () => {
+        // EMOJI PICKER
+        document.getElementById('open-emoji-btn')?.addEventListener('click', () => {
             const picker = document.getElementById('chat-emoji-picker');
             picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
         });
@@ -386,24 +387,26 @@
                 document.getElementById('send-btn').disabled = false;
             });
         });
-        // Tıklama dışı kapat
         document.addEventListener('click', function(event) {
             const btn = document.getElementById('open-emoji-btn');
             const picker = document.getElementById('chat-emoji-picker');
-            if (!btn.contains(event.target) && !picker.contains(event.target)) {
+            if (btn && picker && !btn.contains(event.target) && !picker.contains(event.target)) {
                 picker.style.display = 'none';
             }
         });
 
-        // FOTOĞRAF KONTROLÜ
-        document.getElementById('chat-image-input').addEventListener('change', (e) => {
-            if(e.target.files.length > 0) { document.getElementById('send-btn').disabled = false; }
+        // FOTOĞRAF VE İNPUT KONTROLÜ
+        document.getElementById('chat-image-input')?.addEventListener('change', (e) => {
+            if(e.target.files.length > 0) { document.getElementById('send-btn').disabled = false; document.getElementById('img-upload-label').style.color = '#2ecc71'; }
         });
-        document.getElementById('msg-input').addEventListener('input', (e) => {
+        document.getElementById('msg-input')?.addEventListener('input', (e) => {
             if(e.target.value.trim().length > 0) document.getElementById('send-btn').disabled = false;
             else if (document.getElementById('chat-image-input').files.length === 0) document.getElementById('send-btn').disabled = true;
         });
 
+        // =====================================
+        // SİSTEM BAŞLANGICI VE INBOX
+        // =====================================
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
@@ -412,12 +415,12 @@
                 
                 onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(d => { allUsersData[d.id] = d.data(); }); updateInboxDisplay(); });
                 onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
-                    activeChats = activeChats.filter(c => c.type === 'group'); // Sadece grupları tut
+                    activeChats = activeChats.filter(c => c.type === 'group'); 
                     snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
                     updateInboxDisplay(); 
                 });
                 onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
-                    activeChats = activeChats.filter(c => c.type === 'private'); // Sadece özelleri tut
+                    activeChats = activeChats.filter(c => c.type === 'private'); 
                     snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); 
                     updateInboxDisplay(); 
                 });
@@ -430,14 +433,17 @@
                     document.getElementById('chat-view').style.display = 'flex';
                     setupActiveChat();
                 }
+
             } else { window.location.href = "index.html"; }
         });
 
-        document.getElementById('dm-search-input').addEventListener('input', updateInboxDisplay);
+        document.getElementById('dm-search-input')?.addEventListener('input', updateInboxDisplay);
 
         function updateInboxDisplay() {
-            const text = document.getElementById('dm-search-input').value.toLowerCase().trim();
-            const container = document.getElementById('dm-list'); container.innerHTML = '';
+            const text = document.getElementById('dm-search-input')?.value.toLowerCase().trim() || "";
+            const container = document.getElementById('dm-list'); 
+            if(!container) return;
+            container.innerHTML = '';
             
             let allConversations = [...activeChats];
             allConversations.sort((a, b) => { let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0; let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0; return timeB - timeA; });
@@ -447,7 +453,7 @@
                 let isUnread = (conv.lastSender && conv.lastSender !== myUsername);
                 if (currentInboxTab === 'unread') return isUnread;
                 if (currentInboxTab === 'groups') return conv.type === 'group';
-                return true; // 'all'
+                return true; 
             });
 
             // FİLTRELEME (Arama Kutusuna Göre)
@@ -483,7 +489,7 @@
             } else { container.innerHTML = '<p style="text-align:center; color:#888; padding:20px;">Sohbet bulunamadı.</p>'; }
         }
 
-        document.getElementById('new-chat-search').addEventListener('input', (e) => {
+        document.getElementById('new-chat-search')?.addEventListener('input', (e) => {
             const text = e.target.value.toLowerCase().trim(); const container = document.getElementById('new-chat-results'); container.innerHTML = '';
             if(!text) return;
             const searchResults = Object.keys(allUsersData).filter(uid => uid !== myUsername && uid.toLowerCase().includes(text));
@@ -496,17 +502,21 @@
             }
         });
 
-        document.getElementById('open-group-modal').addEventListener('click', () => {
-            document.getElementById('group-modal').style.display = 'flex';
-            const listDiv = document.getElementById('group-users-list'); listDiv.innerHTML = '';
-            if(myFollowing.length === 0) { listDiv.innerHTML = '<div style="padding:10px; color:#888; text-align:center;">Önce birilerini takip et.</div>'; return; }
-            myFollowing.forEach(uid => {
-                const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
-                listDiv.innerHTML += `<label style="display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid #f0f0f0;"><div style="display:flex; align-items:center; gap:10px; font-weight:bold;"><div style="width:35px; height:35px; border-radius:50%; overflow:hidden;">${avatar}</div>@${uid}</div><input type="checkbox" class="group-member-checkbox" value="${uid}"></label>`;
+        // GRUP KURMA İŞLEMLERİ
+        const openGroupModalBtn = document.getElementById('open-group-modal');
+        if (openGroupModalBtn) {
+            openGroupModalBtn.addEventListener('click', () => {
+                document.getElementById('group-modal').style.display = 'flex';
+                const listDiv = document.getElementById('group-users-list'); listDiv.innerHTML = '';
+                if(myFollowing.length === 0) { listDiv.innerHTML = '<div style="padding:10px; color:#888; text-align:center;">Önce birilerini takip etmelisin!</div>'; return; }
+                myFollowing.forEach(uid => {
+                    const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
+                    listDiv.innerHTML += `<label style="display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid #f0f0f0;"><div style="display:flex; align-items:center; gap:10px; font-weight:bold;"><div style="width:35px; height:35px; border-radius:50%; overflow:hidden;">${avatar}</div>@${uid}</div><input type="checkbox" class="group-member-checkbox" value="${uid}"></label>`;
+                });
             });
-        });
+        }
 
-        document.getElementById('create-group-btn').addEventListener('click', async () => {
+        document.getElementById('create-group-btn')?.addEventListener('click', async () => {
             const groupName = document.getElementById('group-name-input').value.trim(); const selectedCheckboxes = document.querySelectorAll('.group-member-checkbox:checked');
             if(!groupName || selectedCheckboxes.length === 0) return alert("İsim ve en az 1 kişi gerekli!");
             const members = [myUsername, ...Array.from(selectedCheckboxes).map(cb => cb.value)]; 
@@ -517,6 +527,9 @@
             } catch(e) { alert("Hata!"); btn.disabled = false; btn.innerText = "Grubu Oluştur"; }
         });
 
+        // =====================================
+        // AKTİF SOHBET PENCERESİ YÜKLEMESİ
+        // =====================================
         async function setupActiveChat() {
             if (targetUsername) {
                 isGroupChat = false; chatId = [myUsername, targetUsername].sort().join('_');
@@ -551,6 +564,7 @@
                 }
             });
 
+            // WEBRTC DİNLEYİCİSİ VE CEVAPSIZ ÇAĞRI MANTIĞI
             onSnapshot(collection(db, "chats", chatId, "calls"), (snapshot) => {
                 snapshot.docChanges().forEach(async (change) => {
                     const callData = change.doc.data();
@@ -571,7 +585,7 @@
             loadMessages();
         }
 
-        document.getElementById('delete-chat-btn').addEventListener('click', async () => {
+        document.getElementById('delete-chat-btn')?.addEventListener('click', async () => {
             if(confirm("Sohbeti kalıcı olarak silmek istediğinize emin misiniz?")) {
                 await deleteDoc(doc(db, isGroupChat ? "groups" : "chats", chatId)); window.location.href = "chat.html";
             }
@@ -585,7 +599,12 @@
             document.getElementById('reply-preview-box').style.display = 'flex'; document.getElementById('msg-input').focus();
         };
 
-        window.cancelReply = function() { currentReplyData = null; document.getElementById('reply-preview-box').style.display = 'none'; };
+        window.cancelReply = function() { 
+            currentReplyData = null; 
+            document.getElementById('reply-preview-box').style.display = 'none'; 
+        };
+        
+        document.getElementById('cancel-reply-btn')?.addEventListener('click', window.cancelReply);
 
         window.deleteMessage = async function(msgId) {
             if(confirm("Mesajı silmek istediğinize emin misiniz?")) { await deleteDoc(doc(db, "chats", chatId, "messages", msgId)); }
@@ -613,7 +632,7 @@
                         timeString = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
                     }
 
-                    // SİSTEM MESAJLARI (Cevapsız Çağrı vb)
+                    // SİSTEM MESAJLARI
                     if (data.type === 'system') {
                         const sysDiv = document.createElement('div'); sysDiv.className = 'system-message';
                         const icon = data.text.includes('görüntülü') ? '📹' : '📞';
@@ -669,7 +688,8 @@
         const sendBtn = document.getElementById('send-btn');
         const imgInput = document.getElementById('chat-image-input');
 
-        msgInput.addEventListener('input', () => {
+        msgInput?.addEventListener('input', () => {
+            if (!chatId) return;
             const chatRef = doc(db, isGroupChat ? "groups" : "chats", chatId);
             updateDoc(chatRef, { [`typing.${myUsername}`]: true }).catch(e=>{});
             clearTimeout(typingTimeout); typingTimeout = setTimeout(() => { updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{}); }, 1500);
@@ -680,6 +700,7 @@
             if (!text && !file) return;
 
             sendBtn.disabled = true; msgInput.value = ''; document.getElementById('chat-emoji-picker').style.display = 'none';
+            document.getElementById('img-upload-label').style.color = '#1da1f2';
             
             let imgUrl = null;
             if(file) {
@@ -716,11 +737,11 @@
             }
         }
 
-        sendBtn.addEventListener('click', sendMessage);
-        msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        sendBtn?.addEventListener('click', sendMessage);
+        msgInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-        document.getElementById('video-call-btn').addEventListener('click', () => startCall(true));
-        document.getElementById('audio-call-btn').addEventListener('click', () => startCall(false));
+        document.getElementById('video-call-btn')?.addEventListener('click', () => startCall(true));
+        document.getElementById('audio-call-btn')?.addEventListener('click', () => startCall(false));
 
         async function startCall(isVideo) {
             isCallVideo = isVideo; document.getElementById('call-status-text').innerText = "Aranıyor..."; document.getElementById('accept-call-btn').style.display = 'none'; callOverlay.style.display = 'flex';
@@ -742,7 +763,7 @@
             } catch(e) { alert("Erişim reddedildi!"); endCallUI(); }
         }
 
-        document.getElementById('accept-call-btn').addEventListener('click', async () => {
+        document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
             document.getElementById('accept-call-btn').style.display = 'none'; document.getElementById('call-status-text').innerText = "Bağlanıyor...";
             const callDocRef = doc(db, "chats", chatId, "calls", currentCallDocId); const callData = (await getDoc(callDocRef)).data();
             try {
@@ -763,7 +784,7 @@
             } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
         });
 
-        document.getElementById('end-call-btn').addEventListener('click', async () => { 
+        document.getElementById('end-call-btn')?.addEventListener('click', async () => { 
             if(currentCallDocId) { 
                 const callSnap = await getDoc(doc(db, "chats", chatId, "calls", currentCallDocId));
                 if(callSnap.exists()) {
