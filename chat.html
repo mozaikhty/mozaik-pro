@@ -32,7 +32,6 @@
         .message-bubble { padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .msg-them { background: white; color: #333; border-top-left-radius: 0; }
         .msg-me { background: #3498db; color: white; border-top-right-radius: 0; }
-        .msg-sender-name { font-size: 11px; color: #888; margin-bottom: 3px; font-weight: bold; margin-left: 5px; }
         
         .msg-image { max-width: 100%; border-radius: 10px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.1); }
         .quoted-msg { background: rgba(0,0,0,0.1); padding: 8px; border-radius: 8px; border-left: 4px solid #f39c12; font-size: 13px; margin-bottom: 8px; opacity: 0.9; }
@@ -52,20 +51,16 @@
         .cancel-reply-btn { background: none; border: none; font-weight: bold; font-size: 16px; cursor: pointer; color: #888; }
         
         .chat-input-area { background: white; padding: 10px 15px; display: flex; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); margin-bottom: 60px; gap: 10px;}
-        .img-upload-label { font-size: 22px; cursor: pointer; color: #888; transition: 0.2s; }
+        .img-upload-label { font-size: 24px; cursor: pointer; color: #888; transition: 0.2s; }
         .img-upload-label:hover { color: #3498db; }
         
-        /* SES KAYDI BUTONU */
-        .mic-btn { font-size: 22px; cursor: pointer; color: #888; transition: 0.2s; background: none; border: none; padding: 0; display: flex; align-items: center; justify-content: center; }
-        .mic-btn.recording { color: #e74c3c; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-
         .chat-input { flex: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 30px; font-size: 15px; outline: none; background: #f9f9f9; transition: 0.2s; }
         .chat-input:focus { border-color: #3498db; background: white; }
         .send-btn { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 20px; transition: 0.2s; flex-shrink: 0;}
         .send-btn:hover { background: #2980b9; transform: scale(1.05); }
 
         /* CANLI ARAMA EKRANI (WebRTC) */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
         .call-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .call-status-text { font-size: 22px; font-weight: bold; margin-bottom: 30px; z-index: 3010; position: absolute; top: 50px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .video-container { position: relative; width: 100%; height: 100%; max-width: 800px; display: flex; justify-content: center; align-items: center; background: #000; }
@@ -136,8 +131,6 @@
             <input type="file" id="chat-image-input" accept="image/*" style="display:none;">
             <label for="chat-image-input" class="img-upload-label" id="img-upload-label">📷</label>
             
-            <button class="mic-btn" id="mic-btn" title="Ses Kaydet">🎙️</button>
-            
             <input type="text" id="msg-input" class="chat-input" placeholder="Bir mesaj yaz..." autocomplete="off">
             <button id="send-btn" class="send-btn">➤</button>
         </div>
@@ -168,19 +161,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-        // YENİ: Firebase Storage (Ses Kayıtları İçin)
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1"; 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
-        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app); const storage = getStorage(app);
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
         let currentUser = null; let myUsername = null; let chatId = null; 
         let allUsersData = {}; let activeChats = []; 
         let currentReplyData = null; let typingTimeout = null;
-
-        // SES KAYDI DEĞİŞKENLERİ
-        let mediaRecorder; let audioChunks = []; let isRecording = false;
 
         // WEBRTC ARAMA DEĞİŞKENLERİ
         let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let isCallVideo = false;
@@ -195,45 +183,6 @@
         document.getElementById('chat-image-input').addEventListener('change', (e) => {
             const label = document.getElementById('img-upload-label');
             if(e.target.files.length > 0) label.style.color = '#2ecc71'; else label.style.color = '#888';
-        });
-
-        // 🎙️ SES KAYDI MANTIĞI
-        const micBtn = document.getElementById('mic-btn');
-        micBtn.addEventListener('click', async () => {
-            if (!isRecording) {
-                // Kayda başla
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorder.start();
-                    isRecording = true;
-                    micBtn.classList.add('recording');
-                    document.getElementById('msg-input').placeholder = "Ses kaydediliyor...";
-                    
-                    mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
-                    
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        audioChunks = [];
-                        micBtn.classList.remove('recording');
-                        document.getElementById('msg-input').placeholder = "Bir mesaj yaz...";
-                        
-                        // Storage'a yükle
-                        const fileRef = storageRef(storage, `voice_notes/${chatId}_${Date.now()}.webm`);
-                        document.getElementById('send-btn').innerText = "...";
-                        try {
-                            await uploadBytes(fileRef, audioBlob);
-                            const downloadUrl = await getDownloadURL(fileRef);
-                            await sendActualMessage(null, null, downloadUrl);
-                        } catch(e) { alert("Ses gönderilemedi!"); }
-                        document.getElementById('send-btn').innerText = "➤";
-                    };
-                } catch(e) { alert("Mikrofon izni alınamadı!"); }
-            } else {
-                // Kaydı durdur ve gönder
-                isRecording = false;
-                mediaRecorder.stop();
-            }
         });
 
         if (!targetUsername) {
@@ -270,9 +219,8 @@
                         let timeAgoStr = ""; if(conv.updatedAt) { const date = conv.updatedAt.toDate(); timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); }
                         
                         let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı'; 
-                        if(lastMsgText.includes('https://i.ibb.co') || lastMsgText.includes('firebasestorage')) {
-                            if(lastMsgText.includes('.webm')) lastMsgText = '🎙️ Sesli Mesaj'; else lastMsgText = '📷 Fotoğraf';
-                        }
+                        if(lastMsgText.includes('https://i.ibb.co')) lastMsgText = '📷 Fotoğraf';
+                        
                         let subtitleHtml = isUnread ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` : `<span>${lastMsgText}</span>`;
                         container.innerHTML += `<a href="${link}" class="dm-user-card"><div class="dm-avatar">${avatar}</div><div class="dm-info"><div class="dm-username">${title}</div><div class="dm-subtitle">${subtitleHtml}</div></div><div class="time-badge">${timeAgoStr}</div></a>`;
                     });
@@ -321,7 +269,6 @@
                         snapshot.docChanges().forEach(async (change) => {
                             const callData = change.doc.data();
                             if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
-                                // Gelen arama var!
                                 currentCallDocId = change.doc.id;
                                 isCallVideo = callData.type === 'video';
                                 
@@ -333,7 +280,6 @@
                                 else { document.getElementById('video-container').style.display = 'none'; document.getElementById('audio-wave').style.display = 'block'; }
                             }
                             if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername) {
-                                // Karşı taraf açtı
                                 document.getElementById('call-status-text').innerText = "Bağlandı";
                                 const desc = new RTCSessionDescription(callData.answer);
                                 await peerConnection.setRemoteDescription(desc);
@@ -355,7 +301,7 @@
             });
 
             window.prepareReply = function(msgId, sender, text) {
-                let summary = text; if(text.includes('firebasestorage')) summary = '🎙️ Sesli Mesaj'; else if (text.includes('i.ibb.co')) summary = '📷 Fotoğraf';
+                let summary = text; if (text.includes('i.ibb.co')) summary = '📷 Fotoğraf';
                 currentReplyData = { id: msgId, sender: sender, text: summary };
                 document.getElementById('reply-preview-sender').innerText = sender;
                 document.getElementById('reply-preview-msg').innerText = summary.length > 50 ? summary.substring(0, 50) + "..." : summary;
@@ -400,14 +346,13 @@
 
                         let replyHtml = ''; if (data.replyTo) replyHtml = `<div class="quoted-msg"><b>@${data.replyTo.sender}</b>: ${data.replyTo.text}</div>`;
                         let imageHtml = ''; if (data.imageUrl) imageHtml = `<img src="${data.imageUrl}" class="msg-image">`;
-                        let audioHtml = ''; if (data.audioUrl) audioHtml = `<audio controls src="${data.audioUrl}" style="height:40px; max-width:220px; outline:none;"></audio>`;
 
                         const safeText = data.text ? data.text.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
                         
                         let actionsHtml = `<div class="msg-actions">`;
                         actionsHtml += `<span class="action-link" onclick="window.prepareReply('${docSnap.id}', '${data.sender}', '${safeText}')">Yanıtla</span>`;
                         if (isMe) {
-                            if(!data.audioUrl && !data.imageUrl) actionsHtml += `<span class="action-link" onclick="window.editMessage('${docSnap.id}', '${safeText}', ${timeMillis})">Düzenle</span>`;
+                            if(!data.imageUrl) actionsHtml += `<span class="action-link" onclick="window.editMessage('${docSnap.id}', '${safeText}', ${timeMillis})">Düzenle</span>`;
                             actionsHtml += `<span class="action-link danger" onclick="window.deleteMessage('${docSnap.id}')">Sil</span>`;
                         }
                         actionsHtml += `</div>`;
@@ -418,7 +363,6 @@
                             <div class="message-bubble ${isMe ? 'msg-me' : 'msg-them'}">
                                 ${replyHtml}
                                 ${imageHtml}
-                                ${audioHtml}
                                 ${data.text ? `<div>${data.text}</div>` : ''}
                                 <div class="msg-meta">
                                     ${data.isEdited ? '<span class="msg-edited">(düzenlendi)</span>' : ''}
@@ -458,21 +402,20 @@
                     const data = await res.json(); imgUrl = data.data.url;
                 }
                 
-                await sendActualMessage(text, imgUrl, null);
+                await sendActualMessage(text, imgUrl);
                 
                 sendBtn.disabled = false; sendBtn.innerText = "➤"; msgInput.focus(); imgInput.value = ''; window.cancelReply();
             }
 
-            async function sendActualMessage(text, imgUrl, audioUrl) {
+            async function sendActualMessage(text, imgUrl) {
                 const chatRef = doc(db, "chats", chatId);
                 const messagesRef = collection(db, "chats", chatId, "messages");
                 
                 let finalTxt = text;
                 if(!text && imgUrl) finalTxt = "📷 Fotoğraf";
-                if(!text && audioUrl) finalTxt = ""; 
                 
                 const msgData = { 
-                    text: finalTxt, sender: myUsername, createdAt: serverTimestamp(), imageUrl: imgUrl, audioUrl: audioUrl,
+                    text: finalTxt, sender: myUsername, createdAt: serverTimestamp(), imageUrl: imgUrl,
                     replyTo: currentReplyData ? { sender: currentReplyData.sender, text: currentReplyData.text } : null,
                     isEdited: false, isRead: false
                 };
@@ -480,7 +423,7 @@
                 await addDoc(messagesRef, msgData);
                 await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
                 
-                let summary = text; if(audioUrl) summary = "🎙️ Sesli Mesaj"; else if(imgUrl) summary = "📷 Fotoğraf";
+                let summary = text; if(imgUrl) summary = "📷 Fotoğraf";
                 await setDoc(chatRef, { participants: [myUsername, targetUsername], lastMessage: summary, lastSender: myUsername, updatedAt: serverTimestamp() }, { merge: true });
             }
 
