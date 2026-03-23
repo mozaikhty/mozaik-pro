@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Yönetimi</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; padding-bottom: 80px; }
         .header { text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-bottom: 20px; }
         .header h1 { margin: 0; color: #e74c3c; letter-spacing: 2px; }
         
@@ -33,7 +33,6 @@
         .btn-posts { background: #9b59b6; }
         .btn-delete { background: #c0392b; }
 
-        /* POST MODALI TASARIMI */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: #2c3e50; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); max-height: 80vh; overflow-y: auto; color: white; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px; }
@@ -46,6 +45,12 @@
         .ticket-header { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 8px; font-size: 14px; color: #aaa; }
         .ticket-msg { font-size: 16px; line-height: 1.4; }
         .delete-ticket { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; float: right; margin-top: 10px; }
+
+        /* ADMIN ICIN KOYU TEMA ALT MENU */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #2c3e50; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #444; }
+        .nav-item { flex: 1; text-decoration: none; color: #aaa; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
+        .nav-item .icon { font-size: 22px; }
+        .nav-item:hover { color: white; }
     </style>
 </head>
 <body>
@@ -78,6 +83,14 @@
         </div>
     </div>
 
+    <div class="bottom-nav">
+        <a href="feed.html" class="nav-item"><span class="icon">🏠</span><span>Akış</span></a>
+        <a href="search.html" class="nav-item"><span class="icon">🔍</span><span>Ara</span></a>
+        <a href="chat.html" class="nav-item"><span class="icon">💬</span><span>Mesajlar</span></a>
+        <a href="notifications.html" class="nav-item"><span class="icon">🔔</span><span>Bildirimler</span></a>
+        <a href="#" class="nav-item" id="my-profile-link"><span class="icon">👤</span><span>Profil</span></a>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -86,7 +99,6 @@
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        // YETKİ ARTIK "mozaik" HESABINDA!
         const ADMIN_USERNAME = "mozaik"; 
         let allUsers = []; 
 
@@ -94,6 +106,7 @@
             if (user) {
                 const myUsername = user.displayName || user.email.split('@')[0];
                 if (myUsername !== ADMIN_USERNAME) { window.location.href = "feed.html"; return; }
+                document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
                 loadUsers(); loadTickets();
             } else { window.location.href = "index.html"; }
         });
@@ -174,7 +187,7 @@
                 
                 await addDoc(collection(db, "notifications"), {
                     type: 'admin_delete',
-                    sender: ADMIN_USERNAME, // Artık "mozaik" olarak bildirim gidecek
+                    sender: ADMIN_USERNAME, 
                     recipient: author,
                     createdAt: serverTimestamp()
                 });

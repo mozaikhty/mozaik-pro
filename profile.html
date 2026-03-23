@@ -37,8 +37,7 @@
         .private-badge { position: absolute; top: 15px; right: 15px; background: #333; color: white; font-size: 11px; padding: 5px 10px; border-radius: 20px; font-weight: bold; display: none; }
 
         .btn-container { margin-top: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
-        .edit-profile-btn, .follow-btn, .msg-btn, .support-btn { padding: 8px 20px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; font-size: 13px; transition: 0.2s; }
-        .edit-profile-btn { background: #000; color: white; }
+        .follow-btn, .msg-btn, .support-btn { padding: 8px 20px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; display: none; font-size: 13px; transition: 0.2s; }
         .follow-btn { background: #3498db; color: white; }
         .unfollow-btn { background: #ecf0f1; color: #333; border: 1px solid #ccc; }
         .requested-btn { background: #f39c12; color: white; }
@@ -90,6 +89,12 @@
         .modal-btn-save { background: #27ae60; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; }
         .hashtag { color: #3498db; text-decoration: none; font-weight: bold; }
 
+        .settings-option { display: block; width: 100%; text-align: left; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #eee; background: #f9f9f9; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
+        .settings-option:hover { background: #f0f2f5; }
+        .settings-danger { color: #c0392b; border-color: #f5b7b1; background: #fadbd8; }
+        .settings-danger:hover { background: #f5b7b1; }
+
+        /* GÜNCELLENMİŞ 5'Lİ ALT MENÜ */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
         .nav-item .icon { font-size: 22px; }
@@ -103,7 +108,6 @@
         <div class="settings-menu" id="settings-menu">
             <button id="menu-settings-btn" style="display:none;">⚙️ Ayarlar</button>
             <button id="menu-logout-btn" class="text-danger">🚪 Çıkış Yap</button>
-            <button id="menu-delete-btn" class="text-danger" style="display:none;">🗑️ Hesabı Sil</button>
         </div>
     </div>
     
@@ -122,7 +126,6 @@
             </div>
             <div class="profile-stats" id="post-count">Gönderi Sayısı: 0</div>
             <div class="btn-container">
-                <button class="edit-profile-btn" id="edit-profile-btn">Profili Düzenle</button>
                 <button class="follow-btn" id="follow-btn">Takip Et</button>
                 <button class="msg-btn" id="msg-btn">💬 Mesaj</button>
                 <button class="support-btn" id="open-support-btn" style="display:none;">🚨 Şikayet / Destek</button>
@@ -131,10 +134,8 @@
         <div id="profile-feed-container"></div> 
     </div>
 
-    <div class="modal-overlay" id="likes-modal">
-        <div class="modal-content"><div class="list-header"><h3 style="margin:0;">Beğenenler</h3><button class="close-btn" id="close-likes-modal">&times;</button></div><div id="likes-list-container"></div></div>
-    </div>
-
+    <div class="modal-overlay" id="likes-modal"><div class="modal-content"><div class="list-header"><h3 style="margin:0;">Beğenenler</h3><button class="close-btn" id="close-likes-modal">&times;</button></div><div id="likes-list-container"></div></div></div>
+    
     <div class="modal-overlay" id="edit-post-modal">
         <div class="modal-content">
             <div class="list-header"><h3 style="margin:0;">Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div>
@@ -142,6 +143,16 @@
             <div style="display:flex; justify-content:space-between; margin-top:15px;">
                 <button style="padding:8px 15px; border:none; background:#eee; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button>
                 <button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#2980b9; color:white; border-radius:6px; font-weight:bold; cursor:pointer;">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="advanced-settings-modal">
+        <div class="modal-content">
+            <div class="list-header"><h3 style="margin:0;">Ayarlar</h3><button class="close-btn" onclick="document.getElementById('advanced-settings-modal').style.display='none'">&times;</button></div>
+            <div>
+                <button class="settings-option" id="open-edit-profile-modal-btn">✏️ Profilimi Düzenle</button>
+                <button class="settings-option settings-danger" id="trigger-delete-account-btn">🗑️ Hesabımı Sil</button>
             </div>
         </div>
     </div>
@@ -163,14 +174,12 @@
             <div class="modal-actions"><button class="modal-btn-cancel" id="cancel-support-btn">İptal</button><button class="modal-btn-save" id="send-support-btn" style="background:#e74c3c;">Gönder</button></div>
         </div>
     </div>
-
-    <div class="modal-overlay" id="users-list-modal">
-        <div class="modal-content"><div class="list-header"><h3 id="users-list-title" style="margin:0;">Liste</h3><button class="close-btn" id="close-list-btn">&times;</button></div><div id="users-list-container"></div></div>
-    </div>
+    <div class="modal-overlay" id="users-list-modal"><div class="modal-content"><div class="list-header"><h3 id="users-list-title" style="margin:0;">Liste</h3><button class="close-btn" id="close-list-btn">&times;</button></div><div id="users-list-container"></div></div></div>
 
     <div class="bottom-nav">
         <a href="feed.html" class="nav-item"><span class="icon">🏠</span><span>Akış</span></a>
         <a href="search.html" class="nav-item"><span class="icon">🔍</span><span>Ara</span></a>
+        <a href="chat.html" class="nav-item"><span class="icon">💬</span><span>Mesajlar</span></a>
         <a href="notifications.html" class="nav-item"><span class="icon">🔔</span><span>Bildirimler</span></a>
         <a href="#" class="nav-item active" id="my-profile-link"><span class="icon">👤</span><span>Profil</span></a>
     </div>
@@ -202,7 +211,7 @@
                 onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); }); });
                 
                 if (targetUsername === myUsername) {
-                    document.getElementById('menu-settings-btn').style.display = 'block'; document.getElementById('menu-delete-btn').style.display = 'block';
+                    document.getElementById('menu-settings-btn').style.display = 'block'; 
                 } else {
                     document.getElementById('follow-btn').style.display = 'inline-block'; document.getElementById('msg-btn').style.display = 'inline-block'; document.getElementById('open-support-btn').style.display = 'block';
                     await checkFollowStatus(); 
@@ -242,12 +251,34 @@
             }
         };
 
-        // DİĞER BUTON İŞLEMLERİ
+        // YENİ AYARLAR VE HAMBURGER MENÜ MANTIĞI
         const hamburgerBtn = document.getElementById('hamburger-btn'); const settingsMenu = document.getElementById('settings-menu');
         hamburgerBtn.addEventListener('click', () => { settingsMenu.style.display = settingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', (e) => { if (e.target !== hamburgerBtn && !settingsMenu.contains(e.target)) { settingsMenu.style.display = 'none'; } });
         document.getElementById('menu-logout-btn').addEventListener('click', () => { signOut(auth).then(() => { window.location.href = "index.html"; }); });
-        document.getElementById('menu-settings-btn').addEventListener('click', () => { settingsMenu.style.display = 'none'; document.getElementById('edit-modal').style.display = 'flex'; });
+        
+        // Ayarlar Butonu Modalı Açıyor
+        document.getElementById('menu-settings-btn').addEventListener('click', () => { 
+            settingsMenu.style.display = 'none'; 
+            document.getElementById('advanced-settings-modal').style.display = 'flex'; 
+        });
+
+        // Ayarlar İçinden Profil Düzenlemeyi Açma
+        document.getElementById('open-edit-profile-modal-btn').addEventListener('click', () => {
+            document.getElementById('advanced-settings-modal').style.display = 'none';
+            document.getElementById('edit-modal').style.display = 'flex'; 
+            const currentBio = document.getElementById('display-bio').innerText; 
+            if (currentBio !== "Merhaba, ben Mozaik'te yeniyim!") document.getElementById('edit-bio-input').value = currentBio;
+        });
+
+        // Ayarlar İçinden Hesap Silme İşlemi
+        document.getElementById('trigger-delete-account-btn').addEventListener('click', async () => {
+            if(confirm("DİKKAT: Hesabınızı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
+                try { await deleteDoc(doc(db, "users", myUsername)); await deleteUser(currentUser); alert("Hesabınız başarıyla silindi. Sizi özleyeceğiz!"); window.location.href = "index.html"; } 
+                catch (error) { alert("Hesap silinirken hata oluştu. Lütfen çıkış yapıp tekrar deneyin. (Güvenlik gereği yakın zamanda giriş yapmış olmanız istenir)."); }
+            }
+        });
+
         document.getElementById('msg-btn').addEventListener('click', () => { window.location.href = `chat.html?user=${targetUsername}`; });
 
         async function checkFollowStatus() {
@@ -311,7 +342,6 @@
             } catch (e) {} finally { saveBtn.innerText = "Kaydet"; saveBtn.disabled = false; }
         });
 
-        // YENİ: SİLME VE DÜZENLEME (PROFİL İÇİN)
         window.deletePost = async function(postId) {
             if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?")) {
                 await deleteDoc(doc(db, "posts", postId));

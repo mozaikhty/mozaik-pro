@@ -16,6 +16,13 @@
         .share-btn { background: #000; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .image-upload-label { cursor: pointer; color: #2980b9; font-weight: bold; font-size: 14px; background: #ebf5fb; padding: 8px 12px; border-radius: 20px; }
         
+        /* YENİ: EMOJİ SEÇİCİ TASARIMI */
+        .emoji-btn { background: #f0f2f5; color: #333; border: none; padding: 8px 12px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .emoji-btn:hover { background: #e4e6e9; }
+        .emoji-picker { display: none; background: white; border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-top: 10px; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .emoji-item { cursor: pointer; font-size: 22px; transition: 0.2s; }
+        .emoji-item:hover { transform: scale(1.2); }
+
         .feed-tabs { display: flex; justify-content: space-around; background: white; padding: 10px 0; border-radius: 10px; margin-bottom: 15px; }
         .feed-tab { cursor: pointer; font-weight: bold; color: #888; padding: 8px 15px; border-bottom: 3px solid transparent; }
         .feed-tab.active { color: #2980b9; border-bottom-color: #2980b9; }
@@ -58,6 +65,7 @@
         .user-row:hover { background: #ebf5fb; }
         .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; }
         
+        /* GÜNCELLENMİŞ 5'Lİ ALT MENÜ */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
         .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
         .nav-item .icon { font-size: 22px; }
@@ -70,12 +78,25 @@
         <div class="post-box">
             <textarea id="post-text" placeholder="Neler düşünüyorsun?" maxlength="280"></textarea>
             <input type="file" id="image-input" accept="image/*" style="display: none;">
+            
+            <div class="emoji-picker" id="emoji-picker">
+                <span class="emoji-item">😀</span><span class="emoji-item">😂</span><span class="emoji-item">🥰</span>
+                <span class="emoji-item">😎</span><span class="emoji-item">🔥</span><span class="emoji-item">👍</span>
+                <span class="emoji-item">🎉</span><span class="emoji-item">😢</span><span class="emoji-item">😮</span>
+                <span class="emoji-item">🙏</span><span class="emoji-item">💯</span><span class="emoji-item">✨</span>
+            </div>
+            
             <div id="image-preview-text" style="display:none; color:green; font-size:12px; margin-top:5px;">✓ Fotoğraf Seçildi</div>
+            
             <div class="post-actions">
-                <label for="image-input" class="image-upload-label">📸 Fotoğraf Ekle</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <label for="image-input" class="image-upload-label">📸 Fotoğraf</label>
+                    <button class="emoji-btn" id="emoji-btn">😀 Emoji</button>
+                </div>
                 <button class="share-btn" id="share-btn">Paylaş</button>
             </div>
         </div>
+        
         <div class="feed-tabs">
             <div class="feed-tab active" id="tab-following">Takip Edilenler</div>
             <div class="feed-tab" id="tab-discover">Keşfet</div>
@@ -83,24 +104,13 @@
         <div id="feed-container"></div> 
     </div>
 
-    <div class="modal-overlay" id="likes-modal">
-        <div class="modal-content"><div class="modal-header"><h3>Beğenenler</h3><button class="close-btn" id="close-likes-modal">&times;</button></div><div id="likes-list-container"></div></div>
-    </div>
-
-    <div class="modal-overlay" id="edit-post-modal">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div>
-            <textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit;"></textarea>
-            <div style="display:flex; justify-content:space-between; margin-top:15px;">
-                <button style="padding:8px 15px; border:none; background:#eee; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button>
-                <button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#2980b9; color:white; border-radius:6px; font-weight:bold; cursor:pointer;">Kaydet</button>
-            </div>
-        </div>
-    </div>
+    <div class="modal-overlay" id="likes-modal"><div class="modal-content"><div class="modal-header"><h3>Beğenenler</h3><button class="close-btn" id="close-likes-modal">&times;</button></div><div id="likes-list-container"></div></div></div>
+    <div class="modal-overlay" id="edit-post-modal"><div class="modal-content"><div class="modal-header"><h3>Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div><textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit;"></textarea><div style="display:flex; justify-content:space-between; margin-top:15px;"><button style="padding:8px 15px; border:none; background:#eee; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button><button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#2980b9; color:white; border-radius:6px; font-weight:bold; cursor:pointer;">Kaydet</button></div></div></div>
 
     <div class="bottom-nav">
         <a href="feed.html" class="nav-item active"><span class="icon">🏠</span><span>Akış</span></a>
         <a href="search.html" class="nav-item"><span class="icon">🔍</span><span>Ara</span></a>
+        <a href="chat.html" class="nav-item"><span class="icon">💬</span><span>Mesajlar</span></a>
         <a href="notifications.html" class="nav-item"><span class="icon">🔔</span><span>Bildirimler</span></a>
         <a href="#" class="nav-item" id="my-profile-link"><span class="icon">👤</span><span>Profil</span></a>
     </div>
@@ -114,9 +124,19 @@
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        let currentUser = null; let myUsername = null;
-        let currentTab = 'following'; let myFollowingList = []; let globalPosts = []; let allUsersData = {}; 
-        let currentlyEditingPostId = null; 
+        let currentUser = null; let myUsername = null; let currentTab = 'following'; let myFollowingList = []; let globalPosts = []; let allUsersData = {}; let currentlyEditingPostId = null; 
+
+        // Emoji Seçici Mantığı
+        document.getElementById('emoji-btn').addEventListener('click', () => {
+            const picker = document.getElementById('emoji-picker');
+            picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+        });
+        document.querySelectorAll('.emoji-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const input = document.getElementById('post-text');
+                input.value += e.target.innerText;
+            });
+        });
 
         document.getElementById('tab-following').addEventListener('click', () => { currentTab = 'following'; document.getElementById('tab-following').classList.add('active'); document.getElementById('tab-discover').classList.remove('active'); renderFeed(); });
         document.getElementById('tab-discover').addEventListener('click', () => { currentTab = 'discover'; document.getElementById('tab-discover').classList.add('active'); document.getElementById('tab-following').classList.remove('active'); renderFeed(); });
@@ -189,12 +209,9 @@
             const feedContainer = document.getElementById('feed-container'); feedContainer.innerHTML = '';
             globalPosts.forEach((post) => {
                 const postData = post.data; const authorData = allUsersData[postData.author] || {};
-                
-                // YENİ: BANLI KİŞİLERİN POSTLARINI AKIŞTA GİZLE
                 if (authorData.isBanned) return; 
 
                 const isPrivate = authorData.isPrivate || false; const amIFollowing = myFollowingList.includes(postData.author);
-                
                 if (currentTab === 'following' && postData.author !== myUsername && !amIFollowing) return;
                 if (currentTab === 'discover' && postData.author !== myUsername && isPrivate && !amIFollowing) return;
 
@@ -251,7 +268,7 @@
             if(!text && !file) return; shareBtn.disabled = true; shareBtn.innerText = "..."; let url = null;
             if(file) { const formData = new FormData(); formData.append("image", file); const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const data = await res.json(); url = data.data.url; }
             await addDoc(collection(db, "posts"), { content: text, imageUrl: url, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false });
-            document.getElementById('post-text').value = ''; document.getElementById('image-input').value = ''; document.getElementById('image-preview-text').style.display = 'none'; shareBtn.disabled = false; shareBtn.innerText = "Paylaş";
+            document.getElementById('post-text').value = ''; document.getElementById('image-input').value = ''; document.getElementById('image-preview-text').style.display = 'none'; document.getElementById('emoji-picker').style.display = 'none'; shareBtn.disabled = false; shareBtn.innerText = "Paylaş";
         });
     </script>
 </body>

@@ -15,25 +15,26 @@
         .chat-username { font-size: 18px; font-weight: bold; color: #333; }
 
         /* MESAJ ALANI */
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-color: #efeae2; /* Hafif WhatsApp arka plan rengi */ }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-color: #efeae2; }
         
         .message-bubble { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        
-        /* Karşı tarafın mesajı (Sola dayalı, beyaz) */
         .msg-them { align-self: flex-start; background: white; color: #333; border-top-left-radius: 0; }
-        
-        /* Benim mesajım (Sağa dayalı, mavi) */
-        .msg-me { align-self: flex-end; background: #dcf8c6; /* WhatsApp yeşili / Mozaik mavisi de yapılabilir */ background: #3498db; color: white; border-top-right-radius: 0; }
-        
+        .msg-me { align-self: flex-end; background: #3498db; color: white; border-top-right-radius: 0; }
         .msg-time { font-size: 10px; margin-top: 5px; text-align: right; opacity: 0.7; }
 
-        /* MESAJ YAZMA KUTUSU */
-        .chat-input-area { background: white; padding: 15px; display: flex; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+        /* MESAJ YAZMA KUTUSU (Alt menü ile çakışmaması için margin eklendi) */
+        .chat-input-area { background: white; padding: 15px; display: flex; align-items: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); margin-bottom: 60px; }
         .chat-input { flex: 1; padding: 12px 20px; border: 1px solid #ddd; border-radius: 30px; font-size: 15px; outline: none; background: #f9f9f9; transition: 0.2s; }
         .chat-input:focus { border-color: #3498db; background: white; }
         .send-btn { background: #3498db; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; margin-left: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 20px; transition: 0.2s; }
         .send-btn:hover { background: #2980b9; transform: scale(1.05); }
         .send-btn:disabled { background: #ccc; cursor: not-allowed; transform: scale(1); }
+
+        /* GÜNCELLENMİŞ 5'Lİ ALT MENÜ CSS */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; padding: 10px 0; z-index: 1000; border-top: 1px solid #eee; }
+        .nav-item { flex: 1; text-decoration: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; gap: 4px; transition: 0.2s; }
+        .nav-item .icon { font-size: 22px; }
+        .nav-item.active { color: #000; }
     </style>
 </head>
 <body>
@@ -44,38 +45,31 @@
         <div class="chat-username" id="chat-username">Yükleniyor...</div>
     </div>
 
-    <div class="chat-messages" id="chat-messages">
-        </div>
+    <div class="chat-messages" id="chat-messages"></div>
 
     <div class="chat-input-area">
         <input type="text" id="msg-input" class="chat-input" placeholder="Bir mesaj yaz..." autocomplete="off">
         <button id="send-btn" class="send-btn">➤</button>
     </div>
 
+    <div class="bottom-nav">
+        <a href="feed.html" class="nav-item"><span class="icon">🏠</span><span>Akış</span></a>
+        <a href="search.html" class="nav-item"><span class="icon">🔍</span><span>Ara</span></a>
+        <a href="chat.html" class="nav-item active"><span class="icon">💬</span><span>Mesajlar</span></a>
+        <a href="notifications.html" class="nav-item"><span class="icon">🔔</span><span>Bildirimler</span></a>
+        <a href="#" class="nav-item" id="my-profile-link"><span class="icon">👤</span><span>Profil</span></a>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        // Mesajlaşma için Firestore fonksiyonları
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-          apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k",
-          authDomain: "mozaiksosyalmedya.firebaseapp.com",
-          projectId: "mozaiksosyalmedya",
-          storageBucket: "mozaiksosyalmedya.firebasestorage.app",
-          messagingSenderId: "492534131254",
-          appId: "1:492534131254:web:6644008a553294be05c697"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        let currentUser = null; let myUsername = null; let chatId = null;
 
-        let currentUser = null;
-        let myUsername = null;
-        let chatId = null; // İki kişi arasındaki benzersiz oda ID'si
-
-        // URL'den kiminle mesajlaştığımızı alalım
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
 
@@ -88,12 +82,10 @@
             if (user) {
                 currentUser = user;
                 myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
                 
-                // Kendisiyle konuşamaz!
                 if (targetUsername === myUsername) window.location.href = `profile.html?user=${myUsername}`;
 
-                // SOHBET ODASI ID'Sİ OLUŞTURMA ALGORİTMASI
-                // İki ismi alfabetik sıralayıp birleştirirsek, kim kime yazarsa yazsın aynı odaya düşerler! (Örn: ahmet_mehmet)
                 chatId = [myUsername, targetUsername].sort().join('_');
 
                 loadTargetUserInfo();
@@ -103,7 +95,6 @@
             }
         });
 
-        // Karşı tarafın profil fotoğrafını çek
         async function loadTargetUserInfo() {
             try {
                 const uSnap = await getDoc(doc(db, "users", targetUsername));
@@ -113,20 +104,18 @@
             } catch(e) {}
         }
 
-        // MESAJLARI ANLIK ÇEKME
         function loadMessages() {
             const messagesRef = collection(db, "chats", chatId, "messages");
             const q = query(messagesRef, orderBy("createdAt", "asc"));
 
             onSnapshot(q, (snapshot) => {
                 const messagesContainer = document.getElementById('chat-messages');
-                messagesContainer.innerHTML = ''; // Temizle
+                messagesContainer.innerHTML = ''; 
 
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const isMe = data.sender === myUsername;
                     
-                    // Saat formatı (Örn: 14:30)
                     let timeString = '';
                     if (data.createdAt) {
                         const date = data.createdAt.toDate();
@@ -135,19 +124,14 @@
 
                     const msgDiv = document.createElement('div');
                     msgDiv.className = `message-bubble ${isMe ? 'msg-me' : 'msg-them'}`;
-                    msgDiv.innerHTML = `
-                        <div>${data.text}</div>
-                        <div class="msg-time">${timeString}</div>
-                    `;
+                    msgDiv.innerHTML = `<div>${data.text}</div><div class="msg-time">${timeString}</div>`;
                     messagesContainer.appendChild(msgDiv);
                 });
 
-                // Yeni mesaj geldiğinde ekranı en aşağıya (en yeni mesaja) kaydır
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             });
         }
 
-        // MESAJ GÖNDERME İŞLEMİ
         const msgInput = document.getElementById('msg-input');
         const sendBtn = document.getElementById('send-btn');
 
@@ -160,24 +144,15 @@
 
             try {
                 const messagesRef = collection(db, "chats", chatId, "messages");
-                await addDoc(messagesRef, {
-                    text: text,
-                    sender: myUsername,
-                    createdAt: serverTimestamp()
-                });
-            } catch (e) {
-                alert("Mesaj gönderilemedi!");
-            }
+                await addDoc(messagesRef, { text: text, sender: myUsername, createdAt: serverTimestamp() });
+            } catch (e) { alert("Mesaj gönderilemedi!"); }
+            
             sendBtn.disabled = false;
             msgInput.focus();
         }
 
         sendBtn.addEventListener('click', sendMessage);
-        
-        // Klavyeden Enter'a basınca gönder
-        msgInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
+        msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     </script>
 </body>
 </html>
