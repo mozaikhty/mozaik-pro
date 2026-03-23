@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mozaik / Mesajlar</title>
+    <title>Mozaik / Sohbet</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #fff; margin: 0; padding: 0; color: #0f1419; display: flex; flex-direction: column; min-height: 100vh; }
+        /* GENEL SIFIRLAMA VE X RENKLERİ */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #fff; margin: 0; padding: 0; color: #0f1419; overflow: hidden; }
         * { box-sizing: border-box; }
         a { text-decoration: none; color: inherit; }
 
-        .app-container { display: flex; justify-content: center; max-width: 1250px; margin: 0 auto; min-height: 100vh; width: 100%; }
+        /* 3 SÜTUNLU ANA IZGARA */
+        .app-container { display: flex; justify-content: center; max-width: 1250px; margin: 0 auto; height: 100vh; }
         
-        .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; }
+        /* SOL MENÜ */
+        .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; flex-shrink: 0; }
         .logo-desktop { font-size: 28px; font-weight: 800; padding: 10px; margin-bottom: 10px; display: inline-block; color: #1da1f2; }
         .desktop-nav { display: flex; flex-direction: column; gap: 5px; }
         .desktop-nav-item { display: flex; align-items: center; gap: 15px; font-size: 20px; padding: 12px; border-radius: 30px; transition: 0.2s; cursor: pointer; width: fit-content; font-weight: 500; }
@@ -20,19 +23,47 @@
         .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
         .desktop-post-btn:hover { background: #1a91da; }
 
-        /* SOHBET ANA ALANI (ORTA SÜTUN) */
-        .feed-main { width: 600px; height: 100vh; border-right: 1px solid #eff3f4; display: flex; flex-direction: column; position: relative; }
+        /* ORTA SÜTUN (GELEN KUTUSU - INBOX) */
+        .feed-main { width: 400px; height: 100vh; border-right: 1px solid #eff3f4; display: flex; flex-direction: column; flex-shrink: 0; background: white; z-index: 10; }
+        .chat-header-main { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .header-title { font-size: 20px; font-weight: 800; }
+        .header-icons { display: flex; gap: 15px; font-size: 20px; color: #0f1419; }
+        .header-icons span { cursor: pointer; transition: 0.2s; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .header-icons span:hover { background: #eff3f4; }
+        
+        .inbox-search-container { padding: 10px 15px; }
+        .search-box-inbox { background: #eff3f4; border-radius: 30px; padding: 10px 20px; display: flex; align-items: center; gap: 10px; }
+        .search-box-inbox input { border: none; background: none; outline: none; width: 100%; font-size: 15px; }
+        
+        .feed-tabs { display: flex; width: 100%; height: 53px; border-bottom: 1px solid #eff3f4; overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none;}
+        .feed-tabs::-webkit-scrollbar { display: none; }
+        .feed-tab { padding: 0 15px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: 500; color: #536471; transition: 0.2s; position: relative; white-space: nowrap; }
+        .feed-tab:hover { background-color: #eff3f4; }
+        .feed-tab.active { color: #0f1419; font-weight: bold; }
+        .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; display: none; width: 60%; }
+        .feed-tab.active .tab-indicator { display: block; }
+
+        .inbox-list { flex: 1; overflow-y: auto; }
+        .dm-user-card { display: flex; align-items: center; gap: 15px; padding: 15px 20px; text-decoration: none; color: #0f1419; border-bottom: 1px solid #eff3f4; transition: 0.2s; position: relative; cursor: pointer; }
+        .dm-user-card:hover { background: #f7f9f9; }
+        .dm-avatar { width: 48px; height: 48px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; flex-shrink: 0; }
+        .dm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dm-info { flex: 1; overflow: hidden; }
+        .dm-username { font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+        .dm-subtitle { font-size: 14px; color: #536471; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+        .unread-text { color: #0f1419; font-weight: bold; }
+        .unread-dot { width: 8px; height: 8px; background-color: #1da1f2; border-radius: 50%; flex-shrink: 0; }
+        .time-badge { position: absolute; top: 15px; right: 20px; font-size: 13px; color: #536471; }
+
+        /* SAĞ SÜTUN (SOHBET EKRANI VEYA BAŞLANGIÇ) */
+        .sidebar-right { flex: 1; display: flex; flex-direction: column; height: 100vh; background: #fff; overflow: hidden; }
         
         .chat-header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); padding: 15px 20px; display: flex; align-items: center; border-bottom: 1px solid #eff3f4; position: sticky; top: 0; z-index: 100; justify-content: space-between; }
         .header-left { display: flex; align-items: center; gap: 15px; }
         .header-right { display: flex; align-items: center; gap: 15px; }
-        .header-title { font-size: 20px; font-weight: 800; }
         
-        .back-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #0f1419; font-weight: bold; transition: 0.2s; border-radius: 50%; padding: 5px 10px;}
+        .back-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #0f1419; font-weight: bold; transition: 0.2s; border-radius: 50%; padding: 5px 10px; display: none; }
         .back-btn:hover { background: #eff3f4; }
-        .chat-avatar { width: 36px; height: 36px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .chat-username { font-size: 18px; font-weight: bold; color: #0f1419; display: flex; flex-direction: column; }
         
         .call-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #0f1419; transition: 0.2s; }
         .call-btn:hover { color: #1da1f2; }
@@ -40,7 +71,6 @@
 
         .typing-indicator { font-size: 12px; color: #1da1f2; font-weight: normal; display: none; margin-top: 2px; }
 
-        /* SOHBET İÇİ (MESAJLAR) */
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #fff; }
         .message-wrapper { display: flex; flex-direction: column; max-width: 80%; }
         .wrapper-me { align-self: flex-end; align-items: flex-end; }
@@ -69,7 +99,6 @@
         .reply-preview-text { color: #536471; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
         .cancel-reply-btn { background: none; border: none; font-weight: bold; font-size: 16px; cursor: pointer; color: #0f1419; }
         
-        /* GİRİŞ KUTUSU */
         .chat-input-area { background: white; padding: 10px 15px; display: flex; align-items: center; border-top: 1px solid #eff3f4; gap: 10px; margin-bottom: 0;}
         .img-upload-label { font-size: 22px; cursor: pointer; color: #1da1f2; transition: 0.2s; padding: 5px; border-radius: 50%; }
         .img-upload-label:hover { background: #e7f5fe; }
@@ -79,23 +108,6 @@
         .send-btn { background: none; color: #1da1f2; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 22px; padding: 5px; transition: 0.2s;}
         .send-btn:disabled { color: #888; }
         .send-btn:hover:not(:disabled) { transform: scale(1.1); }
-
-        /* INBOX (GELEN KUTUSU) */
-        .dm-user-card { display: flex; align-items: center; gap: 15px; padding: 15px 20px; text-decoration: none; color: #0f1419; border-bottom: 1px solid #eff3f4; transition: 0.2s; position: relative; }
-        .dm-user-card:hover { background: #f7f9f9; }
-        .dm-avatar { width: 48px; height: 48px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; flex-shrink: 0; }
-        .dm-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .dm-info { flex: 1; overflow: hidden; }
-        .dm-username { font-weight: bold; font-size: 15px; display: flex; align-items: center; margin-bottom: 2px; }
-        .dm-subtitle { font-size: 14px; color: #536471; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
-        .unread-text { color: #0f1419; font-weight: bold; }
-        .unread-dot { width: 8px; height: 8px; background-color: #1da1f2; border-radius: 50%; flex-shrink: 0; }
-        .time-badge { position: absolute; top: 15px; right: 20px; font-size: 13px; color: #536471; }
-
-        /* SAĞ SÜTUN (Arama vb.) */
-        .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
-        .search-box-right { background: #eff3f4; border-radius: 30px; padding: 12px 20px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .search-box-right input { border: none; background: none; outline: none; width: 100%; font-size: 15px; }
 
         /* WEBRTC MODAL */
         .call-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; color: white; }
@@ -109,54 +121,103 @@
         .btn-accept { background: #2ecc71; color: white; display: none; }
         .btn-end { background: #f4212e; color: white; }
 
-        /* MOBİL EKRAN */
+        /* SİSTEM MODALLARI */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eff3f4; padding-bottom: 10px; margin-bottom: 15px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #0f1419; }
+
+        /* MOBİL EKRAN TEPKİSİ */
         .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #eff3f4; z-index: 1000; padding: 10px 0; justify-content: space-around; }
         .nav-item { color: #536471; font-size: 24px; padding: 5px 20px; border-radius: 30px; transition: 0.2s; }
         .nav-item.active { color: #0f1419; font-weight: bold; }
 
         @media (max-width: 1000px) {
-            .sidebar-left, .sidebar-right { display: none; }
-            .feed-main { width: 100%; border-right: none; }
+            .sidebar-left { display: none; }
+            .feed-main { width: 100%; border-right: none; padding-bottom: 60px; }
+            .sidebar-right { display: none; width: 100%; padding-bottom: 60px; }
             .bottom-nav { display: flex; }
-            .chat-input-area { margin-bottom: 60px; }
-            .msg-actions { opacity: 1; } /* Mobilde her zaman görünsün */
+            .back-btn { display: block !important; }
+            
+            /* Mobilde bir sohbet açıldığında sol listeyi gizle sağ ekranı tam yap */
+            body.chat-active .feed-main { display: none !important; }
+            body.chat-active .sidebar-right { display: flex !important; }
+            body.chat-active .bottom-nav { display: none; } /* Sohbet içindeyken alt menü olmasın */
         }
     </style>
 </head>
 <body>
     
     <div class="app-container">
+        
         <nav class="sidebar-left">
             <a href="feed.html" class="logo-desktop">Mozaik</a>
             <div class="desktop-nav">
                 <a href="feed.html" class="desktop-nav-item">🏠 Anasayfa</a>
                 <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
-                <a href="chat.html" class="desktop-nav-item active">✉️ Mesajlar</a>
+                <a href="chat.html" class="desktop-nav-item active">✉️ Sohbet</a>
                 <a href="#" class="desktop-nav-item" id="desktop-profile-link">👤 Profil</a>
             </div>
             <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
         </nav>
 
-        <main class="feed-main">
-            <div id="inbox-view" style="display: none; flex: 1; overflow-y: auto;">
-                <div class="chat-header">
-                    <h2 class="header-title">Mesajlar</h2>
-                    <button id="open-group-modal" style="background:none; border:none; font-size:24px; color:#0f1419; cursor:pointer;" title="Yeni Grup">+</button>
+        <main class="feed-main" id="inbox-column">
+            <div class="chat-header-main">
+                <h2 class="header-title" style="margin:0;">Sohbet</h2>
+                <div class="header-icons">
+                    <span title="Sohbet Ayarları" onclick="document.getElementById('chat-settings-modal').style.display='flex'">⚙️</span>
+                    <span title="Yeni Sohbet" onclick="window.showNewChatScreen()">📝</span>
                 </div>
-                <div style="padding: 10px 15px;">
-                    <div style="background: #eff3f4; border-radius: 30px; padding: 10px 15px; display: flex; align-items: center; gap: 10px;">
-                        <span>🔍</span>
-                        <input type="text" id="dm-search-input" placeholder="Direkt mesajlarda ara" style="border:none; background:none; outline:none; width:100%; font-size:15px;">
-                    </div>
+            </div>
+            
+            <div class="inbox-search-container">
+                <div class="search-box-inbox">
+                    <span>🔍</span>
+                    <input type="text" id="dm-search-input" placeholder="Ara">
                 </div>
-                <div id="dm-list">Yükleniyor...</div>
+            </div>
+            
+            <div class="feed-tabs">
+                <div class="feed-tab active">Tümü <div class="tab-indicator"></div></div>
+                <div class="feed-tab" onclick="alert('Yakında eklenecek!')">Okunmamış</div>
+                <div class="feed-tab" onclick="alert('Yakında eklenecek!')">Doğrudan</div>
+                <div class="feed-tab" onclick="alert('Yakında eklenecek!')">Gruplar</div>
             </div>
 
-            <div id="chat-view" style="display: none; flex: 1; flex-direction: column;">
+            <div class="inbox-list" id="dm-list">
+                </div>
+        </main>
+
+        <aside class="sidebar-right" id="chat-column">
+            
+            <div id="chat-empty-state" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center; padding:20px;">
+                <div style="font-size:70px; margin-bottom:20px; color:#0f1419;">💬</div>
+                <h2 style="font-size:32px; margin:0 0 10px 0; font-weight:800;">Sohbet Başlat</h2>
+                <p style="color:#536471; font-size:15px; margin:0 0 25px 0;">Mevcut sohbetlerin arasından seçim yap veya yeni bir sohbet başlat.</p>
+                <button class="desktop-post-btn" style="width:auto; padding:15px 35px; margin:0;" onclick="window.showNewChatScreen()">Yeni sohbet</button>
+            </div>
+
+            <div id="new-chat-state" style="display:none; flex-direction:column; height:100%;">
                 <div class="chat-header">
                     <div class="header-left">
-                        <a href="chat.html" class="back-btn" id="back-link">⬅</a>
+                        <button class="back-btn" onclick="window.closeNewChatScreen()" style="display:block;">⬅</button>
+                        <h2 class="header-title" style="margin:0;">Yeni Mesaj</h2>
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="search-box-inbox" style="margin-bottom:15px;">
+                        <span>🔍</span><input type="text" id="new-chat-search" placeholder="Kişi ara...">
+                    </div>
+                    <button class="desktop-post-btn" style="width:100%; background:#fff; color:#1da1f2; border:1px solid #1da1f2; margin:0 0 20px 0;" onclick="document.getElementById('group-modal').style.display='flex'">+ Grup Oluştur</button>
+                    <div id="new-chat-results" style="border-top:1px solid #eff3f4;"></div>
+                </div>
+            </div>
+
+            <div id="chat-view" style="display: none; flex-direction: column; height: 100%;">
+                <div class="chat-header">
+                    <div class="header-left">
+                        <button class="back-btn" onclick="window.location.href='chat.html'">⬅</button>
                         <div class="chat-avatar" id="chat-avatar">👤</div>
                         <div class="chat-username">
                             <div id="chat-username-text" style="line-height:1.2;">Yükleniyor...</div>
@@ -185,18 +246,36 @@
                     <button id="send-btn" class="send-btn" disabled>➤</button>
                 </div>
             </div>
-        </main>
 
-        <aside class="sidebar-right">
-            <div class="search-box-right">
-                <span>🔍</span>
-                <input type="text" placeholder="Mozaik'te Ara" onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
-            </div>
-            <div style="background: #f7f9f9; border-radius: 16px; padding: 15px;">
-                <div style="font-size: 20px; font-weight: 800; margin-bottom: 10px;">Mesajlaşma İpuçları</div>
-                <div style="font-size: 15px; color: #536471; line-height: 1.4;">Özel mesajlar uçtan uca hızlı bir şekilde iletilir. Sadece karşılıklı takipleştiğin kişilerle grup kurabilirsin.</div>
-            </div>
         </aside>
+    </div>
+
+    <div class="modal-overlay" id="chat-settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;">Sohbet Ayarları</h3>
+                <button class="close-btn" onclick="document.getElementById('chat-settings-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:15px; margin-top:10px;">
+                <label style="display:flex; align-items:center; gap:10px; font-weight:bold; cursor:pointer;"><input type="checkbox" checked> Okundu bilgisini gönder</label>
+                <label style="display:flex; align-items:center; gap:10px; font-weight:bold; cursor:pointer;"><input type="checkbox" checked> Gelen aramalara izin ver</label>
+                <label style="display:flex; align-items:center; gap:10px; font-weight:bold; cursor:pointer;"><input type="checkbox" checked> Yüksek kaliteli medya yükle</label>
+            </div>
+            <button class="desktop-post-btn" style="width:100%; margin-top:25px;" onclick="document.getElementById('chat-settings-modal').style.display='none'">Kaydet</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="group-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;">Yeni Grup Oluştur</h3>
+                <button class="close-btn" onclick="document.getElementById('group-modal').style.display='none'">&times;</button>
+            </div>
+            <input type="text" id="group-name-input" placeholder="Grup Adı (Örn: Kankalar)" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #eff3f4; outline:none;">
+            <div style="font-weight:bold; font-size:14px; margin-bottom:10px; color:#536471;">Kişileri Seç (Takip Ettiklerin):</div>
+            <div id="group-users-list" style="max-height:200px; overflow-y:auto; border:1px solid #eff3f4; border-radius:8px; padding:5px;"></div>
+            <button class="desktop-post-btn" style="width:100%; margin-top:15px;" id="create-group-btn">Grubu Oluştur</button>
+        </div>
     </div>
 
     <div class="call-overlay" id="call-overlay">
@@ -229,7 +308,7 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
         let currentUser = null; let myUsername = null; let chatId = null; 
-        let allUsersData = {}; let activeChats = []; 
+        let allUsersData = {}; let activeChats = []; let myFollowing = [];
         let currentReplyData = null; let typingTimeout = null;
 
         let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let isCallVideo = false;
@@ -240,9 +319,24 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
+        const targetGroupId = urlParams.get('group');
 
+        // YENİ EKRAN YÖNETİMİ MANTIĞI
+        window.showNewChatScreen = function() {
+            document.getElementById('chat-empty-state').style.display = 'none';
+            document.getElementById('chat-view').style.display = 'none';
+            document.getElementById('new-chat-state').style.display = 'flex';
+            document.body.classList.add('chat-active'); // Mobil için sağ sütunu öne getir
+        };
+        window.closeNewChatScreen = function() {
+            document.getElementById('new-chat-state').style.display = 'none';
+            document.getElementById('chat-empty-state').style.display = 'flex';
+            document.body.classList.remove('chat-active');
+        };
+
+        // FOTOĞRAF KONTROL
         document.getElementById('chat-image-input').addEventListener('change', (e) => {
-            if(e.target.files.length > 0) { document.getElementById('send-btn').disabled = false; }
+            if(e.target.files.length > 0) { document.getElementById('send-btn').disabled = false; document.getElementById('img-upload-label').style.color = '#2ecc71'; }
         });
         
         document.getElementById('msg-input').addEventListener('input', (e) => {
@@ -250,306 +344,331 @@
             else if (document.getElementById('chat-image-input').files.length === 0) document.getElementById('send-btn').disabled = true;
         });
 
-        if (!targetUsername) {
-            document.getElementById('inbox-view').style.display = 'flex'; document.getElementById('chat-view').style.display = 'none';
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
-                    document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
-                    document.getElementById('mobile-profile-link').href = `profile.html?user=${myUsername}`;
-                    onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(d => { allUsersData[d.id] = d.data(); }); updateInboxDisplay(); });
-                    onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { activeChats = []; snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data() }); }); updateInboxDisplay(); });
-                } else { window.location.href = "index.html"; }
-            });
-
-            document.getElementById('dm-search-input').addEventListener('input', updateInboxDisplay);
-
-            function updateInboxDisplay() {
-                const text = document.getElementById('dm-search-input').value.toLowerCase().trim();
-                const container = document.getElementById('dm-list'); container.innerHTML = '';
+        // =====================================
+        // SİSTEM BAŞLANGICI VE INBOX
+        // =====================================
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
+                document.getElementById('mobile-profile-link').href = `profile.html?user=${myUsername}`;
                 
-                let allConversations = [...activeChats];
-                allConversations.sort((a, b) => { let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0; let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0; return timeB - timeA; });
+                onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(d => { allUsersData[d.id] = d.data(); }); updateInboxDisplay(); });
+                onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { activeChats = []; snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data() }); }); updateInboxDisplay(); });
                 
-                let filteredConversations = allConversations;
-                if(text) { filteredConversations = allConversations.filter(c => { const otherUser = c.participants.find(p => p !== myUsername); return otherUser && otherUser.toLowerCase().includes(text); }); }
+                onSnapshot(doc(db, "users", myUsername), (docSnap) => { if (docSnap.exists()) { myFollowing = docSnap.data().following || []; } });
 
-                if (filteredConversations.length > 0) {
-                    filteredConversations.forEach(conv => {
-                        const otherUser = conv.participants.find(p => p !== myUsername); const uData = allUsersData[otherUser] || {};
-                        const title = `${uData.fullName || otherUser} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
-                        const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤';
-                        const link = `chat.html?user=${otherUser}`;
-                        
-                        let isUnread = (conv.lastSender && conv.lastSender !== myUsername); 
-                        let timeAgoStr = ""; if(conv.updatedAt) { const date = conv.updatedAt.toDate(); timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); }
-                        
-                        let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı'; 
-                        if(lastMsgText.includes('https://i.ibb.co')) lastMsgText = '📷 Fotoğraf';
-                        
-                        let subtitleHtml = isUnread ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` : `<span>${lastMsgText}</span>`;
-                        container.innerHTML += `
-                            <a href="${link}" class="dm-user-card">
-                                <div class="dm-avatar">${avatar}</div>
-                                <div class="dm-info">
-                                    <div class="dm-username">${title}</div>
-                                    <div class="dm-subtitle" style="font-size:13px;">@${otherUser} · ${subtitleHtml}</div>
-                                </div>
-                                <div class="time-badge">${timeAgoStr}</div>
-                            </a>`;
-                    });
+                // EĞER URL'DE SOHBET VARSA
+                if (targetUsername || targetGroupId) {
+                    document.body.classList.add('chat-active');
+                    document.getElementById('chat-empty-state').style.display = 'none';
+                    document.getElementById('new-chat-state').style.display = 'none';
+                    document.getElementById('chat-view').style.display = 'flex';
+                    setupActiveChat();
                 }
-                
-                if (text) {
-                    const activeUsernames = activeChats.map(c => c.participants.find(p => p !== myUsername));
-                    const searchResults = Object.keys(allUsersData).filter(uid => uid !== myUsername && !activeUsernames.includes(uid) && uid.toLowerCase().includes(text));
-                    if (searchResults.length > 0) {
-                        container.innerHTML += '<div style="font-size:13px; font-weight:bold; color:#0f1419; margin:15px 0 10px 15px;">DİĞER KİŞİLER</div>';
-                        searchResults.forEach(uid => {
-                            const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤';
-                            const title = `${uData.fullName || uid} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
-                            container.innerHTML += `<a href="chat.html?user=${uid}" class="dm-user-card"><div class="dm-avatar">${avatar}</div><div class="dm-info"><div class="dm-username">${title}</div><div class="dm-subtitle">@${uid}</div></div></a>`;
-                        });
-                    }
-                }
-            }
 
-        } else {
-            document.getElementById('inbox-view').style.display = 'none'; document.getElementById('chat-view').style.display = 'flex';
+            } else { window.location.href = "index.html"; }
+        });
 
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
-                    document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
-                    document.getElementById('mobile-profile-link').href = `profile.html?user=${myUsername}`;
+        // 1. INBOX ARAMA (Sadece mevcut sohbetleri filtreler)
+        document.getElementById('dm-search-input').addEventListener('input', updateInboxDisplay);
+        function updateInboxDisplay() {
+            const text = document.getElementById('dm-search-input').value.toLowerCase().trim();
+            const container = document.getElementById('dm-list'); container.innerHTML = '';
+            
+            let allConversations = [...activeChats];
+            allConversations.sort((a, b) => { let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0; let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0; return timeB - timeA; });
+            
+            let filteredConversations = allConversations;
+            if(text) { filteredConversations = allConversations.filter(c => { const otherUser = c.participants.find(p => p !== myUsername); return otherUser && otherUser.toLowerCase().includes(text); }); }
+
+            if (filteredConversations.length > 0) {
+                filteredConversations.forEach(conv => {
+                    const otherUser = conv.participants.find(p => p !== myUsername); const uData = allUsersData[otherUser] || {};
+                    const title = `${uData.fullName || otherUser} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
+                    const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤';
+                    const link = `chat.html?user=${otherUser}`;
                     
-                    if (targetUsername === myUsername) window.location.href = `profile.html?user=${myUsername}`;
-                    chatId = [myUsername, targetUsername].sort().join('_');
+                    let isUnread = (conv.lastSender && conv.lastSender !== myUsername); 
+                    let timeAgoStr = ""; if(conv.updatedAt) { const date = conv.updatedAt.toDate(); timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); }
                     
-                    try { 
-                        const uSnap = await getDoc(doc(db, "users", targetUsername)); 
-                        if (uSnap.exists()) {
-                            const data = uSnap.data();
-                            document.getElementById('chat-username-text').innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span style="color:#1da1f2; font-size:16px;">☑️</span>' : ''}`;
-                            document.getElementById('chat-subtitle').innerText = `@${targetUsername}`;
-                            if (data.avatarUrl) document.getElementById('chat-avatar').innerHTML = `<img src="${data.avatarUrl}">`; 
-                        }
-                    } catch(e) {}
-
-                    const chatDocRef = doc(db, "chats", chatId);
-                    onSnapshot(chatDocRef, (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data(); const typingObj = data.typing || {}; let typingUsers = [];
-                            for (let usr in typingObj) { if (usr !== myUsername && typingObj[usr] === true) typingUsers.push(usr); }
-                            const indicator = document.getElementById('typing-indicator'); const subtitle = document.getElementById('chat-subtitle');
-                            if (typingUsers.length > 0) { subtitle.style.display = 'none'; indicator.style.display = 'block'; } 
-                            else { indicator.style.display = 'none'; subtitle.style.display = 'block'; }
-                        }
-                    });
-
-                    // WEBRTC DİNLEYİCİSİ
-                    onSnapshot(collection(db, "chats", chatId, "calls"), (snapshot) => {
-                        snapshot.docChanges().forEach(async (change) => {
-                            const callData = change.doc.data();
-                            if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
-                                currentCallDocId = change.doc.id; isCallVideo = callData.type === 'video';
-                                document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
-                                document.getElementById('accept-call-btn').style.display = 'block'; callOverlay.style.display = 'flex';
-                                if(isCallVideo) { document.getElementById('video-container').style.display = 'flex'; } else { document.getElementById('video-container').style.display = 'none'; }
-                            }
-                            if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername) {
-                                document.getElementById('call-status-text').innerText = "Bağlandı";
-                                const desc = new RTCSessionDescription(callData.answer); await peerConnection.setRemoteDescription(desc);
-                            }
-                            if (change.type === 'modified' && callData.status === 'ended') { endCallUI(); }
-                        });
-                    });
-
-                    loadMessages();
-                } else { window.location.href = "index.html"; }
-            });
-
-            document.getElementById('delete-chat-btn').addEventListener('click', async () => {
-                if(confirm("Bu sohbeti kalıcı olarak silmek istediğinize emin misiniz?")) {
-                    await deleteDoc(doc(db, "chats", chatId)); window.location.href = "chat.html";
-                }
-            });
-
-            window.prepareReply = function(msgId, sender, text) {
-                let summary = text; if (text.includes('i.ibb.co')) summary = '📷 Fotoğraf';
-                currentReplyData = { id: msgId, sender: sender, text: summary };
-                document.getElementById('reply-preview-sender').innerText = sender;
-                document.getElementById('reply-preview-msg').innerText = summary.length > 50 ? summary.substring(0, 50) + "..." : summary;
-                document.getElementById('reply-preview-box').style.display = 'flex'; document.getElementById('msg-input').focus();
-            };
-
-            window.cancelReply = function() { currentReplyData = null; document.getElementById('reply-preview-box').style.display = 'none'; };
-
-            window.deleteMessage = async function(msgId) {
-                if(confirm("Mesajı silmek istediğinize emin misiniz?")) { await deleteDoc(doc(db, "chats", chatId, "messages", msgId)); }
-            };
-
-            window.editMessage = async function(msgId, oldText, timeMillis) {
-                const now = Date.now();
-                if (now - timeMillis > 900000) { alert("Sadece son 15 dakika içinde gönderilen mesajları düzenleyebilirsiniz!"); return; }
-                const newText = prompt("Mesajınızı düzenleyin:", oldText);
-                if (newText !== null && newText.trim() !== "" && newText !== oldText) { await updateDoc(doc(db, "chats", chatId, "messages", msgId), { text: newText.trim(), isEdited: true }); }
-            };
-
-            function loadMessages() {
-                const messagesRef = collection(db, "chats", chatId, "messages");
-                onSnapshot(query(messagesRef, orderBy("createdAt", "asc")), (snapshot) => {
-                    const messagesContainer = document.getElementById('chat-messages');
-                    messagesContainer.innerHTML = ''; 
-
-                    snapshot.forEach((docSnap) => {
-                        const data = docSnap.data(); const isMe = data.sender === myUsername;
-                        
-                        if (!isMe && !data.isRead) { updateDoc(doc(messagesRef, docSnap.id), { isRead: true }).catch(e=>{}); }
-                        
-                        let timeString = ''; let timeMillis = 0;
-                        if (data.createdAt) {
-                            const date = data.createdAt.toDate(); timeMillis = data.createdAt.toMillis();
-                            timeString = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
-                        }
-
-                        let tickHtml = '';
-                        if (isMe) {
-                            const isRead = data.isRead === true;
-                            // X tarzı mavi renkli okunma bilgisi (basit)
-                            tickHtml = `<span class="msg-tick" style="color:${isRead ? (isMe ? 'white' : '#1da1f2') : 'rgba(255,255,255,0.7)'};">${isRead ? '✓✓' : '✓'}</span>`;
-                        }
-
-                        let replyHtml = ''; if (data.replyTo) replyHtml = `<div class="quoted-msg"><b>@${data.replyTo.sender}</b>: ${data.replyTo.text}</div>`;
-                        let imageHtml = ''; if (data.imageUrl) imageHtml = `<img src="${data.imageUrl}" class="msg-image">`;
-
-                        const safeText = data.text ? data.text.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
-                        
-                        let actionsHtml = `<div class="msg-actions">`;
-                        actionsHtml += `<span class="action-link" onclick="window.prepareReply('${docSnap.id}', '${data.sender}', '${safeText}')">Yanıtla</span>`;
-                        if (isMe) {
-                            if(!data.imageUrl) actionsHtml += `<span class="action-link" onclick="window.editMessage('${docSnap.id}', '${safeText}', ${timeMillis})">Düzenle</span>`;
-                            actionsHtml += `<span class="action-link danger" onclick="window.deleteMessage('${docSnap.id}')">Sil</span>`;
-                        }
-                        actionsHtml += `</div>`;
-
-                        const msgDiv = document.createElement('div');
-                        msgDiv.className = `message-wrapper ${isMe ? 'wrapper-me' : 'wrapper-them'}`;
-                        msgDiv.innerHTML = `
-                            <div class="message-bubble ${isMe ? 'msg-me' : 'msg-them'}">
-                                ${replyHtml}
-                                ${imageHtml}
-                                ${data.text ? `<div>${data.text}</div>` : ''}
-                                <div class="msg-meta">
-                                    ${data.isEdited ? '<span class="msg-edited">(düzenlendi)</span>' : ''}
-                                    <div class="msg-time">${timeString}</div>
-                                    ${tickHtml}
-                                </div>
+                    let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı'; 
+                    if(lastMsgText.includes('https://i.ibb.co')) lastMsgText = '📷 Fotoğraf';
+                    
+                    let subtitleHtml = isUnread ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` : `<span>${lastMsgText}</span>`;
+                    container.innerHTML += `
+                        <a href="${link}" class="dm-user-card ${otherUser === targetUsername ? 'active' : ''}">
+                            <div class="dm-avatar">${avatar}</div>
+                            <div class="dm-info">
+                                <div class="dm-username">${title}</div>
+                                <div class="dm-subtitle" style="font-size:13px;">@${otherUser} · ${subtitleHtml}</div>
                             </div>
-                            ${actionsHtml}
-                        `;
-                        messagesContainer.appendChild(msgDiv);
-                    });
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            <div class="time-badge">${timeAgoStr}</div>
+                        </a>`;
                 });
+            } else {
+                container.innerHTML = '<p style="text-align:center; color:#888; padding:20px;">Sohbet bulunamadı.</p>';
             }
-
-            const msgInput = document.getElementById('msg-input');
-            const sendBtn = document.getElementById('send-btn');
-            const imgInput = document.getElementById('chat-image-input');
-
-            msgInput.addEventListener('input', () => {
-                const chatRef = doc(db, "chats", chatId);
-                updateDoc(chatRef, { [`typing.${myUsername}`]: true }).catch(e=>{});
-                clearTimeout(typingTimeout); typingTimeout = setTimeout(() => { updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{}); }, 1500);
-            });
-
-            async function sendMessage() {
-                const text = msgInput.value.trim(); const file = imgInput.files[0];
-                if (!text && !file) return;
-
-                sendBtn.disabled = true; msgInput.value = ''; 
-                
-                let imgUrl = null;
-                if(file) {
-                    sendBtn.innerText = "...";
-                    const formData = new FormData(); formData.append("image", file);
-                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-                    const data = await res.json(); imgUrl = data.data.url;
-                }
-                
-                await sendActualMessage(text, imgUrl);
-                
-                sendBtn.disabled = false; sendBtn.innerText = "➤"; msgInput.focus(); imgInput.value = ''; window.cancelReply();
-            }
-
-            async function sendActualMessage(text, imgUrl) {
-                const chatRef = doc(db, "chats", chatId);
-                const messagesRef = collection(db, "chats", chatId, "messages");
-                
-                let finalTxt = text;
-                if(!text && imgUrl) finalTxt = "📷 Fotoğraf";
-                
-                const msgData = { 
-                    text: finalTxt, sender: myUsername, createdAt: serverTimestamp(), imageUrl: imgUrl,
-                    replyTo: currentReplyData ? { sender: currentReplyData.sender, text: currentReplyData.text } : null,
-                    isEdited: false, isRead: false
-                };
-
-                await addDoc(messagesRef, msgData);
-                await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
-                
-                let summary = text; if(imgUrl) summary = "📷 Fotoğraf";
-                await setDoc(chatRef, { participants: [myUsername, targetUsername], lastMessage: summary, lastSender: myUsername, updatedAt: serverTimestamp() }, { merge: true });
-            }
-
-            sendBtn.addEventListener('click', sendMessage);
-            msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-
-            // WEBRTC ARAMA 
-            document.getElementById('video-call-btn').addEventListener('click', () => startCall(true));
-            document.getElementById('audio-call-btn').addEventListener('click', () => startCall(false));
-
-            async function startCall(isVideo) {
-                isCallVideo = isVideo; document.getElementById('call-status-text').innerText = "Aranıyor..."; document.getElementById('accept-call-btn').style.display = 'none'; callOverlay.style.display = 'flex';
-                if(isVideo) { document.getElementById('video-container').style.display = 'flex'; } else { document.getElementById('video-container').style.display = 'none'; }
-                try {
-                    localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-                    if(isVideo) localVideo.srcObject = localStream;
-                    peerConnection = new RTCPeerConnection(servers);
-                    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                    remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
-                    peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-                    const callDocRef = doc(collection(db, "chats", chatId, "calls")); currentCallDocId = callDocRef.id;
-                    peerConnection.onicecandidate = event => { if(event.candidate) { addDoc(collection(db, "chats", chatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); } };
-                    const offerDescription = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offerDescription);
-                    await setDoc(callDocRef, { offer: { type: offerDescription.type, sdp: offerDescription.sdp }, caller: myUsername, type: isVideo ? 'video' : 'audio', status: 'ringing', createdAt: serverTimestamp() });
-                    onSnapshot(collection(db, "chats", chatId, "calls", currentCallDocId, "calleeCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if(change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); peerConnection.addIceCandidate(candidate); } }); });
-                } catch(e) { alert("Kamera/Mikrofon erişimi reddedildi!"); endCallUI(); }
-            }
-
-            document.getElementById('accept-call-btn').addEventListener('click', async () => {
-                document.getElementById('accept-call-btn').style.display = 'none'; document.getElementById('call-status-text').innerText = "Bağlanıyor...";
-                const callDocRef = doc(db, "chats", chatId, "calls", currentCallDocId); const callData = (await getDoc(callDocRef)).data();
-                try {
-                    localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
-                    if(isCallVideo) localVideo.srcObject = localStream;
-                    peerConnection = new RTCPeerConnection(servers);
-                    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                    remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
-                    peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-                    peerConnection.onicecandidate = event => { if(event.candidate) { addDoc(collection(db, "chats", chatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); } };
-                    const offerDescription = callData.offer; await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
-                    const answerDescription = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answerDescription);
-                    await updateDoc(callDocRef, { answer: { type: answerDescription.type, sdp: answerDescription.sdp }, status: 'answered' });
-                    onSnapshot(collection(db, "chats", chatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if(change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); peerConnection.addIceCandidate(candidate); } }); });
-                    document.getElementById('call-status-text').innerText = "Bağlandı";
-                } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
-            });
-
-            document.getElementById('end-call-btn').addEventListener('click', async () => { if(currentCallDocId) { await updateDoc(doc(db, "chats", chatId, "calls", currentCallDocId), { status: 'ended' }); } endCallUI(); });
-            function endCallUI() { callOverlay.style.display = 'none'; if(localStream) { localStream.getTracks().forEach(track => track.stop()); } if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } if(peerConnection) { peerConnection.close(); } localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; localVideo.srcObject = null; remoteVideo.srcObject = null; }
         }
+
+        // 2. YENİ KİŞİ ARAMA (Sağ sütundaki yeni sohbet ekranında)
+        document.getElementById('new-chat-search').addEventListener('input', (e) => {
+            const text = e.target.value.toLowerCase().trim();
+            const container = document.getElementById('new-chat-results'); container.innerHTML = '';
+            if(!text) return;
+
+            const searchResults = Object.keys(allUsersData).filter(uid => uid !== myUsername && uid.toLowerCase().includes(text));
+            if (searchResults.length > 0) {
+                searchResults.forEach(uid => {
+                    const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤';
+                    const title = `${uData.fullName || uid} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
+                    container.innerHTML += `<a href="chat.html?user=${uid}" class="dm-user-card" style="border-bottom:none; border-top:1px solid #eff3f4;"><div class="dm-avatar">${avatar}</div><div class="dm-info"><div class="dm-username">${title}</div><div class="dm-subtitle">@${uid}</div></div></a>`;
+                });
+            } else {
+                container.innerHTML = '<p style="text-align:center; color:#888; padding:20px;">Kişi bulunamadı.</p>';
+            }
+        });
+
+        // 3. GRUP KURMA İŞLEMİ
+        document.getElementById('open-group-modal').addEventListener('click', () => {
+            document.getElementById('group-modal').style.display = 'flex';
+            const listDiv = document.getElementById('group-users-list'); listDiv.innerHTML = '';
+            if(myFollowing.length === 0) { listDiv.innerHTML = '<div style="padding:10px; color:#888; text-align:center;">Önce birilerini takip etmelisin!</div>'; return; }
+            myFollowing.forEach(uid => {
+                const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
+                listDiv.innerHTML += `<label style="display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid #f0f0f0;"><div style="display:flex; align-items:center; gap:10px; font-weight:bold;"><div style="width:35px; height:35px; border-radius:50%; overflow:hidden;">${avatar}</div>@${uid}</div><input type="checkbox" class="group-member-checkbox" value="${uid}"></label>`;
+            });
+        });
+
+        // =====================================
+        // AKTİF SOHBET PENCERESİ YÜKLEMESİ
+        // =====================================
+        async function setupActiveChat() {
+            if (targetUsername) {
+                if (targetUsername === myUsername) window.location.href = `profile.html?user=${myUsername}`;
+                chatId = [myUsername, targetUsername].sort().join('_');
+                
+                try { 
+                    const uSnap = await getDoc(doc(db, "users", targetUsername)); 
+                    if (uSnap.exists()) {
+                        const data = uSnap.data();
+                        document.getElementById('chat-username-text').innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span style="color:#1da1f2; font-size:16px;">☑️</span>' : ''}`;
+                        document.getElementById('chat-subtitle').innerText = `@${targetUsername}`;
+                        if (data.avatarUrl) document.getElementById('chat-avatar').innerHTML = `<img src="${data.avatarUrl}">`; 
+                    }
+                } catch(e) {}
+            }
+
+            const chatDocRef = doc(db, "chats", chatId);
+            onSnapshot(chatDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data(); const typingObj = data.typing || {}; let typingUsers = [];
+                    for (let usr in typingObj) { if (usr !== myUsername && typingObj[usr] === true) typingUsers.push(usr); }
+                    const indicator = document.getElementById('typing-indicator'); const subtitle = document.getElementById('chat-subtitle');
+                    if (typingUsers.length > 0) { subtitle.style.display = 'none'; indicator.style.display = 'block'; } 
+                    else { indicator.style.display = 'none'; subtitle.style.display = 'block'; }
+                }
+            });
+
+            // WEBRTC DİNLEYİCİSİ
+            onSnapshot(collection(db, "chats", chatId, "calls"), (snapshot) => {
+                snapshot.docChanges().forEach(async (change) => {
+                    const callData = change.doc.data();
+                    if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
+                        currentCallDocId = change.doc.id; isCallVideo = callData.type === 'video';
+                        document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
+                        document.getElementById('accept-call-btn').style.display = 'block'; callOverlay.style.display = 'flex';
+                        if(isCallVideo) { document.getElementById('video-container').style.display = 'flex'; } else { document.getElementById('video-container').style.display = 'none'; }
+                    }
+                    if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername) {
+                        document.getElementById('call-status-text').innerText = "Bağlandı";
+                        const desc = new RTCSessionDescription(callData.answer); await peerConnection.setRemoteDescription(desc);
+                    }
+                    if (change.type === 'modified' && callData.status === 'ended') { endCallUI(); }
+                });
+            });
+
+            loadMessages();
+        }
+
+        document.getElementById('delete-chat-btn').addEventListener('click', async () => {
+            if(confirm("Sohbeti kalıcı olarak silmek istediğinize emin misiniz?")) {
+                await deleteDoc(doc(db, "chats", chatId)); window.location.href = "chat.html";
+            }
+        });
+
+        window.prepareReply = function(msgId, sender, text) {
+            let summary = text; if (text.includes('i.ibb.co')) summary = '📷 Fotoğraf';
+            currentReplyData = { id: msgId, sender: sender, text: summary };
+            document.getElementById('reply-preview-sender').innerText = sender;
+            document.getElementById('reply-preview-msg').innerText = summary.length > 50 ? summary.substring(0, 50) + "..." : summary;
+            document.getElementById('reply-preview-box').style.display = 'flex'; document.getElementById('msg-input').focus();
+        };
+
+        window.cancelReply = function() { currentReplyData = null; document.getElementById('reply-preview-box').style.display = 'none'; };
+
+        window.deleteMessage = async function(msgId) {
+            if(confirm("Silmek istediğinize emin misiniz?")) { await deleteDoc(doc(db, "chats", chatId, "messages", msgId)); }
+        };
+
+        window.editMessage = async function(msgId, oldText, timeMillis) {
+            const now = Date.now();
+            if (now - timeMillis > 900000) { alert("15 dakika kuralı aşıldı!"); return; }
+            const newText = prompt("Düzenleyin:", oldText);
+            if (newText !== null && newText.trim() !== "" && newText !== oldText) { await updateDoc(doc(db, "chats", chatId, "messages", msgId), { text: newText.trim(), isEdited: true }); }
+        };
+
+        function loadMessages() {
+            const messagesRef = collection(db, "chats", chatId, "messages");
+            onSnapshot(query(messagesRef, orderBy("createdAt", "asc")), (snapshot) => {
+                const messagesContainer = document.getElementById('chat-messages');
+                messagesContainer.innerHTML = ''; 
+
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data(); const isMe = data.sender === myUsername;
+                    
+                    if (!isMe && !data.isRead) { updateDoc(doc(messagesRef, docSnap.id), { isRead: true }).catch(e=>{}); }
+                    
+                    let timeString = ''; let timeMillis = 0;
+                    if (data.createdAt) {
+                        const date = data.createdAt.toDate(); timeMillis = data.createdAt.toMillis();
+                        timeString = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                    }
+
+                    let tickHtml = '';
+                    if (isMe) {
+                        const isRead = data.isRead === true;
+                        tickHtml = `<span class="msg-tick" style="color:${isRead ? '#fff' : 'rgba(255,255,255,0.6)'};">${isRead ? '✓✓' : '✓'}</span>`;
+                    }
+
+                    let replyHtml = ''; if (data.replyTo) replyHtml = `<div class="quoted-msg"><b>@${data.replyTo.sender}</b>: ${data.replyTo.text}</div>`;
+                    let imageHtml = ''; if (data.imageUrl) imageHtml = `<img src="${data.imageUrl}" class="msg-image">`;
+
+                    const safeText = data.text ? data.text.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+                    
+                    let actionsHtml = `<div class="msg-actions">`;
+                    actionsHtml += `<span class="action-link" onclick="window.prepareReply('${docSnap.id}', '${data.sender}', '${safeText}')">Yanıtla</span>`;
+                    if (isMe) {
+                        if(!data.imageUrl) actionsHtml += `<span class="action-link" onclick="window.editMessage('${docSnap.id}', '${safeText}', ${timeMillis})">Düzenle</span>`;
+                        actionsHtml += `<span class="action-link danger" onclick="window.deleteMessage('${docSnap.id}')">Sil</span>`;
+                    }
+                    actionsHtml += `</div>`;
+
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = `message-wrapper ${isMe ? 'wrapper-me' : 'wrapper-them'}`;
+                    msgDiv.innerHTML = `
+                        <div class="message-bubble ${isMe ? 'msg-me' : 'msg-them'}">
+                            ${replyHtml}
+                            ${imageHtml}
+                            ${data.text ? `<div>${data.text}</div>` : ''}
+                            <div class="msg-meta">
+                                ${data.isEdited ? '<span class="msg-edited">(düzenlendi)</span>' : ''}
+                                <div class="msg-time">${timeString}</div>
+                                ${tickHtml}
+                            </div>
+                        </div>
+                        ${actionsHtml}
+                    `;
+                    messagesContainer.appendChild(msgDiv);
+                });
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        }
+
+        const msgInput = document.getElementById('msg-input');
+        const sendBtn = document.getElementById('send-btn');
+        const imgInput = document.getElementById('chat-image-input');
+
+        msgInput.addEventListener('input', () => {
+            const chatRef = doc(db, "chats", chatId);
+            updateDoc(chatRef, { [`typing.${myUsername}`]: true }).catch(e=>{});
+            clearTimeout(typingTimeout); typingTimeout = setTimeout(() => { updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{}); }, 1500);
+        });
+
+        async function sendMessage() {
+            const text = msgInput.value.trim(); const file = imgInput.files[0];
+            if (!text && !file) return;
+
+            sendBtn.disabled = true; msgInput.value = ''; document.getElementById('img-upload-label').style.color = '#1da1f2';
+            
+            let imgUrl = null;
+            if(file) {
+                const formData = new FormData(); formData.append("image", file);
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+                const data = await res.json(); imgUrl = data.data.url;
+            }
+            
+            await sendActualMessage(text, imgUrl);
+            
+            sendBtn.disabled = false; msgInput.focus(); imgInput.value = ''; window.cancelReply();
+        }
+
+        async function sendActualMessage(text, imgUrl) {
+            const chatRef = doc(db, "chats", chatId);
+            const messagesRef = collection(db, "chats", chatId, "messages");
+            
+            let finalTxt = text; if(!text && imgUrl) finalTxt = "📷 Fotoğraf";
+            
+            const msgData = { 
+                text: finalTxt, sender: myUsername, createdAt: serverTimestamp(), imageUrl: imgUrl,
+                replyTo: currentReplyData ? { sender: currentReplyData.sender, text: currentReplyData.text } : null,
+                isEdited: false, isRead: false
+            };
+
+            await addDoc(messagesRef, msgData);
+            await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
+            
+            let summary = text; if(imgUrl) summary = "📷 Fotoğraf";
+            await setDoc(chatRef, { participants: [myUsername, targetUsername], lastMessage: summary, lastSender: myUsername, updatedAt: serverTimestamp() }, { merge: true });
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+        // WEBRTC ARAMA 
+        document.getElementById('video-call-btn').addEventListener('click', () => startCall(true));
+        document.getElementById('audio-call-btn').addEventListener('click', () => startCall(false));
+
+        async function startCall(isVideo) {
+            isCallVideo = isVideo; document.getElementById('call-status-text').innerText = "Aranıyor..."; document.getElementById('accept-call-btn').style.display = 'none'; callOverlay.style.display = 'flex';
+            if(isVideo) { document.getElementById('video-container').style.display = 'flex'; } else { document.getElementById('video-container').style.display = 'none'; }
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+                if(isVideo) localVideo.srcObject = localStream;
+                peerConnection = new RTCPeerConnection(servers);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
+                peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
+                const callDocRef = doc(collection(db, "chats", chatId, "calls")); currentCallDocId = callDocRef.id;
+                peerConnection.onicecandidate = event => { if(event.candidate) { addDoc(collection(db, "chats", chatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); } };
+                const offerDescription = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offerDescription);
+                await setDoc(callDocRef, { offer: { type: offerDescription.type, sdp: offerDescription.sdp }, caller: myUsername, type: isVideo ? 'video' : 'audio', status: 'ringing', createdAt: serverTimestamp() });
+                onSnapshot(collection(db, "chats", chatId, "calls", currentCallDocId, "calleeCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if(change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); peerConnection.addIceCandidate(candidate); } }); });
+            } catch(e) { alert("Erişim reddedildi!"); endCallUI(); }
+        }
+
+        document.getElementById('accept-call-btn').addEventListener('click', async () => {
+            document.getElementById('accept-call-btn').style.display = 'none'; document.getElementById('call-status-text').innerText = "Bağlanıyor...";
+            const callDocRef = doc(db, "chats", chatId, "calls", currentCallDocId); const callData = (await getDoc(callDocRef)).data();
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
+                if(isCallVideo) localVideo.srcObject = localStream;
+                peerConnection = new RTCPeerConnection(servers);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
+                peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
+                peerConnection.onicecandidate = event => { if(event.candidate) { addDoc(collection(db, "chats", chatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); } };
+                const offerDescription = callData.offer; await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
+                const answerDescription = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answerDescription);
+                await updateDoc(callDocRef, { answer: { type: answerDescription.type, sdp: answerDescription.sdp }, status: 'answered' });
+                onSnapshot(collection(db, "chats", chatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if(change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); peerConnection.addIceCandidate(candidate); } }); });
+                document.getElementById('call-status-text').innerText = "Bağlandı";
+            } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
+        });
+
+        document.getElementById('end-call-btn').addEventListener('click', async () => { if(currentCallDocId) { await updateDoc(doc(db, "chats", chatId, "calls", currentCallDocId), { status: 'ended' }); } endCallUI(); });
+        function endCallUI() { callOverlay.style.display = 'none'; if(localStream) { localStream.getTracks().forEach(track => track.stop()); } if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } if(peerConnection) { peerConnection.close(); } localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; localVideo.srcObject = null; remoteVideo.srcObject = null; }
+
     </script>
 </body>
 </html>
