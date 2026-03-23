@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kullanıcı Profili</title>
     <style>
+        /* GENEL SIFIRLAMA VE X RENKLERİ */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #fff; margin: 0; padding: 0; color: #0f1419; }
         * { box-sizing: border-box; }
         a { text-decoration: none; color: inherit; }
 
         .app-container { display: flex; justify-content: center; max-width: 1250px; margin: 0 auto; min-height: 100vh; }
         
-        .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; }
+        /* SOL MENÜ */
+        .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; flex-shrink: 0; }
         .logo-desktop { font-size: 28px; font-weight: 800; padding: 10px; margin-bottom: 10px; display: inline-block; color: #1da1f2; }
         .desktop-nav { display: flex; flex-direction: column; gap: 5px; }
         .desktop-nav-item { display: flex; align-items: center; gap: 15px; font-size: 20px; padding: 12px; border-radius: 30px; transition: 0.2s; cursor: pointer; width: fit-content; font-weight: 500; }
@@ -20,37 +22,52 @@
         .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
         .desktop-post-btn:hover { background: #1a91da; }
 
-        .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; }
-        .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; padding: 5px 15px; display: flex; align-items: center; gap: 20px; }
-        .back-arrow { font-size: 20px; cursor: pointer; padding: 10px; border-radius: 50%; transition: 0.2s; }
+        /* ORTA SÜTUN */
+        .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; flex-shrink: 0; }
+        
+        /* HEADER (Geri Tuşu ve İsim) */
+        .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; padding: 5px 15px; display: flex; align-items: center; gap: 20px; min-height: 53px;}
+        .back-arrow { font-size: 20px; cursor: pointer; padding: 8px 12px; border-radius: 50%; transition: 0.2s; display: flex; justify-content: center; align-items: center; font-weight: bold;}
         .back-arrow:hover { background: #eff3f4; }
+        .header-info { display: flex; flex-direction: column; }
+        .header-name { font-weight: 800; font-size: 20px; color: #0f1419; line-height: 1.2; }
+        .header-post-count { font-size: 13px; color: #536471; }
 
-        /* X PROFİL TASARIMI */
-        .profile-banner { height: 200px; background-color: #cfd9de; width: 100%; }
+        /* X PROFİL TASARIMI (KAPAK VE AVATAR) */
+        .profile-banner { height: 200px; background-color: #cfd9de; width: 100%; position: relative; }
+        .profile-banner img { width: 100%; height: 100%; object-fit: cover; }
+        
         .profile-header-box { padding: 15px; position: relative; }
-        .profile-avatar { width: 135px; height: 135px; border-radius: 50%; border: 4px solid white; background: #eee; margin-top: -80px; overflow: hidden; display: flex; justify-content: center; align-items: center; font-size: 50px; }
+        .profile-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-top: -80px; margin-bottom: 10px; }
+        
+        .profile-avatar { width: 140px; height: 140px; border-radius: 50%; border: 4px solid white; background: #eee; overflow: hidden; display: flex; justify-content: center; align-items: center; font-size: 50px; z-index: 2; position: relative;}
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
         
-        .profile-top-actions { position: absolute; right: 15px; top: 15px; display: flex; gap: 10px; }
+        .profile-top-actions { display: flex; gap: 10px; margin-top: 80px; align-items: center; }
         .edit-profile-btn { background: white; color: #0f1419; border: 1px solid #cfd9de; padding: 8px 16px; border-radius: 30px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; }
         .edit-profile-btn:hover { background: #eff3f4; }
         .follow-btn { background: #0f1419; color: white; border: none; padding: 8px 16px; border-radius: 30px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; }
         .follow-btn:hover { background: #272c30; }
         .unfollow-btn { background: white; color: #0f1419; border: 1px solid #cfd9de; padding: 8px 16px; border-radius: 30px; font-weight: bold; font-size: 15px; cursor: pointer; }
         .unfollow-btn:hover { border-color: #f4212e; color: #f4212e; background: #ffe9e9; }
-        .icon-action-btn { background: white; border: 1px solid #cfd9de; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; }
+        .icon-action-btn { background: white; border: 1px solid #cfd9de; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; transition: 0.2s;}
+        .icon-action-btn:hover { background: #eff3f4; }
 
-        .profile-name { font-size: 20px; font-weight: 900; margin-top: 10px; display: flex; align-items: center; gap: 4px; }
+        /* KULLANICI BİLGİLERİ */
+        .profile-name { font-size: 20px; font-weight: 900; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
         .profile-handle { font-size: 15px; color: #536471; margin-bottom: 12px; }
         .verified-badge { color: #1da1f2; font-size: 18px; }
         
-        .profile-bio { font-size: 15px; line-height: 1.4; margin-bottom: 12px; word-wrap: break-word; }
+        .profile-bio { font-size: 15px; line-height: 1.4; margin-bottom: 12px; word-wrap: break-word; color: #0f1419;}
         .profile-details { display: flex; flex-wrap: wrap; gap: 15px; font-size: 15px; color: #536471; margin-bottom: 12px; }
         .profile-stats { display: flex; gap: 20px; font-size: 15px; }
-        .stat-item { cursor: pointer; }
+        .stat-item { cursor: pointer; color: #536471;}
         .stat-item:hover { text-decoration: underline; }
         .stat-number { font-weight: bold; color: #0f1419; }
 
+        .private-badge { background: #eff3f4; color: #0f1419; font-size: 12px; padding: 5px 10px; border-radius: 20px; font-weight: bold; display: inline-block; margin-bottom: 10px;}
+
+        /* SEKMELER */
         .feed-tabs { display: flex; width: 100%; height: 53px; border-bottom: 1px solid #eff3f4; margin-top: 15px; }
         .feed-tab { flex: 1; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: 500; color: #536471; transition: 0.2s; position: relative; }
         .feed-tab:hover { background-color: #eff3f4; }
@@ -58,7 +75,7 @@
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; display: none; width: 60px; }
         .feed-tab.active .tab-indicator { display: block; }
 
-        /* POST STİLLERİ (Ana Akış ile Aynı) */
+        /* POST STİLLERİ (X AKIŞI) */
         .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; }
         .post:hover { background: #f7f9f9; }
         .post-left { flex-shrink: 0; }
@@ -67,34 +84,43 @@
         .post-right { flex: 1; overflow: hidden; }
         .post-header-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
         .author-group { display: flex; align-items: center; gap: 4px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .author-name { font-weight: bold; color: #0f1419; }
-        .author-username, .post-time { color: #536471; }
+        .author-name { font-weight: bold; color: #0f1419; text-decoration:none; }
+        .author-username, .post-time { color: #536471; text-decoration:none; }
         .post-owner-actions button { background: none; border: none; color: #536471; cursor: pointer; border-radius: 50%; padding: 5px; transition: 0.2s; font-size: 16px; }
         .post-owner-actions button:hover { background: #e1e8ed; color: #e74c3c; }
         .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; }
         .hashtag { color: #1da1f2; text-decoration: none; }
-        .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; }
-        .post-image { width: 100%; display: block; }
+        .hashtag:hover { text-decoration:underline; }
+        .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; position: relative;}
+        .post-image { width: 100%; max-height:400px; object-fit:cover; display: block; }
+        
+        /* AKSİYON BUTONLARI */
         .post-footer-actions { display: flex; justify-content: space-between; max-width: 425px; margin-top: 10px; color: #536471; }
         .action-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; }
         .action-item:hover { color: #1da1f2; }
         .action-item.like-box:hover { color: #f91880; }
         .action-item.liked { color: #f91880; }
         .action-icon { padding: 8px; border-radius: 50%; transition: 0.2s; }
+        .action-item:hover .action-icon { background: #e7f5fe; }
+        .action-item.like-box:hover .action-icon { background: #fbeef5; }
 
+        /* YORUM MANTIĞI */
         .comments-section { display: none; margin-top: 15px; border-top: 1px solid #eff3f4; padding-top: 15px; }
         .comment-item { display: flex; gap: 10px; margin-bottom: 10px; font-size: 14px; }
         .comment-author { font-weight: bold; color: #0f1419; text-decoration: none; }
         .comment-input-box { display: flex; gap: 8px; margin-top: 10px; }
-        .comment-input { flex-grow: 1; padding: 10px; border: 1px solid #eff3f4; border-radius: 20px; font-size: 14px; outline: none; background: #f7f9f9;}
-        .comment-send-btn { background: #1da1f2; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        .comment-input { flex-grow: 1; padding: 10px 15px; border: 1px solid #eff3f4; border-radius: 20px; font-size: 14px; outline: none; background: #f7f9f9;}
+        .comment-send-btn { background: #1da1f2; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        .comment-send-btn:hover { background: #1a91da; }
 
+        /* SAĞ SÜTUN (Arama vb) */
         .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
         .trends-box { background: #f7f9f9; border-radius: 16px; padding: 15px; margin-top: 10px; }
 
+        /* MOBİL TEPSİ VE FAB BUTONU */
         .fab-button { display: none; position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; background: #1da1f2; color: white; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 1000; align-items: center; justify-content: center; }
         .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #eff3f4; z-index: 1000; padding: 10px 0; justify-content: space-around; }
-        .nav-item { color: #536471; font-size: 24px; padding: 5px 20px; border-radius: 30px; transition: 0.2s; }
+        .nav-item { color: #536471; font-size: 24px; padding: 5px 20px; border-radius: 30px; transition: 0.2s; text-decoration: none;}
         .nav-item.active { color: #0f1419; font-weight: bold; }
 
         @media (max-width: 1000px) {
@@ -104,14 +130,16 @@
             .fab-button { display: flex; }
         }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; }
-        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #0f1419; }
+        /* SİSTEM MODALLARI VE ANİMASYONLAR */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: sticky; top:-20px; background:white; z-index:10; padding-bottom:10px; border-bottom:1px solid #eff3f4;}
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #0f1419; display:flex; justify-content:center; align-items:center; width:40px; height:40px; border-radius:50%;}
+        .close-btn:hover { background: #eff3f4; }
         
-        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; border: 1px solid #eff3f4; border-radius: 8px; font-family: inherit; font-size: 14px; outline:none; background:white; transition: 0.2s;}
+        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; border: 1px solid #eff3f4; border-radius: 8px; font-family: inherit; font-size: 15px; outline:none; background:white; transition: 0.2s;}
         .modal-input:focus { border-color: #1da1f2; }
-        .modal-btn-save { background: #0f1419; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; }
+        .modal-btn-save { background: #0f1419; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; font-size:15px;}
 
         .user-row { display: flex; align-items: center; gap: 12px; padding: 10px; text-decoration: none; color: #0f1419; transition: 0.2s; border-bottom: 1px solid #eff3f4; }
         .user-row:hover { background: #f7f9f9; }
@@ -136,23 +164,26 @@
 
         <main class="feed-main">
             <div class="header-sticky">
-                <div class="back-arrow" onclick="window.history.back()">⬅</div>
-                <div>
-                    <div style="font-weight: 800; font-size: 20px;" id="header-name">Yükleniyor...</div>
-                    <div style="font-size: 13px; color: #536471;" id="header-post-count">0 gönderi</div>
+                <div class="back-arrow" onclick="window.location.href='feed.html'">⬅</div>
+                <div class="header-info">
+                    <div class="header-name" id="header-name">Yükleniyor...</div>
+                    <div class="header-post-count" id="header-post-count">0 gönderi</div>
                 </div>
             </div>
 
-            <div class="profile-banner"></div>
+            <div class="profile-banner" id="profile-banner">
+                </div>
             
             <div class="profile-header-box">
-                <div class="profile-avatar" id="profile-avatar">👤</div>
-                
-                <div class="profile-top-actions" id="action-buttons-container">
-                    </div>
+                <div class="profile-top-row">
+                    <div class="profile-avatar" id="profile-avatar">👤</div>
+                    <div class="profile-top-actions" id="action-buttons-container">
+                        </div>
+                </div>
 
                 <div class="profile-name" id="display-fullname">Yükleniyor...</div>
                 <div class="profile-handle" id="display-username">@bekleniyor</div>
+                <div id="private-badge-container"></div>
                 
                 <div class="profile-bio" id="display-bio"></div>
                 
@@ -165,23 +196,34 @@
 
                 <div class="feed-tabs">
                     <div class="feed-tab active">Gönderiler <div class="tab-indicator"></div></div>
-                    <div class="feed-tab" onclick="alert('Yanıtlar yakında!')">Yanıtlar <div class="tab-indicator" style="display:none;"></div></div>
+                    <div class="feed-tab" onclick="alert('Yanıtlar özelliği yakında!')">Yanıtlar <div class="tab-indicator" style="display:none;"></div></div>
                 </div>
             </div>
 
-            <div id="profile-feed-container"></div> 
+            <div id="profile-feed-container">
+                <div style="padding:40px; text-align:center; color:#536471;">Yükleniyor...</div>
+            </div> 
         </main>
 
         <aside class="sidebar-right">
-            <div class="search-box-right" style="background: #eff3f4; border-radius: 30px; padding: 12px 20px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <div style="background: #eff3f4; border-radius: 30px; padding: 12px 20px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                 <span>🔍</span>
-                <input type="text" placeholder="Mozaik'te Ara" style="border:none; background:none; outline:none; width:100%;" onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
+                <input type="text" placeholder="Mozaik'te Ara" style="border:none; background:none; outline:none; width:100%; font-size:15px;" onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
             </div>
             <div class="trends-box">
                 <div style="font-size: 20px; font-weight: 800; margin-bottom: 15px;">Bunları beğenebilirsin</div>
-                <div style="font-size:14px; color:#536471;">Öneriler burada listelenecek.</div>
+                <div style="font-size:14px; color:#536471;">Sana özel öneriler burada listelenecek.</div>
             </div>
         </aside>
+    </div>
+
+    <button class="fab-button" onclick="window.location.href='feed.html'">+</button>
+    <div class="bottom-nav">
+        <a href="feed.html" class="nav-item">🏠</a>
+        <a href="search.html" class="nav-item">🔍</a>
+        <a href="chat.html" class="nav-item">✉️</a>
+        <a href="notifications.html" class="nav-item">🔔</a>
+        <a href="#" class="nav-item active" id="mobile-profile-link-bottom">👤</a>
     </div>
 
     <div class="modal-overlay" id="edit-modal">
@@ -194,43 +236,66 @@
                 <button class="modal-btn-save" id="save-edit-btn">Kaydet</button>
             </div>
             
-            <div style="margin-bottom:15px;">
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px;"><input type="checkbox" id="edit-private-input"> 🔒 Gizli Hesap</label>
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; margin-top:5px;"><input type="checkbox" id="edit-hideinfo-input"> 👁️‍🗨️ Bilgileri Gizle</label>
+            <div style="margin-bottom:15px; background:#f7f9f9; padding:10px; border-radius:8px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; font-weight:bold;"><input type="checkbox" id="edit-private-input"> 🔒 Hesabımı Gizle</label>
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; margin-top:10px; font-weight:bold;"><input type="checkbox" id="edit-hideinfo-input"> 👁️‍🗨️ Kişisel Bilgilerimi Gizle</label>
             </div>
             
-            <input type="email" id="edit-email-display" class="modal-input" disabled style="background:#f7f9f9; color:#888;">
+            <div style="font-size:13px; font-weight:bold; color:#536471; margin-bottom:5px;">Kapak Fotoğrafı (Banner)</div>
+            <input type="file" id="edit-banner-input" class="modal-input" accept="image/*">
+            
+            <div style="font-size:13px; font-weight:bold; color:#536471; margin-bottom:5px;">Profil Fotoğrafı (Avatar)</div>
+            <input type="file" id="edit-avatar-input" class="modal-input" accept="image/*">
+
             <input type="text" id="edit-fullname-input" class="modal-input" placeholder="İsim">
             <textarea id="edit-bio-input" class="modal-input" rows="3" placeholder="Kısa özgeçmiş" style="resize:none;"></textarea>
             <input type="text" id="edit-location-input" class="modal-input" placeholder="Konum">
+            
+            <div style="font-size:13px; font-weight:bold; color:#536471; margin-bottom:5px;">Doğum Tarihi</div>
             <input type="date" id="edit-birthdate-input" class="modal-input">
+            
             <select id="edit-gender-input" class="modal-input">
                 <option value="Kadın">Kadın</option><option value="Erkek">Erkek</option><option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
             </select>
-            <div style="font-size:14px; font-weight:bold; margin-bottom:5px;">Profil Fotoğrafı</div>
-            <input type="file" id="edit-avatar-input" class="modal-input" accept="image/*">
             
-            <div style="text-align:right; margin-top:10px;">
-                <button id="trigger-delete-account-btn" style="background:none; border:none; color:#f4212e; cursor:pointer; font-weight:bold;">Hesabımı Sil</button>
+            <div style="text-align:center; margin-top:20px; padding-top:15px; border-top:1px solid #eff3f4;">
+                <button id="trigger-delete-account-btn" style="background:none; border:none; color:#f4212e; cursor:pointer; font-weight:bold; font-size:15px;">Hesabımı Kalıcı Olarak Sil</button>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="likes-modal" style="align-items:center;"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 style="margin:0;">Beğenenler</h3><button class="close-btn" id="close-likes-modal">&times;</button></div><div id="likes-list-container"></div></div></div>
-    
-    <div class="modal-overlay" id="edit-post-modal" style="align-items:center;"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 style="margin:0;">Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div><textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit; outline:none;"></textarea><div style="display:flex; justify-content:space-between; margin-top:15px;"><button style="padding:8px 15px; border:none; background:#eff3f4; border-radius:30px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button><button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#1da1f2; color:white; border-radius:30px; font-weight:bold; cursor:pointer;">Kaydet</button></div></div></div>
+    <div class="modal-overlay" id="support-modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 style="margin:0;">Kullanıcıyı Bildir</h3>
+                <button class="close-btn" id="cancel-support-btn">&times;</button>
+            </div>
+            <textarea id="support-msg-input" class="modal-input" rows="4" placeholder="Şikayet nedeni..." style="resize:none;"></textarea>
+            <div style="text-align:right;"><button class="modal-btn-save" id="send-support-btn" style="background:#e74c3c;">Gönder</button></div>
+        </div>
+    </div>
 
-    <div class="modal-overlay" id="support-modal" style="align-items:center;"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 style="margin:0;">Yönetime Bildir</h3><button class="close-btn" id="cancel-support-btn">&times;</button></div><textarea id="support-msg-input" class="modal-input" rows="4" placeholder="Şikayet nedeni..." style="resize:none;"></textarea><div style="text-align:right;"><button class="modal-btn-save" id="send-support-btn" style="background:#e74c3c;">Gönder</button></div></div></div>
-    
-    <div class="modal-overlay" id="users-list-modal"><div class="modal-content"><div class="modal-header"><h3 id="users-list-title" style="margin:0;">Liste</h3><button class="close-btn" id="close-list-btn">&times;</button></div><div id="users-list-container"></div></div></div>
+    <div class="modal-overlay" id="edit-post-modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h3 style="margin:0;">Gönderiyi Düzenle</h3>
+                <button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button>
+            </div>
+            <textarea id="edit-post-input" class="modal-input" style="height:100px; resize:none; font-size:18px;"></textarea>
+            <div style="display:flex; justify-content:flex-end;">
+                <button id="save-edited-post-btn" class="modal-btn-save" style="background:#1da1f2;">Kaydet</button>
+            </div>
+        </div>
+    </div>
 
-    <button class="fab-button" onclick="window.location.href='feed.html'">+</button>
-    <div class="bottom-nav">
-        <a href="feed.html" class="nav-item">🏠</a>
-        <a href="search.html" class="nav-item">🔍</a>
-        <a href="chat.html" class="nav-item">✉️</a>
-        <a href="notifications.html" class="nav-item">🔔</a>
-        <a href="#" class="nav-item active" id="mobile-profile-link">👤</a>
+    <div class="modal-overlay" id="users-list-modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 id="users-list-title" style="margin:0;">Liste</h3>
+                <button class="close-btn" id="close-list-btn">&times;</button>
+            </div>
+            <div id="users-list-container"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -245,15 +310,22 @@
         let currentUser = null; let myUsername = null; let isFollowing = false; let isRequested = false; let isTargetPrivate = false; let isTargetVerified = false; 
         let allUsersData = {}; let currentProfileFollowers = []; let currentProfileFollowing = []; let unsubscribePosts = null; let currentlyEditingPostId = null; 
 
+        // URL'DEKİ İSMİ AL, YOKSA (BOŞSA) BENİM PROFİLİM OLSUN MANTIĞI
         const urlParams = new URLSearchParams(window.location.search);
-        const targetUsername = urlParams.get('user');
-        if (!targetUsername) window.location.href = "feed.html"; 
+        let targetUsername = urlParams.get('user');
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                currentUser = user; 
+                myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                
+                // URL'de isim yoksa, kendi profilimi aç
+                if (!targetUsername) {
+                    targetUsername = myUsername;
+                }
+
                 document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
-                document.getElementById('mobile-profile-link').href = `profile.html?user=${myUsername}`;
+                document.getElementById('mobile-profile-link-bottom').href = `profile.html?user=${myUsername}`;
                 
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
                 if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
@@ -264,27 +336,37 @@
             } else { window.location.href = "index.html"; }
         });
 
-        // Çeşitli Buton Fonksiyonları (Feed ile aynı)
+        // ÇEŞİTLİ SİSTEM FONKSİYONLARI
         window.formatHashtags = function(text) { if (!text) return ""; let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); return safeText.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`); }
         window.toggleComments = function(postId) { const section = document.getElementById(`comments-${postId}`); section.style.display = section.style.display === 'none' ? 'block' : 'none'; };
-        window.addComment = async function(postId, postAuthor) { const input = document.getElementById(`input-${postId}`); const text = input.value.trim(); if (!text) return; await updateDoc(doc(db, "posts", postId), { comments: arrayUnion({ text: text, author: myUsername, timestamp: Date.now() }) }); input.value = ''; if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } };
-        window.toggleLike = async function(postId, isLiked, postAuthor) { const postRef = doc(db, "posts", postId); if (isLiked) { await updateDoc(postRef, { likes: arrayRemove(myUsername) }); } else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } } };
-        window.handleDoubleTap = async function(postId, isLiked, postAuthor) { const heartIcon = document.getElementById(`heart-anim-${postId}`); if(heartIcon) { heartIcon.classList.remove('heart-burst-anim'); void heartIcon.offsetWidth; heartIcon.classList.add('heart-burst-anim'); } if (!isLiked) { await window.toggleLike(postId, false, postAuthor); } };
-        window.deletePost = async function(postId) { if(confirm("Silinsin mi?")) await deleteDoc(doc(db, "posts", postId)); };
+        
+        window.addComment = async function(postId, postAuthor) { 
+            const input = document.getElementById(`input-${postId}`); const text = input.value.trim(); if (!text) return; 
+            await updateDoc(doc(db, "posts", postId), { comments: arrayUnion({ text: text, author: myUsername, timestamp: Date.now() }) }); 
+            input.value = ''; 
+            if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } 
+        };
+
+        window.toggleLike = async function(postId, isLiked, postAuthor) { 
+            const postRef = doc(db, "posts", postId); 
+            if (isLiked) { await updateDoc(postRef, { likes: arrayRemove(myUsername) }); } 
+            else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } } 
+        };
+
+        window.handleDoubleTap = async function(postId, isLiked, postAuthor) { 
+            const heartIcon = document.getElementById(`heart-anim-${postId}`); 
+            if(heartIcon) { heartIcon.classList.remove('heart-burst-anim'); void heartIcon.offsetWidth; heartIcon.classList.add('heart-burst-anim'); } 
+            if (!isLiked) { await window.toggleLike(postId, false, postAuthor); } 
+        };
+
+        window.deletePost = async function(postId) { if(confirm("Gönderi silinsin mi?")) await deleteDoc(doc(db, "posts", postId)); };
         window.sharePost = function(postId) { const link = window.location.origin + window.location.pathname.replace('profile.html','feed.html') + "?post=" + postId; navigator.clipboard.writeText(link).then(() => { alert("Gönderi bağlantısı kopyalandı! 🔗\n" + link); }); };
-        window.repostAlert = function() { alert("🔁 Yeniden Paylaş (Repost) özelliği yakında aktif olacak!"); };
+        window.repostAlert = function() { alert("🔁 Yeniden Paylaş özelliği yakında eklenecek!"); };
         
         window.showLikes = function(likesArray) {
             if (!likesArray || likesArray.length === 0) return;
-            document.getElementById('likes-modal').style.display = 'flex'; let html = '';
-            likesArray.forEach(liker => {
-                let username = liker.includes('@') ? liker.split('@')[0] : liker; let userData = allUsersData[username] || {};
-                let avatarHtml = userData.avatarUrl ? `<img src="${userData.avatarUrl}">` : `👤`; let vHtml = userData.isVerified ? '<span class="verified-badge" style="font-size:14px;">☑️</span>' : '';
-                html += `<a href="profile.html?user=${username}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div style="font-weight:bold;">@${username} ${vHtml}</div></a>`;
-            });
-            document.getElementById('likes-list-container').innerHTML = html;
+            showUserList("Beğenenler", likesArray.map(l => l.includes('@') ? l.split('@')[0] : l));
         };
-        document.getElementById('close-likes-modal').onclick = () => { document.getElementById('likes-modal').style.display = 'none'; };
 
         window.openEditModal = function(postId, currentContent) { currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex'; };
         document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
@@ -292,13 +374,12 @@
             try { await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true }); document.getElementById('edit-post-modal').style.display = 'none'; } catch(e) {}
         });
 
-        // PROFIL DÜZENLEME & ÇIKIŞ
+        // PROFİL DÜZENLEME İŞLEMLERİ
         window.openProfileEdit = async function() {
             document.getElementById('edit-modal').style.display = 'flex'; 
             const mySnap = await getDoc(doc(db, "users", myUsername));
             if(mySnap.exists()) {
                 const d = mySnap.data();
-                document.getElementById('edit-email-display').value = d.email || currentUser.email; 
                 document.getElementById('edit-fullname-input').value = d.fullName || '';
                 document.getElementById('edit-birthdate-input').value = d.birthDate || '';
                 document.getElementById('edit-gender-input').value = d.gender || '';
@@ -309,6 +390,7 @@
             }
         };
         document.getElementById('cancel-edit-btn').addEventListener('click', () => { document.getElementById('edit-modal').style.display = 'none'; });
+        
         document.getElementById('save-edit-btn').addEventListener('click', async () => {
             const saveBtn = document.getElementById('save-edit-btn'); saveBtn.innerText = "Kaydediliyor..."; saveBtn.disabled = true;
             const newFullName = document.getElementById('edit-fullname-input').value.trim();
@@ -318,14 +400,38 @@
             const newBio = document.getElementById('edit-bio-input').value; 
             const isPrivateChecked = document.getElementById('edit-private-input').checked; 
             const isHideInfoChecked = document.getElementById('edit-hideinfo-input').checked; 
-            const file = document.getElementById('edit-avatar-input').files[0]; 
+            
+            const avatarFile = document.getElementById('edit-avatar-input').files[0]; 
+            const bannerFile = document.getElementById('edit-banner-input').files[0]; 
+
             if(!newFullName) { alert("İsim zorunludur!"); saveBtn.disabled = false; saveBtn.innerText = "Kaydet"; return; }
-            let newAvatarUrl = document.getElementById('avatar-img').src; 
+            
+            let newAvatarUrl = document.getElementById('profile-avatar').querySelector('img') ? document.getElementById('profile-avatar').querySelector('img').src : null; 
+            let newBannerUrl = document.getElementById('profile-banner').querySelector('img') ? document.getElementById('profile-banner').querySelector('img').src : null;
+            
             try {
-                if (file) { const formData = new FormData(); formData.append("image", file); const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); const data = await res.json(); if(data.success) newAvatarUrl = data.data.url; }
-                await setDoc(doc(db, "users", myUsername), { fullName: newFullName, birthDate: newBirthDate, gender: newGender, location: newLocation, bio: newBio, isPrivate: isPrivateChecked, hideInfo: isHideInfoChecked, avatarUrl: newAvatarUrl === window.location.href ? null : newAvatarUrl }, { merge: true });
+                // Avatar Yükle
+                if (avatarFile) { 
+                    const formData = new FormData(); formData.append("image", avatarFile); 
+                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
+                    const data = await res.json(); if(data.success) newAvatarUrl = data.data.url; 
+                }
+                // Banner (Kapak) Yükle
+                if (bannerFile) { 
+                    const formData = new FormData(); formData.append("image", bannerFile); 
+                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
+                    const data = await res.json(); if(data.success) newBannerUrl = data.data.url; 
+                }
+
+                await setDoc(doc(db, "users", myUsername), { 
+                    fullName: newFullName, birthDate: newBirthDate, gender: newGender, location: newLocation, bio: newBio, 
+                    isPrivate: isPrivateChecked, hideInfo: isHideInfoChecked, 
+                    avatarUrl: newAvatarUrl, bannerUrl: newBannerUrl 
+                }, { merge: true });
+                
                 document.getElementById('edit-modal').style.display = 'none';
-            } catch (e) {} finally { saveBtn.innerText = "Kaydet"; saveBtn.disabled = false; }
+            } catch (e) { alert("Yükleme sırasında hata oluştu!"); } 
+            finally { saveBtn.innerText = "Kaydet"; saveBtn.disabled = false; }
         });
 
         document.getElementById('trigger-delete-account-btn').addEventListener('click', async () => {
@@ -335,7 +441,7 @@
         });
         window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
 
-        // TAKİP İŞLEMLERİ
+        // TAKİP SİSTEMİ
         window.toggleFollow = async function() {
             const btn = document.getElementById('main-follow-btn'); btn.disabled = true;
             const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", targetUsername);
@@ -372,7 +478,7 @@
             } catch(e) {} finally { btn.disabled = false; }
         });
 
-        // KULLANICI VERİSİNİ VE BUTONLARI YÜKLE
+        // ANA VERİ YÜKLEME ALANI
         function loadUserProfileData() {
             onSnapshot(doc(db, "users", targetUsername), async (docSnap) => {
                 if (docSnap.exists()) {
@@ -392,17 +498,26 @@
                     }
                     document.getElementById('display-details').innerHTML = detailsHtml;
                     if (data.bio) document.getElementById('display-bio').innerText = data.bio;
-                    if (data.avatarUrl) { document.getElementById('avatar-emoji').style.display = 'none'; document.getElementById('avatar-img').style.display = 'inline-block'; document.getElementById('avatar-img').src = data.avatarUrl; }
+                    
+                    // Avatar Yükle
+                    if (data.avatarUrl) { document.getElementById('profile-avatar').innerHTML = `<img src="${data.avatarUrl}">`; }
+                    else { document.getElementById('profile-avatar').innerHTML = `👤`; }
+
+                    // Banner (Kapak Fotoğrafı) Yükle
+                    const bannerDiv = document.getElementById('profile-banner');
+                    if (data.bannerUrl) { bannerDiv.innerHTML = `<img src="${data.bannerUrl}">`; }
+                    else { bannerDiv.innerHTML = ``; }
                     
                     currentProfileFollowers = data.followers || []; currentProfileFollowing = data.following || [];
                     document.getElementById('followers-count').innerText = currentProfileFollowers.length; document.getElementById('following-count').innerText = currentProfileFollowing.length;
                     isTargetPrivate = data.isPrivate || false; isTargetVerified = data.isVerified || false; 
                     
-                    if(isTargetPrivate) document.getElementById('private-badge').style.display = 'block'; else document.getElementById('private-badge').style.display = 'none';
+                    if(isTargetPrivate) document.getElementById('private-badge-container').innerHTML = `<div class="private-badge">🔒 Bu hesap gizli</div>`; 
+                    else document.getElementById('private-badge-container').innerHTML = '';
                     
                     const amIFollowing = currentProfileFollowers.includes(myUsername);
 
-                    // AKSİYON BUTONLARINI OLUŞTUR
+                    // BUTONLAR (Kendi Profilim Mi Başkası Mı?)
                     const actionContainer = document.getElementById('action-buttons-container');
                     if (isMe) {
                         actionContainer.innerHTML = `
@@ -410,7 +525,6 @@
                             <button class="edit-profile-btn" onclick="window.openProfileEdit()">Profili düzenle</button>
                         `;
                     } else {
-                        // Takip durumunu kontrol et
                         const mySnap = await getDoc(doc(db, "users", myUsername)); 
                         if(mySnap.exists() && mySnap.data().following) isFollowing = mySnap.data().following.includes(targetUsername); 
                         isRequested = (data.followRequests || []).includes(myUsername);
@@ -423,15 +537,17 @@
                         updateFollowButtonUI();
                     }
 
-                    // Tıklamalar
+                    // Tıklanabilir İstatistikler
                     document.getElementById('followers-box').onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; showUserList("Takipçiler", currentProfileFollowers); };
                     document.getElementById('following-box').onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; showUserList("Takip Edilenler", currentProfileFollowing); };
 
                     const feedContainer = document.getElementById('profile-feed-container');
                     if (isTargetPrivate && !isMe && !amIFollowing) {
-                        feedContainer.innerHTML = `<div style="padding:40px; text-align:center;"><div style="font-size:24px; font-weight:800; margin-bottom:10px;">Bu hesap gizli</div><div style="color:#536471;">Gönderilerini görmek için takip et.</div></div>`;
+                        feedContainer.innerHTML = `<div style="padding:50px 20px; text-align:center;"><div style="font-size:28px; font-weight:800; margin-bottom:10px; color:#0f1419;">Bu hesap gizli</div><div style="color:#536471; font-size:15px;">Gönderilerini ve yanıtlarını görmek için takip et.</div></div>`;
                         if(unsubscribePosts) { unsubscribePosts(); unsubscribePosts = null; }
                     } else { if(!unsubscribePosts) loadUserPosts(); }
+                } else {
+                    document.getElementById('profile-feed-container').innerHTML = `<div style="padding:40px; text-align:center; color:#536471;">Bu hesap mevcut değil.</div>`;
                 }
             });
         }
@@ -445,11 +561,12 @@
                 userArray.forEach(uname => {
                     let uData = allUsersData[uname] || {};
                     let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`;
+                    let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
                     container.innerHTML += `
                         <a href="profile.html?user=${uname}" class="user-row">
                             <div class="row-avatar">${avatarHtml}</div>
                             <div>
-                                <div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname}</div>
+                                <div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname} ${vHtml}</div>
                                 <div style="font-size:14px; color:#536471;">@${uname}</div>
                             </div>
                         </a>`;
@@ -470,7 +587,7 @@
                         const likesArray = postData.likes || [];
                         const isLiked = likesArray.includes(myUsername);
                         const isOwner = postData.author === myUsername;
-                        const editedHtml = postData.isEdited ? '<span class="edited-tag">(Düzenlendi)</span>' : '';
+                        const editedHtml = postData.isEdited ? '<span style="font-size:12px; color:#536471; font-style:italic;">(Düzenlendi)</span>' : '';
                         
                         const authorData = allUsersData[postData.author] || {};
                         const vHtml = authorData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
@@ -494,7 +611,7 @@
                         const postDiv = document.createElement('div'); postDiv.className = 'post';
                         postDiv.innerHTML = `
                             <div class="post-left">
-                                <div class="post-avatar-img" style="display:flex; justify-content:center; align-items:center; overflow:hidden;">${avatarImg}</div>
+                                <div class="post-avatar-img">${avatarImg}</div>
                             </div>
                             <div class="post-right">
                                 <div class="post-header-info">
@@ -513,9 +630,9 @@
                                 <div class="post-content">${window.formatHashtags(postData.content)}</div>
                                 
                                 ${postData.imageUrl ? `
-                                <div class="post-image-container" ondblclick="window.handleDoubleTap('${postId}', ${isLiked}, '${postData.author}')" style="position:relative;">
+                                <div class="post-image-container" ondblclick="window.handleDoubleTap('${postId}', ${isLiked}, '${postData.author}')">
                                     <img src="${postData.imageUrl}" class="post-image">
-                                    <div id="heart-anim-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:80px; z-index:10; opacity:0; pointer-events:none; text-shadow:0 2px 10px rgba(0,0,0,0.3);">❤️</div>
+                                    <div id="heart-anim-${postId}" class="heart-burst-anim" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:80px; z-index:10; opacity:0; pointer-events:none; text-shadow:0 2px 10px rgba(0,0,0,0.3);">❤️</div>
                                 </div>` : ''}
                                 
                                 <div class="post-footer-actions">
@@ -538,8 +655,10 @@
                         feedContainer.appendChild(postDiv);
                     }
                 });
-                document.getElementById('post-count').innerText = `${userPostCount} gönderi`;
                 document.getElementById('header-post-count').innerText = `${userPostCount} gönderi`;
+                if(userPostCount === 0) {
+                    feedContainer.innerHTML = `<div style="padding:40px; text-align:center;"><div style="font-size:28px; font-weight:800; margin-bottom:10px; color:#0f1419;">Henüz bir gönderi yok</div><div style="color:#536471; font-size:15px;">Burada paylaşılanlar listelenecek.</div></div>`;
+                }
             });
         }
     </script>
