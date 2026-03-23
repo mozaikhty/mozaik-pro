@@ -12,7 +12,6 @@
 
         .app-container { display: flex; justify-content: center; max-width: 1250px; margin: 0 auto; min-height: 100vh; }
         
-        /* SOL MENÜ */
         .sidebar-left { width: 275px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid #eff3f4; flex-shrink: 0; }
         .logo-desktop { font-size: 28px; font-weight: 800; padding: 10px; margin-bottom: 10px; display: inline-block; color: #1da1f2; }
         .desktop-nav { display: flex; flex-direction: column; gap: 5px; }
@@ -20,12 +19,9 @@
         .desktop-nav-item:hover { background-color: #e7f5fe; color: #1da1f2; }
         .desktop-nav-item.active { font-weight: bold; }
         .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
-        .desktop-post-btn:hover { background: #1a91da; }
 
-        /* ORTA SÜTUN */
         .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; flex-shrink: 0; }
         
-        /* HEADER (Geri Tuşu ve İsim) */
         .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; padding: 5px 15px; display: flex; align-items: center; gap: 20px; min-height: 53px;}
         .back-arrow { font-size: 20px; cursor: pointer; padding: 8px 12px; border-radius: 50%; transition: 0.2s; display: flex; justify-content: center; align-items: center; font-weight: bold;}
         .back-arrow:hover { background: #eff3f4; }
@@ -33,7 +29,22 @@
         .header-name { font-weight: 800; font-size: 20px; color: #0f1419; line-height: 1.2; }
         .header-post-count { font-size: 13px; color: #536471; }
 
-        /* X PROFİL TASARIMI (KAPAK VE AVATAR) */
+        /* MOBİL SOL ÇEKMECE MENÜSÜ (DRAWER) */
+        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; }
+        .mobile-sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: white; z-index: 4001; transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
+        .mobile-sidebar.open { left: 0; }
+        .sidebar-header-mobile { padding: 20px; border-bottom: 1px solid #eff3f4; }
+        .sidebar-avatar-mobile { width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 10px; cursor: pointer; border: 1px solid #ddd; }
+        .sidebar-avatar-mobile img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-name-mobile { font-weight: 800; font-size: 18px; color: #0f1419; margin-bottom: 2px; }
+        .sidebar-handle-mobile { color: #536471; font-size: 15px; margin-bottom: 15px; }
+        .sidebar-stats-mobile { display: flex; gap: 15px; font-size: 14px; color: #536471; }
+        .sidebar-stats-mobile b { color: #0f1419; }
+        .sidebar-menu-mobile { display: flex; flex-direction: column; padding: 10px 0; }
+        .sidebar-menu-item { padding: 15px 20px; font-size: 20px; font-weight: bold; color: #0f1419; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.2s; }
+        .sidebar-menu-item:hover { background: #eff3f4; }
+        .sidebar-divider { height: 1px; background: #eff3f4; margin: 10px 0; }
+
         .profile-banner { height: 200px; background-color: #cfd9de; width: 100%; position: relative; }
         .profile-banner img { width: 100%; height: 100%; object-fit: cover; }
         
@@ -51,9 +62,7 @@
         .unfollow-btn { background: white; color: #0f1419; border: 1px solid #cfd9de; padding: 8px 16px; border-radius: 30px; font-weight: bold; font-size: 15px; cursor: pointer; }
         .unfollow-btn:hover { border-color: #f4212e; color: #f4212e; background: #ffe9e9; }
         .icon-action-btn { background: white; border: 1px solid #cfd9de; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; transition: 0.2s;}
-        .icon-action-btn:hover { background: #eff3f4; }
 
-        /* KULLANICI BİLGİLERİ */
         .profile-name { font-size: 20px; font-weight: 900; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
         .profile-handle { font-size: 15px; color: #536471; margin-bottom: 12px; }
         .verified-badge { color: #1da1f2; font-size: 18px; }
@@ -67,15 +76,12 @@
 
         .private-badge { background: #eff3f4; color: #0f1419; font-size: 12px; padding: 5px 10px; border-radius: 20px; font-weight: bold; display: inline-block; margin-bottom: 10px;}
 
-        /* SEKMELER */
         .feed-tabs { display: flex; width: 100%; height: 53px; border-bottom: 1px solid #eff3f4; margin-top: 15px; }
         .feed-tab { flex: 1; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: 500; color: #536471; transition: 0.2s; position: relative; }
-        .feed-tab:hover { background-color: #eff3f4; }
         .feed-tab.active { color: #0f1419; font-weight: bold; }
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; display: none; width: 60px; }
         .feed-tab.active .tab-indicator { display: block; }
 
-        /* POST STİLLERİ (X AKIŞI) */
         .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; }
         .post:hover { background: #f7f9f9; }
         .post-left { flex-shrink: 0; }
@@ -87,37 +93,26 @@
         .author-name { font-weight: bold; color: #0f1419; text-decoration:none; }
         .author-username, .post-time { color: #536471; text-decoration:none; }
         .post-owner-actions button { background: none; border: none; color: #536471; cursor: pointer; border-radius: 50%; padding: 5px; transition: 0.2s; font-size: 16px; }
-        .post-owner-actions button:hover { background: #e1e8ed; color: #e74c3c; }
         .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; }
         .hashtag { color: #1da1f2; text-decoration: none; }
-        .hashtag:hover { text-decoration:underline; }
         .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; position: relative;}
         .post-image { width: 100%; max-height:400px; object-fit:cover; display: block; }
         
-        /* AKSİYON BUTONLARI */
         .post-footer-actions { display: flex; justify-content: space-between; max-width: 425px; margin-top: 10px; color: #536471; }
         .action-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; }
-        .action-item:hover { color: #1da1f2; }
-        .action-item.like-box:hover { color: #f91880; }
         .action-item.liked { color: #f91880; }
         .action-icon { padding: 8px; border-radius: 50%; transition: 0.2s; }
-        .action-item:hover .action-icon { background: #e7f5fe; }
-        .action-item.like-box:hover .action-icon { background: #fbeef5; }
 
-        /* YORUM MANTIĞI */
         .comments-section { display: none; margin-top: 15px; border-top: 1px solid #eff3f4; padding-top: 15px; }
         .comment-item { display: flex; gap: 10px; margin-bottom: 10px; font-size: 14px; }
         .comment-author { font-weight: bold; color: #0f1419; text-decoration: none; }
         .comment-input-box { display: flex; gap: 8px; margin-top: 10px; }
         .comment-input { flex-grow: 1; padding: 10px 15px; border: 1px solid #eff3f4; border-radius: 20px; font-size: 14px; outline: none; background: #f7f9f9;}
         .comment-send-btn { background: #1da1f2; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .comment-send-btn:hover { background: #1a91da; }
 
-        /* SAĞ SÜTUN (Arama vb) */
         .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
         .trends-box { background: #f7f9f9; border-radius: 16px; padding: 15px; margin-top: 10px; }
 
-        /* MOBİL TEPSİ VE FAB BUTONU */
         .fab-button { display: none; position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; background: #1da1f2; color: white; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 1000; align-items: center; justify-content: center; }
         .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #eff3f4; z-index: 1000; padding: 10px 0; justify-content: space-around; }
         .nav-item { color: #536471; font-size: 24px; padding: 5px 20px; border-radius: 30px; transition: 0.2s; text-decoration: none;}
@@ -130,25 +125,44 @@
             .fab-button { display: flex; }
         }
 
-        /* SİSTEM MODALLARI VE ANİMASYONLAR */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; }
         .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: sticky; top:-20px; background:white; z-index:10; padding-bottom:10px; border-bottom:1px solid #eff3f4;}
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #0f1419; display:flex; justify-content:center; align-items:center; width:40px; height:40px; border-radius:50%;}
-        .close-btn:hover { background: #eff3f4; }
-        
         .modal-input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; border: 1px solid #eff3f4; border-radius: 8px; font-family: inherit; font-size: 15px; outline:none; background:white; transition: 0.2s;}
-        .modal-input:focus { border-color: #1da1f2; }
         .modal-btn-save { background: #0f1419; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; font-size:15px;}
 
         .user-row { display: flex; align-items: center; gap: 12px; padding: 10px; text-decoration: none; color: #0f1419; transition: 0.2s; border-bottom: 1px solid #eff3f4; }
-        .user-row:hover { background: #f7f9f9; }
+        .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; }
+        .row-avatar img { width: 100%; height: 100%; object-fit: cover;}
         
         @keyframes heartBurst { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 15% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 30% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; } }
         .heart-burst-anim { animation: heartBurst 0.8s ease-out forwards; }
     </style>
 </head>
 <body>
+
+    <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <div class="sidebar-header-mobile">
+            <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
+            <div class="sidebar-name-mobile" id="sidebar-name-mobile">Yükleniyor...</div>
+            <div class="sidebar-handle-mobile" id="sidebar-handle-mobile">@bekleniyor</div>
+            <div class="sidebar-stats-mobile">
+                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Takip edilen</div>
+                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçi</div>
+            </div>
+        </div>
+        <div class="sidebar-menu-mobile">
+            <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Premium (Abonelik) sistemi çok yakında!')">✨ Premium</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Yer İşaretleri yakında eklenecek!')">🔖 Yer İşaretleri</a>
+            <div class="sidebar-divider"></div>
+            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal;" onclick="alert('Ayarlar yakında!')">⚙️ Ayarlar ve gizlilik</a>
+            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal; color: #e74c3c;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+        </div>
+    </div>
+
     <div class="app-container">
         <nav class="sidebar-left">
             <a href="feed.html" class="logo-desktop">Mozaik</a>
@@ -157,28 +171,26 @@
                 <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item">✉️ Mesajlar</a>
-                <a href="#" class="desktop-nav-item active" id="desktop-profile-link">👤 Profil</a>
+                <a href="#" class="desktop-nav-item active" id="desktop-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
             </div>
             <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
         </nav>
 
         <main class="feed-main">
             <div class="header-sticky">
-                <div class="back-arrow" onclick="window.location.href='feed.html'">⬅</div>
+                <div class="back-arrow" onclick="window.history.back()">⬅</div>
                 <div class="header-info">
                     <div class="header-name" id="header-name">Yükleniyor...</div>
                     <div class="header-post-count" id="header-post-count">0 gönderi</div>
                 </div>
             </div>
 
-            <div class="profile-banner" id="profile-banner">
-                </div>
+            <div class="profile-banner" id="profile-banner"></div>
             
             <div class="profile-header-box">
                 <div class="profile-top-row">
                     <div class="profile-avatar" id="profile-avatar">👤</div>
-                    <div class="profile-top-actions" id="action-buttons-container">
-                        </div>
+                    <div class="profile-top-actions" id="action-buttons-container"></div>
                 </div>
 
                 <div class="profile-name" id="display-fullname">Yükleniyor...</div>
@@ -186,7 +198,6 @@
                 <div id="private-badge-container"></div>
                 
                 <div class="profile-bio" id="display-bio"></div>
-                
                 <div class="profile-details" id="display-details"></div>
 
                 <div class="profile-stats">
@@ -212,7 +223,7 @@
             </div>
             <div class="trends-box">
                 <div style="font-size: 20px; font-weight: 800; margin-bottom: 15px;">Bunları beğenebilirsin</div>
-                <div style="font-size:14px; color:#536471;">Sana özel öneriler burada listelenecek.</div>
+                <div style="font-size:14px; color:#536471;">Öneriler burada listelenecek.</div>
             </div>
         </aside>
     </div>
@@ -223,7 +234,6 @@
         <a href="search.html" class="nav-item">🔍</a>
         <a href="chat.html" class="nav-item">✉️</a>
         <a href="notifications.html" class="nav-item">🔔</a>
-        <a href="#" class="nav-item active" id="mobile-profile-link-bottom">👤</a>
     </div>
 
     <div class="modal-overlay" id="edit-modal">
@@ -275,19 +285,6 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="edit-post-modal">
-        <div class="modal-content" style="max-width:500px;">
-            <div class="modal-header">
-                <h3 style="margin:0;">Gönderiyi Düzenle</h3>
-                <button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button>
-            </div>
-            <textarea id="edit-post-input" class="modal-input" style="height:100px; resize:none; font-size:18px;"></textarea>
-            <div style="display:flex; justify-content:flex-end;">
-                <button id="save-edited-post-btn" class="modal-btn-save" style="background:#1da1f2;">Kaydet</button>
-            </div>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="users-list-modal">
         <div class="modal-content" style="max-width:400px;">
             <div class="modal-header">
@@ -297,6 +294,7 @@
             <div id="users-list-container"></div>
         </div>
     </div>
+    <div class="modal-overlay" id="edit-post-modal" style="align-items:center;"><div class="modal-content" style="max-width:400px;"><div class="modal-header"><h3 style="margin:0;">Gönderiyi Düzenle</h3><button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button></div><textarea id="edit-post-input" style="width:100%; height:100px; padding:10px; box-sizing:border-box; border-radius:6px; border:1px solid #ddd; resize:none; font-family:inherit; outline:none;"></textarea><div style="display:flex; justify-content:space-between; margin-top:15px;"><button style="padding:8px 15px; border:none; background:#eff3f4; border-radius:30px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button><button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#1da1f2; color:white; border-radius:30px; font-weight:bold; cursor:pointer;">Kaydet</button></div></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
@@ -310,33 +308,70 @@
         let currentUser = null; let myUsername = null; let isFollowing = false; let isRequested = false; let isTargetPrivate = false; let isTargetVerified = false; 
         let allUsersData = {}; let currentProfileFollowers = []; let currentProfileFollowing = []; let unsubscribePosts = null; let currentlyEditingPostId = null; 
 
-        // URL'DEKİ İSMİ AL, YOKSA (BOŞSA) BENİM PROFİLİM OLSUN MANTIĞI
+        // URL'DEKİ İSMİ AL
         const urlParams = new URLSearchParams(window.location.search);
         let targetUsername = urlParams.get('user');
 
+        // MOBİL MENÜ MANTIĞI
+        window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
+        window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
+        window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
+        window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
+
+        window.showMyFollowing = function() {
+            window.closeMobileSidebar();
+            if (allUsersData[myUsername]) { window.showUserList("Takip Edilenler", allUsersData[myUsername].following || []); }
+        };
+        window.showMyFollowers = function() {
+            window.closeMobileSidebar();
+            if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); }
+        };
+        window.showUserList = function(title, userArray) {
+            const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
+            const container = document.getElementById('users-list-container'); if(!container) return;
+            container.innerHTML = '';
+            if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#536471; padding:20px;">Henüz kimse yok.</p>'; } 
+            else {
+                userArray.forEach(uname => {
+                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
+                    container.innerHTML += `<a href="profile.html?user=${uname}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:14px; color:#536471;">@${uname}</div></div></a>`;
+                });
+            }
+            document.getElementById('users-list-modal').style.display = 'flex';
+        };
+        document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                currentUser = user; 
-                myUsername = currentUser.displayName || currentUser.email.split('@')[0];
-                
-                // URL'de isim yoksa, kendi profilimi aç
-                if (!targetUsername) {
-                    targetUsername = myUsername;
-                }
+                currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                if (!targetUsername) { targetUsername = myUsername; }
 
                 document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
-                document.getElementById('mobile-profile-link-bottom').href = `profile.html?user=${myUsername}`;
                 
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
                 if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
                 
-                onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); }); });
+                onSnapshot(collection(db, "users"), (snapshot) => { 
+                    allUsersData = {}; 
+                    snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); });
+                    
+                    if(allUsersData[myUsername]) {
+                        const u = allUsersData[myUsername];
+                        document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
+                        document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
+                        document.getElementById('sidebar-following-count').innerText = (u.following || []).length;
+                        document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
+                        if(u.avatarUrl) {
+                            const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                            const sideAv = document.getElementById('sidebar-avatar-mobile'); if(sideAv) sideAv.innerHTML = imgTag;
+                        }
+                    }
+                });
                 
                 loadUserProfileData(); 
             } else { window.location.href = "index.html"; }
         });
 
-        // ÇEŞİTLİ SİSTEM FONKSİYONLARI
         window.formatHashtags = function(text) { if (!text) return ""; let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); return safeText.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`); }
         window.toggleComments = function(postId) { const section = document.getElementById(`comments-${postId}`); section.style.display = section.style.display === 'none' ? 'block' : 'none'; };
         
@@ -360,13 +395,8 @@
         };
 
         window.deletePost = async function(postId) { if(confirm("Gönderi silinsin mi?")) await deleteDoc(doc(db, "posts", postId)); };
-        window.sharePost = function(postId) { const link = window.location.origin + window.location.pathname.replace('profile.html','feed.html') + "?post=" + postId; navigator.clipboard.writeText(link).then(() => { alert("Gönderi bağlantısı kopyalandı! 🔗\n" + link); }); };
+        window.sharePost = function(postId) { const link = window.location.origin + window.location.pathname.replace('profile.html','feed.html') + "?post=" + postId; navigator.clipboard.writeText(link).then(() => { alert("Gönderi bağlantısı kopyalandı! 🔗"); }); };
         window.repostAlert = function() { alert("🔁 Yeniden Paylaş özelliği yakında eklenecek!"); };
-        
-        window.showLikes = function(likesArray) {
-            if (!likesArray || likesArray.length === 0) return;
-            showUserList("Beğenenler", likesArray.map(l => l.includes('@') ? l.split('@')[0] : l));
-        };
 
         window.openEditModal = function(postId, currentContent) { currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex'; };
         document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
@@ -374,7 +404,7 @@
             try { await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true }); document.getElementById('edit-post-modal').style.display = 'none'; } catch(e) {}
         });
 
-        // PROFİL DÜZENLEME İŞLEMLERİ
+        // PROFİL DÜZENLEME 
         window.openProfileEdit = async function() {
             document.getElementById('edit-modal').style.display = 'flex'; 
             const mySnap = await getDoc(doc(db, "users", myUsername));
@@ -410,13 +440,11 @@
             let newBannerUrl = document.getElementById('profile-banner').querySelector('img') ? document.getElementById('profile-banner').querySelector('img').src : null;
             
             try {
-                // Avatar Yükle
                 if (avatarFile) { 
                     const formData = new FormData(); formData.append("image", avatarFile); 
                     const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
                     const data = await res.json(); if(data.success) newAvatarUrl = data.data.url; 
                 }
-                // Banner (Kapak) Yükle
                 if (bannerFile) { 
                     const formData = new FormData(); formData.append("image", bannerFile); 
                     const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
@@ -436,12 +464,10 @@
 
         document.getElementById('trigger-delete-account-btn').addEventListener('click', async () => {
             if(confirm("DİKKAT: Hesabınızı kalıcı olarak silmek istediğinize emin misiniz?")) {
-                try { await deleteDoc(doc(db, "users", myUsername)); await deleteUser(currentUser); window.location.href = "index.html"; } catch (error) { alert("Hata oluştu, tekrar giriş yapıp deneyin."); }
+                try { await deleteDoc(doc(db, "users", myUsername)); await deleteUser(currentUser); window.location.href = "index.html"; } catch (error) { alert("Hata oluştu."); }
             }
         });
-        window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
 
-        // TAKİP SİSTEMİ
         window.toggleFollow = async function() {
             const btn = document.getElementById('main-follow-btn'); btn.disabled = true;
             const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", targetUsername);
@@ -466,7 +492,6 @@
             else { btn.innerText = "Takip Et"; }
         }
 
-        // ŞİKAYET MANTIĞI
         document.getElementById('cancel-support-btn').addEventListener('click', () => { document.getElementById('support-modal').style.display = 'none'; });
         document.getElementById('send-support-btn').addEventListener('click', async () => {
             const msg = document.getElementById('support-msg-input').value.trim();
@@ -478,7 +503,6 @@
             } catch(e) {} finally { btn.disabled = false; }
         });
 
-        // ANA VERİ YÜKLEME ALANI
         function loadUserProfileData() {
             onSnapshot(doc(db, "users", targetUsername), async (docSnap) => {
                 if (docSnap.exists()) {
@@ -499,11 +523,9 @@
                     document.getElementById('display-details').innerHTML = detailsHtml;
                     if (data.bio) document.getElementById('display-bio').innerText = data.bio;
                     
-                    // Avatar Yükle
                     if (data.avatarUrl) { document.getElementById('profile-avatar').innerHTML = `<img src="${data.avatarUrl}">`; }
                     else { document.getElementById('profile-avatar').innerHTML = `👤`; }
 
-                    // Banner (Kapak Fotoğrafı) Yükle
                     const bannerDiv = document.getElementById('profile-banner');
                     if (data.bannerUrl) { bannerDiv.innerHTML = `<img src="${data.bannerUrl}">`; }
                     else { bannerDiv.innerHTML = ``; }
@@ -517,7 +539,6 @@
                     
                     const amIFollowing = currentProfileFollowers.includes(myUsername);
 
-                    // BUTONLAR (Kendi Profilim Mi Başkası Mı?)
                     const actionContainer = document.getElementById('action-buttons-container');
                     if (isMe) {
                         actionContainer.innerHTML = `
@@ -537,9 +558,8 @@
                         updateFollowButtonUI();
                     }
 
-                    // Tıklanabilir İstatistikler
-                    document.getElementById('followers-box').onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; showUserList("Takipçiler", currentProfileFollowers); };
-                    document.getElementById('following-box').onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; showUserList("Takip Edilenler", currentProfileFollowing); };
+                    document.getElementById('followers-box').onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; window.showUserList("Takipçiler", currentProfileFollowers); };
+                    document.getElementById('following-box').onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; window.showUserList("Takip Edilenler", currentProfileFollowing); };
 
                     const feedContainer = document.getElementById('profile-feed-container');
                     if (isTargetPrivate && !isMe && !amIFollowing) {
@@ -551,30 +571,6 @@
                 }
             });
         }
-
-        function showUserList(title, userArray) {
-            document.getElementById('users-list-title').innerText = title;
-            const container = document.getElementById('users-list-container');
-            container.innerHTML = '';
-            if(userArray.length === 0) container.innerHTML = '<p style="text-align:center; color:#536471; padding:20px;">Henüz kimse yok.</p>';
-            else {
-                userArray.forEach(uname => {
-                    let uData = allUsersData[uname] || {};
-                    let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`;
-                    let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
-                    container.innerHTML += `
-                        <a href="profile.html?user=${uname}" class="user-row">
-                            <div class="row-avatar">${avatarHtml}</div>
-                            <div>
-                                <div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname} ${vHtml}</div>
-                                <div style="font-size:14px; color:#536471;">@${uname}</div>
-                            </div>
-                        </a>`;
-                });
-            }
-            document.getElementById('users-list-modal').style.display = 'flex';
-        }
-        document.getElementById('close-list-btn').onclick = () => { document.getElementById('users-list-modal').style.display = 'none'; };
 
         function loadUserPosts() {
             unsubscribePosts = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
@@ -605,13 +601,13 @@
                         let commentsHTML = ''; 
                         (postData.comments || []).forEach(comment => { 
                             const cVHtml = (allUsersData[comment.author] || {}).isVerified ? '<span class="verified-badge" style="font-size:14px;">☑️</span>' : '';
-                            commentsHTML += `<div class="comment-item"><a href="profile.html?user=${comment.author}" class="comment-author">@${comment.author}${cVHtml}</a> <span>${comment.text}</span></div>`; 
+                            commentsHTML += `<div class="comment-item"><a href="profile.html?user=${comment.author}" class="comment-author">@${comment.author}${cVHtml}</a> <span style="color:#0f1419;">${comment.text}</span></div>`; 
                         });
 
                         const postDiv = document.createElement('div'); postDiv.className = 'post';
                         postDiv.innerHTML = `
                             <div class="post-left">
-                                <div class="post-avatar-img">${avatarImg}</div>
+                                <div class="post-avatar-img" style="overflow:hidden; display:flex; align-items:center; justify-content:center;">${avatarImg}</div>
                             </div>
                             <div class="post-right">
                                 <div class="post-header-info">
@@ -630,7 +626,7 @@
                                 <div class="post-content">${window.formatHashtags(postData.content)}</div>
                                 
                                 ${postData.imageUrl ? `
-                                <div class="post-image-container" ondblclick="window.handleDoubleTap('${postId}', ${isLiked}, '${postData.author}')">
+                                <div class="post-image-container" ondblclick="window.handleDoubleTap('${postId}', ${isLiked}, '${postData.author}')" style="position:relative;">
                                     <img src="${postData.imageUrl}" class="post-image">
                                     <div id="heart-anim-${postId}" class="heart-burst-anim" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:80px; z-index:10; opacity:0; pointer-events:none; text-shadow:0 2px 10px rgba(0,0,0,0.3);">❤️</div>
                                 </div>` : ''}
@@ -638,7 +634,7 @@
                                 <div class="post-footer-actions">
                                     <div class="action-item" onclick="window.toggleComments('${postId}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
                                     <div class="action-item" onclick="window.repostAlert()" title="Yeniden Paylaş"><span class="action-icon">🔁</span> </div>
-                                    <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}')" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="event.stopPropagation(); window.showLikes(${JSON.stringify(likesArray)})">${likesArray.length || ''}</span></div>
+                                    <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}')" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="event.stopPropagation(); window.showUserList('Beğenenler', ${JSON.stringify(likesArray.map(l=>l.includes('@')?l.split('@')[0]:l))})">${likesArray.length || ''}</span></div>
                                     <div class="action-item" title="Görüntülenme"><span class="action-icon">📊</span> ${Math.floor(Math.random() * 500 + 50)}</div>
                                     <div class="action-item" onclick="window.sharePost('${postId}')" title="Paylaş"><span class="action-icon">📤</span></div>
                                 </div>

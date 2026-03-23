@@ -18,13 +18,29 @@
         .desktop-nav-item:hover { background-color: #e7f5fe; color: #1da1f2; }
         .desktop-nav-item.active { font-weight: bold; }
         .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
-        .desktop-post-btn:hover { background: #1a91da; }
 
         .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; }
-        .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; padding: 15px 20px; }
-        .header-title { font-size: 20px; font-weight: 800; }
+        .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; }
+        
+        .mobile-header-top { display: none; padding: 12px 20px; align-items: center; justify-content: space-between; border-bottom: 1px solid #eff3f4; }
+        .header-title { font-size: 20px; font-weight: 800; padding: 15px 20px; }
 
-        /* BİLDİRİM STİLLERİ */
+        /* MOBİL SOL ÇEKMECE MENÜSÜ (DRAWER) */
+        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; }
+        .mobile-sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: white; z-index: 4001; transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
+        .mobile-sidebar.open { left: 0; }
+        .sidebar-header-mobile { padding: 20px; border-bottom: 1px solid #eff3f4; }
+        .sidebar-avatar-mobile { width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 10px; cursor: pointer; border: 1px solid #ddd; }
+        .sidebar-avatar-mobile img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-name-mobile { font-weight: 800; font-size: 18px; color: #0f1419; margin-bottom: 2px; }
+        .sidebar-handle-mobile { color: #536471; font-size: 15px; margin-bottom: 15px; }
+        .sidebar-stats-mobile { display: flex; gap: 15px; font-size: 14px; color: #536471; }
+        .sidebar-stats-mobile b { color: #0f1419; }
+        .sidebar-menu-mobile { display: flex; flex-direction: column; padding: 10px 0; }
+        .sidebar-menu-item { padding: 15px 20px; font-size: 20px; font-weight: bold; color: #0f1419; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.2s; }
+        .sidebar-menu-item:hover { background: #eff3f4; }
+        .sidebar-divider { height: 1px; background: #eff3f4; margin: 10px 0; }
+
         .notification-item { display: flex; padding: 12px 16px; border-bottom: 1px solid #eff3f4; transition: 0.2s; cursor: pointer; text-decoration: none; color: #0f1419; }
         .notification-item:hover { background: #f7f9f9; }
         .notif-icon-box { width: 40px; flex-shrink: 0; display: flex; justify-content: flex-end; padding-right: 10px; font-size: 24px; }
@@ -32,26 +48,55 @@
         .notif-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; background: #eee; }
         .notif-text { font-size: 15px; line-height: 1.4; }
         .notif-alert { color: #e74c3c; font-weight: bold; }
-
         .empty-text { font-size: 15px; color: #536471; padding: 40px; text-align: center; line-height: 1.5; }
 
         .sidebar-right { width: 350px; padding: 10px 20px; position: sticky; top: 0; height: 100vh; }
         .trends-box { background: #f7f9f9; border-radius: 16px; padding: 15px; margin-top: 10px; }
 
-        .fab-button { display: none; position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; background: #1da1f2; color: white; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 1000; align-items: center; justify-content: center; }
         .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #eff3f4; z-index: 1000; padding: 10px 0; justify-content: space-around; }
-        .nav-item { color: #536471; font-size: 24px; padding: 5px 20px; border-radius: 30px; transition: 0.2s; }
+        .nav-item { color: #536471; font-size: 24px; padding: 5px 20px; border-radius: 30px; transition: 0.2s; text-decoration: none;}
         .nav-item.active { color: #0f1419; font-weight: bold; }
 
         @media (max-width: 1000px) {
             .sidebar-left, .sidebar-right { display: none; }
             .feed-main { width: 100%; border: none; padding-bottom: 60px; }
             .bottom-nav { display: flex; }
-            .fab-button { display: flex; }
+            .mobile-header-top { display: flex; }
+            .header-title { display: none; } /* Masaüstü başlığı mobilde gizlenir */
         }
+        
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; }
+        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
+        .user-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; text-decoration: none; color: #333; transition: 0.2s; background: #f9f9f9; margin-bottom: 5px; }
+        .user-row:hover { background: #ebf5fb; }
+        .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; }
     </style>
 </head>
 <body>
+
+    <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <div class="sidebar-header-mobile">
+            <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
+            <div class="sidebar-name-mobile" id="sidebar-name-mobile">Yükleniyor...</div>
+            <div class="sidebar-handle-mobile" id="sidebar-handle-mobile">@bekleniyor</div>
+            <div class="sidebar-stats-mobile">
+                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Takip edilen</div>
+                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçi</div>
+            </div>
+        </div>
+        <div class="sidebar-menu-mobile">
+            <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Premium (Abonelik) sistemi çok yakında!')">✨ Premium</a>
+            <a href="#" class="sidebar-menu-item" onclick="alert('Yer İşaretleri yakında eklenecek!')">🔖 Yer İşaretleri</a>
+            <div class="sidebar-divider"></div>
+            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal;" onclick="alert('Ayarlar yakında!')">⚙️ Ayarlar ve gizlilik</a>
+            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal; color: #e74c3c;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+        </div>
+    </div>
+
     <div class="app-container">
         <nav class="sidebar-left">
             <a href="feed.html" class="logo-desktop">Mozaik</a>
@@ -60,15 +105,21 @@
                 <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item active">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item">✉️ Mesajlar</a>
-                <a href="#" class="desktop-nav-item" id="desktop-profile-link">👤 Profil</a>
+                <a href="#" class="desktop-nav-item" id="desktop-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
             </div>
             <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
         </nav>
 
         <main class="feed-main">
             <div class="header-sticky">
+                <div class="mobile-header-top">
+                    <div id="mobile-avatar-header" style="width:32px; height:32px; border-radius:50%; background:#eee; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">👤</div>
+                    <div style="flex:1; text-align:center; font-weight:900; font-size:20px;">Bildirimler</div>
+                    <div style="width:32px;"></div>
+                </div>
                 <div class="header-title">Bildirimler</div>
             </div>
+            
             <div id="requests-container" style="display:none; border-bottom: 10px solid #eff3f4;"></div>
             <div id="notifications-container"><div class="empty-text">Burada görecek bir şey yok. Henüz...<br><br>Beğeniler, yanıtlar ve çok daha fazlası burada gerçekleşir.</div></div>
         </main>
@@ -82,30 +133,84 @@
         </aside>
     </div>
 
-    <button class="fab-button" onclick="window.location.href='feed.html'">+</button>
     <div class="bottom-nav">
         <a href="feed.html" class="nav-item">🏠</a>
         <a href="search.html" class="nav-item">🔍</a>
         <a href="chat.html" class="nav-item">✉️</a>
         <a href="notifications.html" class="nav-item active">🔔</a>
-        <a href="#" class="nav-item" id="mobile-profile-link">👤</a>
+    </div>
+
+    <div class="modal-overlay" id="users-list-modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 id="users-list-title" style="margin:0;">Liste</h3>
+                <button class="close-btn" id="close-list-btn">&times;</button>
+            </div>
+            <div id="users-list-container"></div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        let myUsername = null;
+        let myUsername = null; let allUsersData = {};
+
+        // MOBİL MENÜ MANTIĞI
+        window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
+        window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
+        window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
+        window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
+
+        window.showMyFollowing = function() {
+            window.closeMobileSidebar();
+            if (allUsersData[myUsername]) { window.showUserList("Takip Edilenler", allUsersData[myUsername].following || []); }
+        };
+        window.showMyFollowers = function() {
+            window.closeMobileSidebar();
+            if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); }
+        };
+        window.showUserList = function(title, userArray) {
+            const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
+            const container = document.getElementById('users-list-container'); if(!container) return;
+            container.innerHTML = '';
+            if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#536471; padding:20px;">Henüz kimse yok.</p>'; } 
+            else {
+                userArray.forEach(uname => {
+                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
+                    container.innerHTML += `<a href="profile.html?user=${uname}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:bold; color:#0f1419;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:14px; color:#536471;">@${uname}</div></div></a>`;
+                });
+            }
+            document.getElementById('users-list-modal').style.display = 'flex';
+        };
+        document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 myUsername = user.displayName || user.email.split('@')[0];
-                document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
-                document.getElementById('mobile-profile-link').href = `profile.html?user=${myUsername}`;
+                
+                onSnapshot(collection(db, "users"), (snapshot) => { 
+                    allUsersData = {}; 
+                    snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); });
+                    
+                    if(allUsersData[myUsername]) {
+                        const u = allUsersData[myUsername];
+                        document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
+                        document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
+                        document.getElementById('sidebar-following-count').innerText = (u.following || []).length;
+                        document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
+                        if(u.avatarUrl) {
+                            const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                            document.getElementById('mobile-avatar-header').innerHTML = imgTag;
+                            document.getElementById('sidebar-avatar-mobile').innerHTML = imgTag;
+                        }
+                    }
+                });
+
                 loadFollowRequests();
                 loadNotifications(); 
             } else { window.location.href = "index.html"; }
@@ -160,13 +265,13 @@
                     else if (data.type === 'admin_delete') { icon = '🚨'; iconColor = '#e74c3c'; actionText = 'bir gönderini kurallara uymadığı gerekçesiyle sildi.'; link = '#'; isAlert = true; }
 
                     let avatarHtml = '👤';
-                    try { const uSnap = await getDoc(doc(db, "users", data.sender)); if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}" class="notif-avatar">`; else avatarHtml = `<div class="notif-avatar" style="display:flex;justify-content:center;align-items:center;">👤</div>`; } catch(e) {}
+                    try { const uSnap = await getDoc(doc(db, "users", data.sender)); if (uSnap.exists() && uSnap.data().avatarUrl) avatarHtml = `<img src="${uSnap.data().avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; } catch(e) {}
 
                     html += `
                         <a href="${link}" class="notification-item">
                             <div class="notif-icon-box" style="color:${iconColor};">${icon}</div>
                             <div class="notif-content">
-                                ${avatarHtml}
+                                <div style="width:32px; height:32px; border-radius:50%; background:#eee; margin-bottom:8px; display:flex; justify-content:center; align-items:center; overflow:hidden;">${avatarHtml}</div>
                                 <div class="notif-text ${isAlert ? 'notif-alert' : ''}"><b>${data.sender}</b> ${actionText}</div>
                             </div>
                         </a>
