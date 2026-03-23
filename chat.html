@@ -73,7 +73,7 @@
             <button id="open-group-modal" style="background:none; border:none; font-size:14px; font-weight:bold; color:#2980b9; cursor:pointer;">+ Grup</button>
         </div>
         <div style="padding: 20px;">
-            <input type="text" id="dm-search-input" placeholder="Sohbetlerinde ara..." style="width:100%; padding:12px 15px; border-radius:20px; border:1px solid #ddd; margin-bottom:20px; box-sizing:border-box; font-size:15px; outline:none;">
+            <input type="text" id="dm-search-input" placeholder="Kişi veya grup ara..." style="width:100%; padding:12px 15px; border-radius:20px; border:1px solid #ddd; margin-bottom:20px; box-sizing:border-box; font-size:15px; outline:none;">
             <div id="dm-list">Yükleniyor...</div>
         </div>
     </div>
@@ -155,14 +155,14 @@
                     myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                     document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
 
-                    // Tüm kullanıcıların bilgilerini çek (Avatarlar ve İsimler için)
+                    // Tüm kullanıcıların bilgilerini çek
                     onSnapshot(collection(db, "users"), (snapshot) => {
                         allUsersData = {};
                         snapshot.forEach(d => { allUsersData[d.id] = d.data(); });
                         updateInboxDisplay(); 
                     });
 
-                    // Sadece takip ettiklerimi çek (Grup kurma ekranı için gerekli)
+                    // Takip ettiklerimi çek (Grup kurma ekranı için gerekli)
                     onSnapshot(doc(db, "users", myUsername), (docSnap) => {
                         if (docSnap.exists()) { myFollowing = docSnap.data().following || []; }
                     });
@@ -196,7 +196,7 @@
                 // Birebir sohbetleri ve Grupları birleştir
                 let allConversations = [...activeChats, ...activeGroups];
 
-                // Son mesaja (updatedAt) göre yeniden eskiye doğru sırala
+                // Son mesaja göre yeniden eskiye doğru sırala
                 allConversations.sort((a, b) => {
                     let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0;
                     let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0;
@@ -204,8 +204,9 @@
                 });
 
                 // Arama filtresi
+                let filteredConversations = allConversations;
                 if(text) {
-                    allConversations = allConversations.filter(c => {
+                    filteredConversations = allConversations.filter(c => {
                         if(c.type === 'group') return c.name.toLowerCase().includes(text);
                         if(c.type === 'private') {
                             const otherUser = c.participants.find(p => p !== myUsername);
@@ -215,55 +216,93 @@
                     });
                 }
 
-                if (allConversations.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; color:#888; margin-top:30px;">Gösterilecek sohbet bulunamadı.<br><br><small>Yeni bir sohbete başlamak için birinin profiline gidip "Mesaj" butonuna tıklayabilirsin.</small></p>';
-                    return;
+                // 1. MEVCUT SOHBETLERİ BAS
+                if (filteredConversations.length > 0) {
+                    if (text) container.innerHTML += '<div style="font-size:12px; font-weight:bold; color:#888; margin-bottom:10px; margin-left:5px;">MEVCUT SOHBETLER</div>';
+                    
+                    filteredConversations.forEach(conv => {
+                        let title = '';
+                        let avatar = '';
+                        let link = '';
+                        
+                        let isUnread = (conv.lastSender && conv.lastSender !== myUsername); 
+                        
+                        let timeAgoStr = "";
+                        if(conv.updatedAt) {
+                            const date = conv.updatedAt.toDate();
+                            timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                        }
+
+                        if (conv.type === 'private') {
+                            const otherUser = conv.participants.find(p => p !== myUsername);
+                            const uData = allUsersData[otherUser] || {};
+                            title = `@${otherUser} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px;">☑️</span>' : ''}`;
+                            avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
+                            link = `chat.html?user=${otherUser}`;
+                        } else {
+                            title = conv.name;
+                            avatar = `<div style="background:#2ecc71; color:white; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">👥</div>`;
+                            link = `chat.html?group=${conv.id}`;
+                        }
+
+                        let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı';
+                        let subtitleHtml = isUnread 
+                            ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` 
+                            : `<span>${lastMsgText}</span>`;
+
+                        container.innerHTML += `
+                            <a href="${link}" class="dm-user-card">
+                                <div class="dm-avatar">${avatar}</div>
+                                <div class="dm-info">
+                                    <div class="dm-username">${title}</div>
+                                    <div class="dm-subtitle">${subtitleHtml}</div>
+                                </div>
+                                <div class="time-badge">${timeAgoStr}</div>
+                            </a>
+                        `;
+                    });
                 }
 
-                allConversations.forEach(conv => {
-                    let title = '';
-                    let avatar = '';
-                    let link = '';
+                // 2. YENİ KİŞİLERİ BAS (Sadece arama kutusu doluysa çalışır)
+                if (text) {
+                    // Aktif sohbetlerdeki kullanıcı isimlerini topla
+                    const activeUsernames = activeChats.map(c => c.participants.find(p => p !== myUsername));
                     
-                    // Yeni mesaj kontrolü: Son mesajı atan ben değilsem ve bir mesaj varsa okunmamış sayılır
-                    let isUnread = (conv.lastSender && conv.lastSender !== myUsername); 
-                    
-                    // Saat formatı oluşturma
-                    let timeAgoStr = "";
-                    if(conv.updatedAt) {
-                        const date = conv.updatedAt.toDate();
-                        timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
-                    }
+                    // Tüm kullanıcılar içinde ara (Kendimiz ve aktif sohbetimiz olanlar hariç)
+                    const searchResults = Object.keys(allUsersData).filter(uid => 
+                        uid !== myUsername && 
+                        !activeUsernames.includes(uid) && 
+                        uid.toLowerCase().includes(text)
+                    );
 
-                    if (conv.type === 'private') {
-                        const otherUser = conv.participants.find(p => p !== myUsername);
-                        const uData = allUsersData[otherUser] || {};
-                        title = `@${otherUser} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px;">☑️</span>' : ''}`;
-                        avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
-                        link = `chat.html?user=${otherUser}`;
+                    if (searchResults.length > 0) {
+                        container.innerHTML += '<div style="font-size:12px; font-weight:bold; color:#888; margin:15px 0 10px 5px;">YENİ SOHBET BAŞLAT</div>';
+                        searchResults.forEach(uid => {
+                            const uData = allUsersData[uid] || {};
+                            const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
+                            const vHtml = uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
+                            
+                            container.innerHTML += `
+                                <a href="chat.html?user=${uid}" class="dm-user-card" style="background:#f9f9f9; border: 1px dashed #ddd; box-shadow:none;">
+                                    <div class="dm-avatar">${avatar}</div>
+                                    <div class="dm-info">
+                                        <div class="dm-username">@${uid} ${vHtml}</div>
+                                        <div class="dm-subtitle">Sohbet başlatmak için tıkla</div>
+                                    </div>
+                                </a>
+                            `;
+                        });
+                    }
+                }
+
+                // EĞER HİÇBİR ŞEY BULUNAMADIYSA
+                if (container.innerHTML === '') {
+                    if (!text) {
+                        container.innerHTML = '<p style="text-align:center; color:#888; margin-top:30px;">Gösterilecek sohbet bulunamadı.<br><br><small>Arama kutusunu kullanarak yeni bir sohbete başlayabilirsin.</small></p>';
                     } else {
-                        title = conv.name;
-                        avatar = `<div style="background:#2ecc71; color:white; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">👥</div>`;
-                        link = `chat.html?group=${conv.id}`;
+                        container.innerHTML = '<p style="text-align:center; color:#888; margin-top:30px;">Kullanıcı veya sohbet bulunamadı...</p>';
                     }
-
-                    // Son Mesaj Metni ve Yeni Mesaj Görseli
-                    let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı';
-                    let subtitleHtml = isUnread 
-                        ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` 
-                        : `<span>${lastMsgText}</span>`;
-
-                    container.innerHTML += `
-                        <a href="${link}" class="dm-user-card">
-                            <div class="dm-avatar">${avatar}</div>
-                            <div class="dm-info">
-                                <div class="dm-username">${title}</div>
-                                <div class="dm-subtitle">${subtitleHtml}</div>
-                            </div>
-                            <div class="time-badge">${timeAgoStr}</div>
-                        </a>
-                    `;
-                });
+                }
             }
 
             // GRUP KURMA MODALI İŞLEMLERİ
