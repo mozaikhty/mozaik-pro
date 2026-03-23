@@ -52,7 +52,7 @@
 
     <div class="header">
         <h1>🛠️ YÖNETİCİ PANELİ</h1>
-        <p style="color:#aaa; font-size:14px;">Platform Kontrol Merkezi (@realdincer)</p>
+        <p style="color:#aaa; font-size:14px;">Platform Kontrol Merkezi (@mozaik)</p>
     </div>
 
     <div class="tabs">
@@ -81,13 +81,14 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        // YENİ EKLENENLER: getDocs, where, addDoc, serverTimestamp
         import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        const ADMIN_USERNAME = "realdincer"; let allUsers = []; 
+        // YETKİ ARTIK "mozaik" HESABINDA!
+        const ADMIN_USERNAME = "mozaik"; 
+        let allUsers = []; 
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -114,7 +115,6 @@
                 const isVerified = user.isVerified || false; const isBanned = user.isBanned || false;
                 let badgesHtml = ''; if (isVerified) badgesHtml += '<span class="badge bg-blue">VIP</span>'; if (isBanned) badgesHtml += '<span class="badge bg-red">BANLI</span>';
 
-                // YENİ BUTONLAR EKLENDİ
                 list.innerHTML += `
                     <div class="list-item">
                         <div class="user-info">@${user.id} ${badgesHtml}</div>
@@ -133,13 +133,9 @@
             const text = e.target.value.toLowerCase().trim(); const filtered = allUsers.filter(u => u.id.toLowerCase().includes(text)); renderUserList(filtered);
         });
 
-        // ==========================================
-        // YENİ: HESAP SİLME MOTORU
-        // ==========================================
         window.deleteUserCompletely = async function(username) {
             if(confirm(`DİKKAT! @${username} adlı kullanıcıyı tamamen silmek istediğine emin misin? Bu işlem geri alınamaz!`)) {
                 await deleteDoc(doc(db, "users", username));
-                // Kullanıcının attığı tüm postları da sil
                 const q = query(collection(db, "posts"), where("author", "==", username));
                 const snap = await getDocs(q);
                 snap.forEach(async (d) => { await deleteDoc(doc(db, "posts", d.id)); });
@@ -147,9 +143,6 @@
             }
         };
 
-        // ==========================================
-        // YENİ: POSTLARI GÖRME VE BİLDİRİMLİ SİLME
-        // ==========================================
         window.viewUserPosts = async function(username) {
             document.getElementById('admin-posts-modal').style.display = 'flex';
             const list = document.getElementById('admin-posts-list');
@@ -179,10 +172,9 @@
             if(confirm("Gönderi silinecek ve kullanıcıya 'Kuralları ihlal ettin' bildirimi gidecek. Emin misin?")) {
                 await deleteDoc(doc(db, "posts", postId));
                 
-                // Kullanıcıya özel sistem cezası bildirimi gönder
                 await addDoc(collection(db, "notifications"), {
                     type: 'admin_delete',
-                    sender: ADMIN_USERNAME,
+                    sender: ADMIN_USERNAME, // Artık "mozaik" olarak bildirim gidecek
                     recipient: author,
                     createdAt: serverTimestamp()
                 });
