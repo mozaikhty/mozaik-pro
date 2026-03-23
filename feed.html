@@ -37,7 +37,7 @@
         .feed-tab.active .tab-indicator { display: block; }
 
         /* ÇEKMECE MENÜ (DRAWER) */
-        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; }
+        .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 4000; cursor: pointer; }
         .mobile-sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: white; z-index: 4001; transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1); box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
         .mobile-sidebar.open { left: 0; }
         .sidebar-header-mobile { padding: 20px; border-bottom: 1px solid #eff3f4; }
@@ -92,7 +92,7 @@
         .post-content { font-size: 15px; color: #0f1419; line-height: 1.5; word-wrap: break-word; margin-bottom: 10px; }
         .hashtag { color: #1da1f2; text-decoration: none; }
         .hashtag:hover { text-decoration: underline; }
-        .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; }
+        .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid #eff3f4; margin-top: 10px; position: relative;}
         .post-image { width: 100%; max-height: 400px; object-fit: cover; display: block; }
 
         .post-footer-actions { display: flex; justify-content: space-between; max-width: 425px; margin-top: 10px; color: #536471; }
@@ -145,11 +145,10 @@
         }
 
         /* MODALLAR */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; overflow-y: auto;}
         .modal-content { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: sticky; top: -20px; background: white; z-index: 10; padding-bottom: 10px; border-bottom: 1px solid #eff3f4;}
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
-        
         #mobile-post-modal .modal-content { max-width: 100%; width: 100%; height: 100vh; border-radius: 0; padding-top: 10px; margin: 0; }
         #post-detail-modal .modal-content { max-width: 650px; width: 100%; min-height: 50vh; padding: 0;}
         
@@ -248,7 +247,7 @@
         <div class="modal-content">
             <div class="modal-header" style="padding: 10px 20px;">
                 <h3 style="margin:0;">Gönderi</h3>
-                <button class="close-btn" onclick="document.getElementById('post-detail-modal').style.display='none'">&times;</button>
+                <button class="close-btn" onclick="window.closePostDetail()">&times;</button>
             </div>
             <div id="post-detail-container" style="padding-bottom: 20px;"></div>
         </div>
@@ -320,9 +319,21 @@
         let currentUser = null; let myUsername = null; let currentTab = 'discover'; let myFollowingList = []; let globalPosts = []; let allUsersData = {}; let currentlyEditingPostId = null;
         let postToShare = null; let activeReplyParentId = null;
 
-        // GLOBAL TIKLAMA (Dropdown kapamak için)
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
+        // GLOBAL TIKLAMA İLE OVERLAY & DROPDOWN KAPATMA
+        document.addEventListener('click', function(event) {
+            // Dropdown Menü Kapat
+            if (!event.target.classList.contains('post-options-btn')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
+            }
+            // Overlay Arka Plan Kapat
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+                if(event.target.id === 'post-detail-modal') {
+                    window.currentOpenPostId = null;
+                    activeReplyParentId = null;
+                    document.getElementById('post-detail-container').innerHTML = '';
+                }
+            }
         });
 
         // MOBİL MENÜ
@@ -381,7 +392,6 @@
         function loadPostsFromDatabase() {
             onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
                 globalPosts = []; snapshot.forEach((postDoc) => { globalPosts.push({ id: postDoc.id, data: postDoc.data() }); }); renderFeed(); 
-                
                 const detailModal = document.getElementById('post-detail-modal');
                 if(detailModal.style.display === 'flex' && window.currentOpenPostId) {
                     window.openPostDetail(window.currentOpenPostId);
@@ -490,6 +500,13 @@
         // 4. DETAYLI İNCELEME VE SONSUZ YORUM AĞACI
         function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
 
+        window.closePostDetail = function() {
+            document.getElementById('post-detail-modal').style.display = 'none';
+            window.currentOpenPostId = null;
+            activeReplyParentId = null;
+            document.getElementById('post-detail-container').innerHTML = ''; 
+        };
+
         window.openPostDetail = function(postId) {
             window.currentOpenPostId = postId; activeReplyParentId = null;
             const postObj = globalPosts.find(p => p.id === postId); if(!postObj) return;
@@ -498,7 +515,16 @@
             const vHtml = authorData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
             const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
             const fullName = authorData.fullName || postData.author;
-            let timeString = postData.createdAt ? new Date(postData.createdAt.toMillis()).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+            
+            // HATA KORUMALI ZAMAN HESAPLAYICI (FAIL-SAFE)
+            let timeString = "";
+            if (postData.createdAt) {
+                if (typeof postData.createdAt.toMillis === 'function') {
+                    timeString = new Date(postData.createdAt.toMillis()).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+                } else if (postData.createdAt.seconds) {
+                    timeString = new Date(postData.createdAt.seconds * 1000).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+                }
+            }
 
             let html = `
                 <div style="padding: 20px; border-bottom:1px solid #eff3f4;">
@@ -541,7 +567,7 @@
             document.getElementById('post-detail-modal').style.display = 'flex';
         };
 
-        // İÇ İÇE YORUM AĞACI OLUŞTURUCU (RECURSIVE)
+        // İÇ İÇE YORUM AĞACI OLUŞTURUCU
         function buildCommentsTree(allComments, parentId, depth = 0) {
             let html = '';
             const children = allComments.filter(c => (c.parentId || null) === (parentId || null)).sort((a,b) => a.timestamp - b.timestamp);
@@ -591,7 +617,7 @@
             input.value = ''; window.cancelDetailReply();
         };
 
-        // GÖNDERİ RENDER (YENİLENMİŞ)
+        // GÖNDERİ RENDER
         function renderFeed() {
             const feedContainer = document.getElementById('feed-container'); feedContainer.innerHTML = '';
             
@@ -616,15 +642,21 @@
                 const isMyRepost = (postData.author === myUsername); 
                 const fullName = authorData.fullName || originalAuthor;
                 
+                // HATA KORUMALI ZAMAN HESAPLAYICI
                 let timeAgo = "";
                 if(postData.createdAt) {
-                    const secs = Math.floor((Date.now() - postData.createdAt.toMillis()) / 1000);
-                    if(secs < 60) timeAgo = `${secs}s`; else if (secs < 3600) timeAgo = `${Math.floor(secs/60)}d`; else if (secs < 86400) timeAgo = `${Math.floor(secs/3600)}sa`; else timeAgo = `${Math.floor(secs/86400)}g`;
+                    let millis = 0;
+                    if (typeof postData.createdAt.toMillis === 'function') millis = postData.createdAt.toMillis();
+                    else if (postData.createdAt.seconds) millis = postData.createdAt.seconds * 1000;
+                    
+                    if(millis > 0) {
+                        const secs = Math.floor((Date.now() - millis) / 1000);
+                        if(secs < 60) timeAgo = `${secs}s`; else if (secs < 3600) timeAgo = `${Math.floor(secs/60)}d`; else if (secs < 86400) timeAgo = `${Math.floor(secs/3600)}sa`; else timeAgo = `${Math.floor(secs/86400)}g`;
+                    }
                 }
 
                 const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
-                // Repost İbaresi
                 let repostHtml = '';
                 if(postData.isRepost) {
                     const reposterName = postData.author === myUsername ? 'Sen' : (allUsersData[postData.author]?.fullName || postData.author);
