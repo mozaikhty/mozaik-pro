@@ -37,7 +37,7 @@
         
         .feed-tabs { display: flex; width: 100%; height: 53px; border-bottom: 1px solid #eff3f4; overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none;}
         .feed-tabs::-webkit-scrollbar { display: none; }
-        .feed-tab { padding: 0 15px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: 500; color: #536471; transition: 0.2s; position: relative; white-space: nowrap; }
+        .feed-tab { padding: 0 15px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: 500; color: #536471; transition: 0.2s; position: relative; white-space: nowrap; flex: 1; }
         .feed-tab:hover { background-color: #eff3f4; }
         .feed-tab.active { color: #0f1419; font-weight: bold; }
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; display: none; width: 60%; }
@@ -88,7 +88,6 @@
         .msg-them { background: #eff3f4; color: #0f1419; border-radius: 20px 20px 20px 4px; }
         .msg-me { background: #1da1f2; color: white; border-radius: 20px 20px 4px 20px; }
         
-        /* GÜNCELLENDİ: Taşan fotoğrafları önleyen CSS */
         .msg-image { max-width: 100%; max-height: 350px; border-radius: 16px; margin-bottom: 5px; object-fit: cover; display: block; }
         
         .quoted-msg { background: rgba(0,0,0,0.05); padding: 8px 12px; border-radius: 12px; border-left: 3px solid #1da1f2; font-size: 13px; margin-bottom: 8px; }
@@ -105,7 +104,6 @@
         .action-link:hover { color: #1da1f2; text-decoration: underline; }
         .action-link.danger:hover { color: #f4212e; }
 
-        /* SİSTEM MESAJLARI (Cevapsız Çağrı vb) */
         .system-message { text-align: center; margin: 15px 0; display: flex; justify-content: center; }
         .system-message span { background: #eff3f4; color: #536471; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; }
 
@@ -113,15 +111,20 @@
         .reply-preview-text { color: #536471; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
         .cancel-reply-btn { background: none; border: none; font-weight: bold; font-size: 16px; cursor: pointer; color: #0f1419; }
         
-        /* YENİ NESİL X GİRİŞ KUTUSU */
-        .chat-input-area { background: white; padding: 10px 15px; display: flex; align-items: center; border-top: 1px solid #eff3f4; min-height: 60px; gap: 5px; }
-        .chat-input-wrapper { flex: 1; background: #eff3f4; border-radius: 20px; display: flex; align-items: center; padding: 5px 15px; }
+        /* GİRİŞ KUTUSU VE EMOJI PICKER */
+        .chat-input-area { background: white; padding: 10px 15px; display: flex; align-items: center; border-top: 1px solid #eff3f4; min-height: 60px; gap: 5px; position: relative;}
         .chat-input-icons { display: flex; gap: 2px; align-items: center; margin-right: 5px;}
         .chat-input-icons label, .chat-input-icons button { font-size: 18px; cursor: pointer; color: #1da1f2; transition: 0.2s; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; background: none; padding: 0; }
         .chat-input-icons label:hover, .chat-input-icons button:hover { background: rgba(29,161,242,0.1); }
         
-        .chat-input { flex: 1; padding: 8px 5px; border: none; background: transparent; font-size: 15px; outline: none; font-family: inherit; color: #0f1419; }
+        .emoji-picker { display: none; background: white; border: 1px solid #eff3f4; border-radius: 16px; padding: 10px; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: absolute; z-index: 500; width: 250px; bottom: 65px; left: 15px;}
+        .emoji-item { cursor: pointer; font-size: 22px; transition: 0.2s; }
+        .emoji-item:hover { transform: scale(1.3); }
+
+        .chat-input-wrapper { flex: 1; background: #eff3f4; border-radius: 20px; display: flex; align-items: center; padding: 0 10px; margin-left: 5px; }
+        .chat-input { flex: 1; padding: 10px 5px; border: none; background: transparent; font-size: 15px; outline: none; font-family: inherit; color: #0f1419; }
         .chat-input::placeholder { color: #536471; }
+        
         .send-btn { background: none; color: #1da1f2; border: none; cursor: pointer; font-size: 20px; padding: 0 0 0 10px; transition: 0.2s; opacity: 0.5; display: flex; align-items: center; justify-content: center; }
         .send-btn:not(:disabled) { opacity: 1; transform: scale(1.1); }
 
@@ -194,11 +197,10 @@
                 </div>
             </div>
             
-            <div class="feed-tabs">
-                <div class="feed-tab active">Tümü <div class="tab-indicator"></div></div>
-                <div class="feed-tab" onclick="alert('Yakında!')">Okunmamış</div>
-                <div class="feed-tab" onclick="alert('Yakında!')">Doğrudan</div>
-                <div class="feed-tab" onclick="alert('Yakında!')">Gruplar</div>
+            <div class="feed-tabs" id="inbox-tabs">
+                <div class="feed-tab active" data-tab="all">Tümü <div class="tab-indicator"></div></div>
+                <div class="feed-tab" data-tab="unread">Okunmamış <div class="tab-indicator"></div></div>
+                <div class="feed-tab" data-tab="groups">Gruplar <div class="tab-indicator"></div></div>
             </div>
 
             <div class="inbox-list" id="dm-list">
@@ -256,15 +258,21 @@
                 </div>
 
                 <div class="chat-input-area">
+                    <div class="chat-input-icons">
+                        <input type="file" id="chat-image-input" accept="image/*" style="display:none;">
+                        <label for="chat-image-input" title="Fotoğraf Ekle" id="img-upload-label">🖼️</label>
+                        <button title="Emoji Ekle" id="open-emoji-btn">😀</button>
+                    </div>
+                    
+                    <div class="emoji-picker" id="chat-emoji-picker">
+                        <span class="emoji-item">😀</span><span class="emoji-item">😂</span><span class="emoji-item">🥰</span>
+                        <span class="emoji-item">😎</span><span class="emoji-item">🔥</span><span class="emoji-item">👍</span>
+                        <span class="emoji-item">🎉</span><span class="emoji-item">😢</span><span class="emoji-item">😮</span>
+                        <span class="emoji-item">🙏</span><span class="emoji-item">💯</span><span class="emoji-item">✨</span>
+                    </div>
+
                     <div class="chat-input-wrapper">
-                        <div class="chat-input-icons">
-                            <button title="Ekle (Yakında)" onclick="alert('Eklentiler yakında!')">➕</button>
-                            <input type="file" id="chat-image-input" accept="image/*" style="display:none;">
-                            <label for="chat-image-input" title="Medya Ekle" id="img-upload-label">🖼️</label>
-                            <button title="GIF (Yakında)" onclick="alert('GIF özelliği yakında eklenecek!')">🔲</button>
-                            <button title="Emoji (Yakında)" onclick="alert('Emoji özelliği yakında eklenecek!')">😀</button>
-                        </div>
-                        <input type="text" id="msg-input" class="chat-input" placeholder="Mesaj" autocomplete="off">
+                        <input type="text" id="msg-input" class="chat-input" placeholder="Bir mesaj yaz..." autocomplete="off">
                         <button id="send-btn" class="send-btn" disabled title="Gönder">🚀</button>
                     </div>
                 </div>
@@ -333,6 +341,7 @@
         let currentUser = null; let myUsername = null; let chatId = null; let isGroupChat = false;
         let allUsersData = {}; let activeChats = []; let myFollowing = [];
         let currentReplyData = null; let typingTimeout = null;
+        let currentInboxTab = 'all'; // Filtreleme için değişken
 
         let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let isCallVideo = false;
         const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
@@ -354,11 +363,42 @@
             document.body.classList.remove('chat-active');
         };
 
-        // Resim Eklendiğinde Butonu Aktif Et
+        // INBOX SEKMELERİ KONTROLÜ
+        document.querySelectorAll('#inbox-tabs .feed-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('#inbox-tabs .feed-tab').forEach(t => t.classList.remove('active'));
+                const target = e.currentTarget;
+                target.classList.add('active');
+                currentInboxTab = target.getAttribute('data-tab');
+                updateInboxDisplay(); // Sekme değiştiğinde listeyi güncelle
+            });
+        });
+
+        // EMOJI PICKER (SOHBET İÇİ)
+        document.getElementById('open-emoji-btn').addEventListener('click', () => {
+            const picker = document.getElementById('chat-emoji-picker');
+            picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+        });
+        document.querySelectorAll('#chat-emoji-picker .emoji-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const input = document.getElementById('msg-input');
+                input.value += e.target.innerText;
+                document.getElementById('send-btn').disabled = false;
+            });
+        });
+        // Tıklama dışı kapat
+        document.addEventListener('click', function(event) {
+            const btn = document.getElementById('open-emoji-btn');
+            const picker = document.getElementById('chat-emoji-picker');
+            if (!btn.contains(event.target) && !picker.contains(event.target)) {
+                picker.style.display = 'none';
+            }
+        });
+
+        // FOTOĞRAF KONTROLÜ
         document.getElementById('chat-image-input').addEventListener('change', (e) => {
             if(e.target.files.length > 0) { document.getElementById('send-btn').disabled = false; }
         });
-        
         document.getElementById('msg-input').addEventListener('input', (e) => {
             if(e.target.value.trim().length > 0) document.getElementById('send-btn').disabled = false;
             else if (document.getElementById('chat-image-input').files.length === 0) document.getElementById('send-btn').disabled = true;
@@ -371,8 +411,16 @@
                 document.getElementById('mobile-profile-link').href = `profile.html?user=${myUsername}`;
                 
                 onSnapshot(collection(db, "users"), (snapshot) => { allUsersData = {}; snapshot.forEach(d => { allUsersData[d.id] = d.data(); }); updateInboxDisplay(); });
-                onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { activeChats = []; snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); updateInboxDisplay(); });
-                onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { activeGroups = []; snapshot.forEach(docSnap => { activeGroups.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); updateInboxDisplay(); });
+                onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
+                    activeChats = activeChats.filter(c => c.type === 'group'); // Sadece grupları tut
+                    snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
+                    updateInboxDisplay(); 
+                });
+                onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
+                    activeChats = activeChats.filter(c => c.type === 'private'); // Sadece özelleri tut
+                    snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); 
+                    updateInboxDisplay(); 
+                });
                 onSnapshot(doc(db, "users", myUsername), (docSnap) => { if (docSnap.exists()) { myFollowing = docSnap.data().following || []; } });
 
                 if (targetUsername || targetGroupId) {
@@ -391,11 +439,25 @@
             const text = document.getElementById('dm-search-input').value.toLowerCase().trim();
             const container = document.getElementById('dm-list'); container.innerHTML = '';
             
-            let allConversations = [...activeChats, ...(typeof activeGroups !== 'undefined' ? activeGroups : [])];
+            let allConversations = [...activeChats];
             allConversations.sort((a, b) => { let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0; let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0; return timeB - timeA; });
             
-            let filteredConversations = allConversations;
-            if(text) { filteredConversations = allConversations.filter(c => { if(c.type === 'group') return c.name.toLowerCase().includes(text); if(c.type === 'private') { const otherUser = c.participants.find(p => p !== myUsername); return otherUser && otherUser.toLowerCase().includes(text); } return false; }); }
+            // FİLTRELEME (Sekmelere Göre)
+            let filteredConversations = allConversations.filter(conv => {
+                let isUnread = (conv.lastSender && conv.lastSender !== myUsername);
+                if (currentInboxTab === 'unread') return isUnread;
+                if (currentInboxTab === 'groups') return conv.type === 'group';
+                return true; // 'all'
+            });
+
+            // FİLTRELEME (Arama Kutusuna Göre)
+            if(text) { 
+                filteredConversations = filteredConversations.filter(c => { 
+                    if(c.type === 'group') return c.name.toLowerCase().includes(text); 
+                    if(c.type === 'private') { const otherUser = c.participants.find(p => p !== myUsername); return otherUser && otherUser.toLowerCase().includes(text); } 
+                    return false; 
+                }); 
+            }
 
             if (filteredConversations.length > 0) {
                 filteredConversations.forEach(conv => {
@@ -489,7 +551,6 @@
                 }
             });
 
-            // WEBRTC DİNLEYİCİSİ VE CEVAPSIZ ÇAĞRI MANTIĞI
             onSnapshot(collection(db, "chats", chatId, "calls"), (snapshot) => {
                 snapshot.docChanges().forEach(async (change) => {
                     const callData = change.doc.data();
@@ -503,10 +564,7 @@
                         document.getElementById('call-status-text').innerText = "Bağlandı";
                         const desc = new RTCSessionDescription(callData.answer); await peerConnection.setRemoteDescription(desc);
                     }
-                    // Arama sonlanırsa veya reddedilirse (Cevapsız çağrı)
-                    if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed')) { 
-                        endCallUI(); 
-                    }
+                    if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed')) { endCallUI(); }
                 });
             });
 
@@ -557,12 +615,11 @@
 
                     // SİSTEM MESAJLARI (Cevapsız Çağrı vb)
                     if (data.type === 'system') {
-                        const sysDiv = document.createElement('div');
-                        sysDiv.className = 'system-message';
+                        const sysDiv = document.createElement('div'); sysDiv.className = 'system-message';
                         const icon = data.text.includes('görüntülü') ? '📹' : '📞';
                         sysDiv.innerHTML = `<span>${icon} ${data.text} - ${timeString}</span>`;
                         messagesContainer.appendChild(sysDiv);
-                        return; // Normal baloncuk oluşturmayı atla
+                        return; 
                     }
 
                     if (!isMe && !data.isRead) { updateDoc(doc(messagesRef, docSnap.id), { isRead: true }).catch(e=>{}); }
@@ -622,7 +679,7 @@
             const text = msgInput.value.trim(); const file = imgInput.files[0];
             if (!text && !file) return;
 
-            sendBtn.disabled = true; msgInput.value = ''; 
+            sendBtn.disabled = true; msgInput.value = ''; document.getElementById('chat-emoji-picker').style.display = 'none';
             
             let imgUrl = null;
             if(file) {
@@ -711,15 +768,10 @@
                 const callSnap = await getDoc(doc(db, "chats", chatId, "calls", currentCallDocId));
                 if(callSnap.exists()) {
                     const callData = callSnap.data();
-                    // Eğer arama "ringing" (çalıyor) durumundayken kapatılırsa cevapsızdır
                     if(callData.status === 'ringing') {
                         await updateDoc(doc(db, "chats", chatId, "calls", currentCallDocId), { status: 'missed' });
-                        // Sisteme Cevapsız Çağrı Mesajı At
                         await addDoc(collection(db, "chats", chatId, "messages"), {
-                            type: 'system',
-                            text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama',
-                            sender: myUsername,
-                            createdAt: serverTimestamp()
+                            type: 'system', text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama', sender: myUsername, createdAt: serverTimestamp()
                         });
                     } else {
                         await updateDoc(doc(db, "chats", chatId, "calls", currentCallDocId), { status: 'ended' });
