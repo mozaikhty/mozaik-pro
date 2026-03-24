@@ -20,6 +20,16 @@
         .desktop-nav-item.active { font-weight: bold; }
         .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
 
+        /* MASAÜSTÜ SOL ALT KULLANICI MENÜSÜ */
+        .sidebar-user-menu { margin-top: auto; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 30px; cursor: pointer; transition: 0.2s; text-decoration: none; }
+        .sidebar-user-menu:hover { background-color: #eff3f4; }
+        .sidebar-user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; border: 1px solid #eff3f4; }
+        .sidebar-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-user-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .sidebar-user-name { font-weight: bold; font-size: 15px; color: #0f1419; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-user-handle { font-size: 15px; color: #536471; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-user-dots { font-weight: bold; color: #0f1419; padding-right: 5px; }
+
         .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; flex-shrink: 0; }
         
         .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; padding: 5px 15px; display: flex; align-items: center; gap: 20px; min-height: 53px;}
@@ -81,7 +91,6 @@
         .tab-indicator { position: absolute; bottom: 0; height: 4px; background: #1da1f2; border-radius: 4px; display: none; width: 60px; }
         .feed-tab.active .tab-indicator { display: block; }
 
-        /* POST ZIRHI: Metin seçimi engellendi, tıklama hatasız */
         .post { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #eff3f4; cursor: pointer; transition: 0.2s; background: white; position: relative; -webkit-tap-highlight-color: transparent;}
         .post * { cursor: pointer !important; }
         .post:hover { background: #f7f9f9; }
@@ -155,7 +164,6 @@
         .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; }
         .row-avatar img { width: 100%; height: 100%; object-fit: cover;}
         
-        /* DETAYLI İNCELEME & YORUM AĞACI */
         #post-detail-modal .modal-content { max-width: 650px; width: 100%; min-height: 50vh; padding: 0;}
         .comments-wrapper { padding-top: 15px; border-top: 1px solid #eff3f4; margin-top: 15px; }
         .comment-node { position: relative; margin-top: 15px; }
@@ -206,6 +214,15 @@
                 <a href="#" class="desktop-nav-item active" id="desktop-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
             </div>
             <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
+            
+            <div class="sidebar-user-menu" onclick="window.goToMyProfile()">
+                <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="desktop-sidebar-name">Yükleniyor...</div>
+                    <div class="sidebar-user-handle" id="desktop-sidebar-handle">@bekleniyor</div>
+                </div>
+                <div class="sidebar-user-dots">•••</div>
+            </div>
         </nav>
 
         <main class="feed-main">
@@ -350,7 +367,6 @@
         let allUsersData = {}; let currentProfileFollowers = []; let currentProfileFollowing = []; let unsubscribePosts = null; let currentlyEditingPostId = null; 
         let postToShare = null; let activeReplyParentId = null;
 
-        // GLOBAL TIKLAMA YAKALAYICI (Hata Koruma)
         document.addEventListener('click', function(event) {
             if (!event.target.classList.contains('post-options-btn')) {
                 document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
@@ -414,7 +430,10 @@
                         if(u.avatarUrl) {
                             const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
                             const sideAv = document.getElementById('sidebar-avatar-mobile'); if(sideAv) sideAv.innerHTML = imgTag;
+                            const deskAv = document.getElementById('desktop-sidebar-avatar'); if(deskAv) deskAv.innerHTML = imgTag;
                         }
+                        const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
+                        const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                     }
                 });
                 
@@ -499,7 +518,6 @@
             window.showUserList("Beğenenler", likesArray);
         };
 
-        // PROFİL DETAYLARI
         function loadUserProfileData() {
             onSnapshot(doc(db, "users", targetUsername), async (docSnap) => {
                 if (docSnap.exists()) {
@@ -654,7 +672,6 @@
             else { btn.innerText = "Takip Et"; }
         }
 
-        // DETAY EKRANI VE İÇ İÇE YORUMLAR (AĞAÇ)
         function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
 
         window.closePostDetail = function() {
@@ -673,7 +690,6 @@
             const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
             const fullName = authorData.fullName || postData.author;
             
-            // HATA KORUMALI ZAMAN (FAIL-SAFE)
             let timeString = "";
             if (postData.createdAt) {
                 if (typeof postData.createdAt.toMillis === 'function') {
@@ -724,9 +740,8 @@
             document.getElementById('post-detail-modal').style.display = 'flex';
         };
 
-        // İÇ İÇE YORUM AĞACI OLUŞTURUCU (HATA KORUMALI)
         function buildCommentsTree(allComments, parentId, depth = 0) {
-            if (depth > 15) return ''; // Sonsuz Döngü Engelleyici Kalkan!
+            if (depth > 15) return ''; 
             let html = '';
             const safeParentId = parentId || null;
             
@@ -736,8 +751,6 @@
                 const cUserData = allUsersData[c.author] || {};
                 const avatarHtml = cUserData.avatarUrl ? `<img src="${cUserData.avatarUrl}">` : `👤`;
                 const vHtml = cUserData.isVerified ? `<span class="verified-badge" style="font-size:12px;">☑️</span>` : '';
-                
-                // ESKİ YORUMLAR İÇİN SAHTE ID ATAMASI (Çökme Önleyici)
                 const safeCommentId = c.id || ('legacy_' + Math.random().toString(36).substr(2, 9));
 
                 html += `
@@ -781,12 +794,10 @@
             input.value = ''; window.cancelDetailReply();
         };
 
-        // GÖNDERİ RENDER
         function loadUserPosts() {
             unsubscribePosts = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
                 const feedContainer = document.getElementById('profile-feed-container'); feedContainer.innerHTML = ''; let userPostCount = 0;
                 
-                // Sabitlenen Gönderi Kontrolü
                 let pinnedPostId = null;
                 if(allUsersData[targetUsername] && allUsersData[targetUsername].pinnedPostId) {
                     pinnedPostId = allUsersData[targetUsername].pinnedPostId;
@@ -798,7 +809,6 @@
                         userPostCount++;
                         const postId = postDoc.id;
                         
-                        // Render Post Function
                         const renderSinglePost = (isPinned) => {
                             const likesArray = postData.likes || [];
                             const isLiked = likesArray.includes(myUsername);
@@ -810,7 +820,6 @@
                             const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
                             const fullName = authorData.fullName || postData.author;
                             
-                            // HATA KORUMALI ZAMAN
                             let timeAgo = "";
                             if(postData.createdAt) {
                                 let millis = 0;
@@ -878,12 +887,8 @@
                             return postDiv;
                         };
 
-                        // Eğer sabitlenmişse en üste at
-                        if(postId === pinnedPostId) {
-                            feedContainer.prepend(renderSinglePost(true));
-                        } else {
-                            feedContainer.appendChild(renderSinglePost(false));
-                        }
+                        if(postId === pinnedPostId) { feedContainer.prepend(renderSinglePost(true)); } 
+                        else { feedContainer.appendChild(renderSinglePost(false)); }
                     }
                 });
                 document.getElementById('header-post-count').innerText = `${userPostCount} gönderi`;

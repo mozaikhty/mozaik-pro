@@ -20,6 +20,16 @@
         .desktop-nav-item.active { font-weight: bold; }
         .desktop-post-btn { background: #1da1f2; color: white; border: none; border-radius: 30px; font-size: 17px; font-weight: bold; padding: 15px; margin-top: 15px; cursor: pointer; transition: 0.2s; width: 90%; }
 
+        /* MASAÜSTÜ SOL ALT KULLANICI MENÜSÜ */
+        .sidebar-user-menu { margin-top: auto; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 30px; cursor: pointer; transition: 0.2s; text-decoration: none; }
+        .sidebar-user-menu:hover { background-color: #eff3f4; }
+        .sidebar-user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eee; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; border: 1px solid #eff3f4; }
+        .sidebar-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-user-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .sidebar-user-name { font-weight: bold; font-size: 15px; color: #0f1419; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-user-handle { font-size: 15px; color: #536471; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-user-dots { font-weight: bold; color: #0f1419; padding-right: 5px; }
+
         .feed-main { width: 600px; min-height: 100vh; border-right: 1px solid #eff3f4; padding-bottom: 80px; }
         .header-sticky { position: sticky; top: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); z-index: 100; border-bottom: 1px solid #eff3f4; }
         
@@ -143,6 +153,15 @@
                 <a href="#" class="desktop-nav-item" id="desktop-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
             </div>
             <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
+            
+            <div class="sidebar-user-menu" onclick="window.goToMyProfile()">
+                <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="desktop-sidebar-name">Yükleniyor...</div>
+                    <div class="sidebar-user-handle" id="desktop-sidebar-handle">@bekleniyor</div>
+                </div>
+                <div class="sidebar-user-dots">•••</div>
+            </div>
         </nav>
 
         <main class="feed-main">
@@ -268,7 +287,11 @@
                         const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
                         document.getElementById('mobile-avatar-header').innerHTML = imgTag;
                         document.getElementById('sidebar-avatar-mobile').innerHTML = imgTag;
+                        
+                        const deskAv = document.getElementById('desktop-sidebar-avatar'); if(deskAv) deskAv.innerHTML = imgTag;
                     }
+                    const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
+                    const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                 }
                 performSearch(); 
             });
