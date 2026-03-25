@@ -419,9 +419,6 @@
             <button class="story-view-count-btn" onclick="window.openStoryDetailsModal()" title="Detayları İncele">
                 👁️ <span id="story-view-count">0</span> Görüntüleyenler
             </button>
-            <div style="margin-left: 15px; font-weight: bold; color: white; display:flex; align-items:center; gap:6px;">
-                ❤️ <span id="story-like-count-owner">0</span> Beğeniler
-            </div>
         </div>
     </div>
 
@@ -839,7 +836,7 @@
         makeDraggable('editor-image-preview', 'image');
         makeDraggable('editor-text-preview', 'text');
 
-        // YENİ HİKAYE KAYDETME (Düzenlenmiş Konumlarla Birlikte)
+        // YENİ HİKAYE KAYDETME (Düzenlenmiş Konumlarla Birlikte ve Hata Yakalamalı)
         document.getElementById('submit-story-btn')?.addEventListener('click', async () => {
             const textVal = document.getElementById('story-text-input').value.trim();
             const file = document.getElementById('story-image-input').files[0];
@@ -848,31 +845,41 @@
             const btn = document.getElementById('submit-story-btn');
             btn.disabled = true; btn.innerText = "Yükleniyor...";
             
-            let imgUrl = null;
-            if(file) { 
-                const formData = new FormData(); formData.append("image", file); 
-                try {
+            try {
+                let imgUrl = null;
+                if(file) { 
+                    const formData = new FormData(); 
+                    formData.append("image", file); 
                     const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData }); 
-                    const data = await res.json(); imgUrl = data.data.url; 
-                } catch(e) { alert("Resim yüklenemedi!"); btn.disabled = false; btn.innerText = "Hikayemi Yayınla"; return;}
+                    const data = await res.json(); 
+                    if(data && data.data && data.data.url) {
+                        imgUrl = data.data.url; 
+                    } else {
+                        throw new Error("Resim yüklenemedi");
+                    }
+                }
+
+                const finalLayout = JSON.parse(JSON.stringify(window.editorState));
+
+                const newStory = {
+                    id: 'story_' + generateUniqueId(),
+                    text: textVal,
+                    imageUrl: imgUrl,
+                    createdAt: Date.now(),
+                    likes: [],
+                    views: [],
+                    layout: finalLayout
+                };
+
+                await updateDoc(doc(db, "users", myUsername), { stories: arrayUnion(newStory) });
+                document.getElementById('add-story-modal').style.display = 'none';
+            } catch(e) { 
+                console.error("Hikaye yükleme hatası:", e);
+                alert("Hikaye paylaşılırken bir hata oluştu. Lütfen tekrar deneyin.");
+            } finally {
+                btn.disabled = false; 
+                btn.innerText = "Hikayemi Yayınla";
             }
-
-            const finalLayout = JSON.parse(JSON.stringify(window.editorState));
-
-            const newStory = {
-                id: 'story_' + generateUniqueId(),
-                text: textVal,
-                imageUrl: imgUrl,
-                createdAt: Date.now(),
-                likes: [],
-                views: [],
-                layout: finalLayout
-            };
-
-            await updateDoc(doc(db, "users", myUsername), { stories: arrayUnion(newStory) });
-            
-            document.getElementById('add-story-modal').style.display = 'none';
-            btn.disabled = false; btn.innerText = "Hikayemi Yayınla";
         });
 
         // =====================================
@@ -948,7 +955,7 @@
             });
             container.innerHTML = html;
 
-            // Eğer Hikaye İzleyici açıksa anlık görüntülenme/beğenme değerlerini güncelle
+            // Eğer Hikaye İzleyici açıksa anlık görüntülenme değerlerini güncelle
             if (document.getElementById('story-viewer-overlay').style.display === 'flex') {
                 const currentUserObj = activeStoryUsers[currentStoryUserIndex];
                 if (currentUserObj) {
@@ -956,11 +963,8 @@
                     if (currentStory) {
                         if (currentUserObj.username === myUsername) {
                             const viewsCount = (currentStory.views || []).length;
-                            const likesCount = (currentStory.likes || []).length;
                             const vEl = document.getElementById('story-view-count');
-                            const lEl = document.getElementById('story-like-count-owner');
                             if(vEl) vEl.innerText = viewsCount;
-                            if(lEl) lEl.innerText = likesCount;
                             
                             if (document.getElementById('story-details-modal').style.display === 'flex') {
                                 window.switchStoryDetailsTab(storyDetailsTab);
