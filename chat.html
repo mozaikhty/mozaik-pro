@@ -47,6 +47,8 @@
         .sidebar-menu-item { padding: 15px 20px; font-size: 20px; font-weight: bold; color: #0f1419; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.2s; }
         .sidebar-menu-item:hover { background: #eff3f4; }
         .sidebar-divider { height: 1px; background: #eff3f4; margin: 10px 0; }
+        .sidebar-bottom-menu { padding: 10px 20px; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar-bottom-item { text-decoration: none; color: #0f1419; font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 15px; }
 
         /* ORTA SÜTUN (GELEN KUTUSU - INBOX) */
         .feed-main { width: 380px; height: 100vh; border-right: 1px solid #eff3f4; display: flex; flex-direction: column; flex-shrink: 0; background: white; z-index: 10; }
@@ -194,6 +196,37 @@
             body.chat-active .sidebar-right { display: flex !important; }
             .msg-actions { opacity: 1; }
         }
+
+        /* KARANLIK MOD CSS */
+        body.dark-mode { background-color: #000000; color: #e7e9ea; }
+        body.dark-mode .sidebar-left, body.dark-mode .feed-main, body.dark-mode .sidebar-right, body.dark-mode .chat-header-main, body.dark-mode .chat-header, body.dark-mode .chat-input-area, body.dark-mode .mobile-sidebar, body.dark-mode .modal-content, body.dark-mode .emoji-picker { background-color: #000000; border-color: #2f3336; color: #e7e9ea; }
+        body.dark-mode .desktop-nav-item:hover, body.dark-mode .sidebar-user-menu:hover, body.dark-mode .feed-tab:hover, body.dark-mode .dm-user-card:hover, body.dark-mode .dm-user-card.active, body.dark-mode .icon-btn:hover, body.dark-mode .call-btn:hover, body.dark-mode .back-btn:hover, body.dark-mode .chat-input-icons label:hover, body.dark-mode .chat-input-icons button:hover, body.dark-mode .sidebar-menu-item:hover, body.dark-mode .user-row:hover { background-color: #181818; }
+        body.dark-mode .search-box-inbox, body.dark-mode .chat-input-wrapper { background-color: #202327; color: #e7e9ea; border:none;}
+        body.dark-mode .chat-input { color: #e7e9ea; }
+        body.dark-mode .dm-username, body.dark-mode .header-title, body.dark-mode .chat-username-text, body.dark-mode .unread-text, body.dark-mode .sidebar-name-mobile, body.dark-mode .settings-text, body.dark-mode .reply-preview-text { color: #e7e9ea !important; }
+        body.dark-mode .dm-subtitle, body.dark-mode .time-badge, body.dark-mode .chat-subtitle, body.dark-mode .sidebar-user-handle, body.dark-mode .sidebar-stats-mobile, body.dark-mode .desktop-nav-item, body.dark-mode .system-message span { color: #71767b; }
+        body.dark-mode .desktop-nav-item { color: #e7e9ea; }
+        body.dark-mode .modal-header { background-color: #000000; border-bottom-color: #2f3336;}
+        body.dark-mode .close-btn, body.dark-mode .cancel-reply-btn { color: #e7e9ea; }
+        body.dark-mode .close-btn:hover { background-color: #181818; }
+        body.dark-mode .bottom-nav { background: rgba(0,0,0,0.9); border-top-color: #2f3336;}
+        body.dark-mode .nav-item { color: #71767b; }
+        body.dark-mode .nav-item.active { color: #e7e9ea; }
+        body.dark-mode .settings-row { border-bottom-color: #2f3336 !important; }
+        body.dark-mode .sidebar-bottom-item { color: #e7e9ea; }
+        body.dark-mode .msg-them { background-color: #202327; color: #e7e9ea; }
+        body.dark-mode .msg-me { background-color: #1da1f2; color: #ffffff; }
+        body.dark-mode .reply-preview-box { background-color: #000000; border-top-color: #2f3336; }
+        body.dark-mode .system-message span { background-color: #202327; border: 1px solid #2f3336; }
+        /* Toggle Switch CSS */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+        input:checked + .slider { background-color: #1da1f2; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -211,11 +244,14 @@
         </div>
         <div class="sidebar-menu-mobile">
             <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Premium (Abonelik) sistemi çok yakında!')">✨ Premium</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Yer İşaretleri yakında eklenecek!')">🔖 Yer İşaretleri</a>
+            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Yer İşaretleri</a>
+            
             <div class="sidebar-divider"></div>
-            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal;" onclick="alert('Ayarlar yakında!')">⚙️ Ayarlar ve gizlilik</a>
-            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal; color: #e74c3c;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            
+            <div class="sidebar-bottom-menu">
+                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
+                <a href="#" class="sidebar-bottom-item" style="color: #e74c3c; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            </div>
         </div>
     </div>
 
@@ -228,8 +264,10 @@
                 <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item active">✉️ Sohbet</a>
+                <a href="feed.html?tab=bookmarks" class="desktop-nav-item">🔖 Yer İşaretleri</a>
+                <a href="#" class="desktop-nav-item" onclick="window.openSettingsModal()">⚙️ Ayarlar</a>
             </div>
-            <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
+            <button class="desktop-post-btn" onclick="window.location.href='feed.html?action=post'">Gönderi Yayınla</button>
             
             <div class="sidebar-user-menu" onclick="window.goToMyProfile()">
                 <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
@@ -393,6 +431,25 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="settings-modal" style="align-items:center; z-index: 5000;">
+        <div class="modal-content" style="max-width:400px; padding:0;">
+            <div class="modal-header" style="padding: 15px 20px; margin:0;">
+                <h3 style="margin:0;">Ayarlar</h3>
+                <button class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #eff3f4;" class="settings-row">
+                    <div style="font-size: 18px; font-weight: bold; color: #0f1419;" class="settings-text">🌙 Karanlık Mod</div>
+                    <label class="switch">
+                      <input type="checkbox" id="dark-mode-toggle" onchange="window.toggleDarkMode()">
+                      <span class="slider round"></span>
+                    </label>
+                </div>
+                <div style="font-size: 18px; font-weight: bold; color: #0f1419; cursor: pointer;" class="settings-text" onclick="alert('Yardım ve Destek merkezi çok yakında!')">❓ Yardım ve Destek</div>
+            </div>
+        </div>
+    </div>
+
     <div class="bottom-nav">
         <a href="feed.html" class="nav-item">🏠</a>
         <a href="search.html" class="nav-item">🔍</a>
@@ -405,6 +462,8 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
+        // IMGBB API Key eklendi
+        const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1";
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
@@ -913,6 +972,17 @@
             if(peerConnection) { peerConnection.close(); } 
             localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; localVideo.srcObject = null; remoteVideo.srcObject = null; 
         }
+    </script>
+    <script>
+        if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
+        window.openSettingsModal = function() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            document.getElementById('dark-mode-toggle').checked = document.body.classList.contains('dark-mode');
+        };
+        window.toggleDarkMode = function() {
+            if(document.getElementById('dark-mode-toggle').checked) { document.body.classList.add('dark-mode'); localStorage.setItem('theme', 'dark'); } 
+            else { document.body.classList.remove('dark-mode'); localStorage.setItem('theme', 'light'); }
+        };
     </script>
 </body>
 </html>

@@ -204,6 +204,35 @@
         
         @keyframes heartBurst { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 15% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 30% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; } }
         .heart-burst-anim { animation: heartBurst 0.8s ease-out forwards; }
+
+        /* KARANLIK MOD CSS */
+        body.dark-mode { background-color: #000000; color: #e7e9ea; }
+        body.dark-mode .sidebar-left, body.dark-mode .feed-main, body.dark-mode .header-sticky, body.dark-mode .post, body.dark-mode .mobile-sidebar, body.dark-mode .modal-content, body.dark-mode .comment-body { background-color: #000000; border-color: #2f3336; color: #e7e9ea; }
+        body.dark-mode .desktop-nav-item:hover, body.dark-mode .sidebar-user-menu:hover, body.dark-mode .feed-tab:hover, body.dark-mode .post:hover, body.dark-mode .user-row:hover, body.dark-mode .sidebar-menu-item:hover, body.dark-mode .icon-btn:hover { background-color: #181818; }
+        body.dark-mode .search-box-right, body.dark-mode #detail-comment-input, body.dark-mode #edit-post-input, body.dark-mode #modal-post-text, body.dark-mode #post-text { background-color: #202327; color: #e7e9ea; border:none;}
+        body.dark-mode .post-content, body.dark-mode .author-name, body.dark-mode .sidebar-user-name, body.dark-mode .sidebar-name-mobile, body.dark-mode .settings-text { color: #e7e9ea !important; }
+        body.dark-mode .sidebar-user-handle, body.dark-mode .post-time, body.dark-mode .author-username, body.dark-mode .feed-tab { color: #71767b; }
+        body.dark-mode .desktop-nav-item { color: #e7e9ea; }
+        body.dark-mode .modal-header { background-color: #000000; border-bottom-color: #2f3336;}
+        body.dark-mode .close-btn { color: #e7e9ea; }
+        body.dark-mode .close-btn:hover { background-color: #181818; }
+        body.dark-mode .dropdown-menu { background-color: #000000; border-color: #2f3336; }
+        body.dark-mode .dropdown-item { color: #e7e9ea; }
+        body.dark-mode .dropdown-item:hover { background-color: #181818; }
+        body.dark-mode .bottom-nav { background: rgba(0,0,0,0.9); border-top-color: #2f3336;}
+        body.dark-mode .nav-item { color: #71767b; }
+        body.dark-mode .nav-item.active { color: #e7e9ea; }
+        body.dark-mode .settings-row { border-bottom-color: #2f3336 !important; }
+        body.dark-mode .sidebar-bottom-item { color: #e7e9ea; }
+        /* Toggle Switch CSS */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+        input:checked + .slider { background-color: #1da1f2; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -227,17 +256,12 @@
         </div>
         <div class="sidebar-menu-mobile">
             <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()"><span class="menu-icon">👤</span> Profil</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Premium (Abonelik) sistemi çok yakında!')"><span class="menu-icon">✖️</span> Premium</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Topluluklar yakında!')"><span class="menu-icon">👥</span> Topluluklar</a>
-            <a href="#" class="sidebar-menu-item" onclick="window.showBookmarksTab()"><span class="menu-icon">🔖</span> Yer İşaretleri</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Listeler yakında!')"><span class="menu-icon">📋</span> Listeler</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Sohbet Odaları yakında!')"><span class="menu-icon">🎤</span> Sohbet Odaları</a>
+            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item"><span class="menu-icon">🔖</span> Yer İşaretleri</a>
             
             <div class="sidebar-divider"></div>
             
             <div class="sidebar-bottom-menu">
-                <a href="#" class="sidebar-bottom-item" onclick="alert('Ayarlar yakında!')">⚙️ Ayarlar ve gizlilik</a>
-                <a href="#" class="sidebar-bottom-item" onclick="alert('Yardım Merkezi yakında!')">❓ Yardım Merkezi</a>
+                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
                 <a href="#" class="sidebar-bottom-item" style="color: #e74c3c; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
             </div>
         </div>
@@ -252,7 +276,8 @@
                 <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item">✉️ Sohbet</a>
-                <a href="#" class="desktop-nav-item" onclick="window.showBookmarksTab()">🔖 Yer İşaretleri</a>
+                <a href="feed.html?tab=bookmarks" class="desktop-nav-item">🔖 Yer İşaretleri</a>
+                <a href="#" class="desktop-nav-item" onclick="window.openSettingsModal()">⚙️ Ayarlar</a>
             </div>
             <button class="desktop-post-btn" onclick="window.openMainPostModal()">Gönderi Yayınla</button>
             
@@ -325,15 +350,6 @@
                 <div id="who-to-follow-list">
                     <div style="font-size:14px; color:#536471;">Öneriler yükleniyor...</div>
                 </div>
-            </div>
-            
-            <div class="trends-box" style="margin-top: 20px;">
-                <div class="trends-title" style="font-weight: 800; font-size: 20px; margin-bottom: 15px;">Neler Oluyor?</div>
-                <div style="font-size:13px; color:#536471; margin-bottom:5px;">Gündemdekiler</div>
-                <div style="font-weight:bold; font-size:16px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='search.html'">#MozaikGuncelleme</div>
-                
-                <div style="font-size:13px; color:#536471; margin-bottom:5px;">Teknoloji · Gündem</div>
-                <div style="font-weight:bold; font-size:16px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='search.html'">X Tasarımı</div>
             </div>
             
             <div style="font-size: 13px; color: #536471; margin-top: 20px; text-align:center;">
@@ -417,6 +433,25 @@
             <div style="display:flex; justify-content:space-between; margin-top:15px;">
                 <button style="padding:8px 15px; border:none; background:#eff3f4; border-radius:30px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button>
                 <button id="save-edited-post-btn" style="padding:8px 15px; border:none; background:#1da1f2; color:white; border-radius:30px; font-weight:bold; cursor:pointer;">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settings-modal" style="align-items:center; z-index: 5000;">
+        <div class="modal-content" style="max-width:400px; padding:0;">
+            <div class="modal-header" style="padding: 15px 20px; margin:0;">
+                <h3 style="margin:0;">Ayarlar</h3>
+                <button class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #eff3f4;" class="settings-row">
+                    <div style="font-size: 18px; font-weight: bold; color: #0f1419;" class="settings-text">🌙 Karanlık Mod</div>
+                    <label class="switch">
+                      <input type="checkbox" id="dark-mode-toggle" onchange="window.toggleDarkMode()">
+                      <span class="slider round"></span>
+                    </label>
+                </div>
+                <div style="font-size: 18px; font-weight: bold; color: #0f1419; cursor: pointer;" class="settings-text" onclick="alert('Yardım ve Destek merkezi çok yakında!')">❓ Yardım ve Destek</div>
             </div>
         </div>
     </div>
@@ -533,10 +568,13 @@
                 });
 
                 loadFeedPosts(); // Sonsuz kaydırmayı başlatıyoruz
+                const urlParams = new URLSearchParams(window.location.search);
+                if(urlParams.get('tab') === 'bookmarks') { setTimeout(() => { window.showBookmarksTab(); }, 100); }
+                if(urlParams.get('action') === 'post') { setTimeout(() => { window.openMainPostModal(); }, 300); }
             } else { window.location.href = "index.html"; }
         });
 
-        // YENİ: Sayfa kaydırıldıkça (Scroll) yeni postları getiren algoritma
+        // Sonsuz Kaydırma algoritması
         window.addEventListener('scroll', () => {
             if (isLoadingMore || !hasMorePosts) return;
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
@@ -986,6 +1024,17 @@
                 }
             }
         }
+    </script>
+    <script>
+        if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
+        window.openSettingsModal = function() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            document.getElementById('dark-mode-toggle').checked = document.body.classList.contains('dark-mode');
+        };
+        window.toggleDarkMode = function() {
+            if(document.getElementById('dark-mode-toggle').checked) { document.body.classList.add('dark-mode'); localStorage.setItem('theme', 'dark'); } 
+            else { document.body.classList.remove('dark-mode'); localStorage.setItem('theme', 'light'); }
+        };
     </script>
 </body>
 </html>

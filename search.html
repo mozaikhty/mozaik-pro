@@ -60,6 +60,8 @@
         .sidebar-menu-item { padding: 15px 20px; font-size: 20px; font-weight: bold; color: #0f1419; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.2s; }
         .sidebar-menu-item:hover { background: #eff3f4; }
         .sidebar-divider { height: 1px; background: #eff3f4; margin: 10px 0; }
+        .sidebar-bottom-menu { padding: 10px 20px; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar-bottom-item { text-decoration: none; color: #0f1419; font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 15px; }
 
         .search-results-container { text-align: left; }
         .trending-item { padding: 12px 16px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid #eff3f4; display: block; }
@@ -117,6 +119,35 @@
             .mobile-header-top { display: flex; }
             .bottom-nav { display: flex; }
         }
+
+        /* KARANLIK MOD CSS */
+        body.dark-mode { background-color: #000000; color: #e7e9ea; }
+        body.dark-mode .sidebar-left, body.dark-mode .feed-main, body.dark-mode .header-sticky, body.dark-mode .post, body.dark-mode .mobile-sidebar, body.dark-mode .modal-content, body.dark-mode .search-results-container, body.dark-mode .who-to-follow { background-color: #000000; border-color: #2f3336; color: #e7e9ea; }
+        body.dark-mode .desktop-nav-item:hover, body.dark-mode .sidebar-user-menu:hover, body.dark-mode .feed-tab:hover, body.dark-mode .post:hover, body.dark-mode .user-row:hover, body.dark-mode .sidebar-menu-item:hover, body.dark-mode .search-user-item:hover, body.dark-mode .trending-item:hover { background-color: #181818; }
+        body.dark-mode .search-input, body.dark-mode .search-box-right { background-color: #202327; color: #e7e9ea; border:none;}
+        body.dark-mode .search-input:focus { background-color: #000; border: 1px solid #1da1f2; }
+        body.dark-mode .post-content, body.dark-mode .author-name, body.dark-mode .sidebar-user-name, body.dark-mode .sidebar-name-mobile, body.dark-mode .settings-text, body.dark-mode .search-username, body.dark-mode .trend-name, body.dark-mode .wtf-title { color: #e7e9ea !important; }
+        body.dark-mode .sidebar-user-handle, body.dark-mode .post-time, body.dark-mode .author-username, body.dark-mode .feed-tab, body.dark-mode .search-handle, body.dark-mode .trend-category, body.dark-mode .trend-count { color: #71767b; }
+        body.dark-mode .desktop-nav-item { color: #e7e9ea; }
+        body.dark-mode .modal-header { background-color: #000000; border-bottom-color: #2f3336;}
+        body.dark-mode .close-btn { color: #e7e9ea; }
+        body.dark-mode .close-btn:hover { background-color: #181818; }
+        body.dark-mode .bottom-nav { background: rgba(0,0,0,0.9); border-top-color: #2f3336;}
+        body.dark-mode .nav-item { color: #71767b; }
+        body.dark-mode .nav-item.active { color: #e7e9ea; }
+        body.dark-mode .settings-row { border-bottom-color: #2f3336 !important; }
+        body.dark-mode .sidebar-bottom-item { color: #e7e9ea; }
+        body.dark-mode .who-to-follow { background-color: #000000; border: 1px solid #2f3336; }
+        body.dark-mode .search-user-item, body.dark-mode .trending-item { border-bottom-color: #2f3336; }
+        /* Toggle Switch CSS */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+        input:checked + .slider { background-color: #1da1f2; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -134,11 +165,14 @@
         </div>
         <div class="sidebar-menu-mobile">
             <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Premium (Abonelik) sistemi çok yakında!')">✨ Premium</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Yer İşaretleri yakında eklenecek!')">🔖 Yer İşaretleri</a>
+            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Yer İşaretleri</a>
+            
             <div class="sidebar-divider"></div>
-            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal;" onclick="alert('Ayarlar yakında!')">⚙️ Ayarlar ve gizlilik</a>
-            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal; color: #e74c3c;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            
+            <div class="sidebar-bottom-menu">
+                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
+                <a href="#" class="sidebar-bottom-item" style="color: #e74c3c; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            </div>
         </div>
     </div>
 
@@ -150,8 +184,10 @@
                 <a href="search.html" class="desktop-nav-item active">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item">✉️ Sohbet</a>
+                <a href="feed.html?tab=bookmarks" class="desktop-nav-item">🔖 Yer İşaretleri</a>
+                <a href="#" class="desktop-nav-item" onclick="window.openSettingsModal()">⚙️ Ayarlar</a>
             </div>
-            <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
+            <button class="desktop-post-btn" onclick="window.location.href='feed.html?action=post'">Gönderi Yayınla</button>
             
             <div class="sidebar-user-menu" onclick="window.goToMyProfile()">
                 <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
@@ -192,6 +228,7 @@
         </aside>
     </div>
 
+    <button class="fab-button" onclick="window.location.href='feed.html?action=post'">+</button>
     <div class="bottom-nav">
         <a href="feed.html" class="nav-item">🏠</a>
         <a href="search.html" class="nav-item active">🔍</a>
@@ -206,6 +243,25 @@
                 <button class="close-btn" id="close-list-btn">&times;</button>
             </div>
             <div id="users-list-container"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settings-modal" style="align-items:center; z-index: 5000;">
+        <div class="modal-content" style="max-width:400px; padding:0;">
+            <div class="modal-header" style="padding: 15px 20px; margin:0;">
+                <h3 style="margin:0;">Ayarlar</h3>
+                <button class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #eff3f4;" class="settings-row">
+                    <div style="font-size: 18px; font-weight: bold; color: #0f1419;" class="settings-text">🌙 Karanlık Mod</div>
+                    <label class="switch">
+                      <input type="checkbox" id="dark-mode-toggle" onchange="window.toggleDarkMode()">
+                      <span class="slider round"></span>
+                    </label>
+                </div>
+                <div style="font-size: 18px; font-weight: bold; color: #0f1419; cursor: pointer;" class="settings-text" onclick="alert('Yardım ve Destek merkezi çok yakında!')">❓ Yardım ve Destek</div>
+            </div>
         </div>
     </div>
 
@@ -262,9 +318,6 @@
             } else { window.location.href = "index.html"; }
         });
 
-        // ==========================================
-        // YENİ: KİMİ TAKİP ETMELİ ALGORİTMASI
-        // ==========================================
         function renderWhoToFollow() {
             const container = document.getElementById('who-to-follow-list');
             if (!container) return;
@@ -273,7 +326,6 @@
                 return uid !== myUsername && !myFollowing.includes(uid);
             });
 
-            // Rastgele 3 kullanıcı seç
             eligibleUsers = eligibleUsers.sort(() => 0.5 - Math.random()).slice(0, 3);
 
             if (eligibleUsers.length === 0) {
@@ -357,7 +409,7 @@
                     const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
                     const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                 }
-                renderWhoToFollow(); // Kimi Takip Etmeli Algoritmasını Çağır
+                renderWhoToFollow(); 
                 performSearch(); 
             });
             onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
@@ -436,6 +488,17 @@
                 resultsContainer.innerHTML = html;
             }
         }
+    </script>
+    <script>
+        if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
+        window.openSettingsModal = function() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            document.getElementById('dark-mode-toggle').checked = document.body.classList.contains('dark-mode');
+        };
+        window.toggleDarkMode = function() {
+            if(document.getElementById('dark-mode-toggle').checked) { document.body.classList.add('dark-mode'); localStorage.setItem('theme', 'dark'); } 
+            else { document.body.classList.remove('dark-mode'); localStorage.setItem('theme', 'light'); }
+        };
     </script>
 </body>
 </html>

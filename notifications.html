@@ -50,6 +50,8 @@
         .sidebar-menu-item { padding: 15px 20px; font-size: 20px; font-weight: bold; color: #0f1419; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.2s; }
         .sidebar-menu-item:hover { background: #eff3f4; }
         .sidebar-divider { height: 1px; background: #eff3f4; margin: 10px 0; }
+        .sidebar-bottom-menu { padding: 10px 20px; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar-bottom-item { text-decoration: none; color: #0f1419; font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 15px; }
 
         .notification-item { display: flex; padding: 12px 16px; border-bottom: 1px solid #eff3f4; transition: 0.2s; cursor: pointer; text-decoration: none; color: #0f1419; }
         .notification-item:hover { background: #f7f9f9; }
@@ -82,6 +84,39 @@
         .user-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; text-decoration: none; color: #333; transition: 0.2s; background: #f9f9f9; margin-bottom: 5px; }
         .user-row:hover { background: #ebf5fb; }
         .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+
+        /* KARANLIK MOD CSS */
+        body.dark-mode { background-color: #000000; color: #e7e9ea; }
+        body.dark-mode .sidebar-left, body.dark-mode .feed-main, body.dark-mode .header-sticky, body.dark-mode .post, body.dark-mode .mobile-sidebar, body.dark-mode .modal-content, body.dark-mode .comment-body { background-color: #000000; border-color: #2f3336; color: #e7e9ea; }
+        body.dark-mode .desktop-nav-item:hover, body.dark-mode .sidebar-user-menu:hover, body.dark-mode .feed-tab:hover, body.dark-mode .post:hover, body.dark-mode .user-row:hover, body.dark-mode .sidebar-menu-item:hover, body.dark-mode .icon-btn:hover { background-color: #181818; }
+        body.dark-mode .search-box-right, body.dark-mode #detail-comment-input, body.dark-mode #edit-post-input, body.dark-mode #modal-post-text, body.dark-mode #post-text { background-color: #202327; color: #e7e9ea; border:none;}
+        body.dark-mode .post-content, body.dark-mode .author-name, body.dark-mode .sidebar-user-name, body.dark-mode .sidebar-name-mobile, body.dark-mode .settings-text { color: #e7e9ea !important; }
+        body.dark-mode .sidebar-user-handle, body.dark-mode .post-time, body.dark-mode .author-username, body.dark-mode .feed-tab { color: #71767b; }
+        body.dark-mode .desktop-nav-item { color: #e7e9ea; }
+        body.dark-mode .modal-header { background-color: #000000; border-bottom-color: #2f3336;}
+        body.dark-mode .close-btn { color: #e7e9ea; }
+        body.dark-mode .close-btn:hover { background-color: #181818; }
+        body.dark-mode .dropdown-menu { background-color: #000000; border-color: #2f3336; }
+        body.dark-mode .dropdown-item { color: #e7e9ea; }
+        body.dark-mode .dropdown-item:hover { background-color: #181818; }
+        body.dark-mode .bottom-nav { background: rgba(0,0,0,0.9); border-top-color: #2f3336;}
+        body.dark-mode .nav-item { color: #71767b; }
+        body.dark-mode .nav-item.active { color: #e7e9ea; }
+        body.dark-mode .settings-row { border-bottom-color: #2f3336 !important; }
+        body.dark-mode .sidebar-bottom-item { color: #e7e9ea; }
+        body.dark-mode .notification-item { color: #e7e9ea; border-bottom-color: #2f3336; }
+        body.dark-mode .notification-item:hover { background-color: #181818; }
+        body.dark-mode .empty-text { color: #71767b; }
+        body.dark-mode .sidebar-right .trends-box { background-color: #000000; border: 1px solid #2f3336; color: #e7e9ea; }
+        /* Toggle Switch CSS */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+        input:checked + .slider { background-color: #1da1f2; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -99,11 +134,14 @@
         </div>
         <div class="sidebar-menu-mobile">
             <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Premium (Abonelik) sistemi çok yakında!')">✨ Premium</a>
-            <a href="#" class="sidebar-menu-item" onclick="alert('Yer İşaretleri yakında eklenecek!')">🔖 Yer İşaretleri</a>
+            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Yer İşaretleri</a>
+            
             <div class="sidebar-divider"></div>
-            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal;" onclick="alert('Ayarlar yakında!')">⚙️ Ayarlar ve gizlilik</a>
-            <a href="#" class="sidebar-menu-item" style="font-size: 16px; font-weight: normal; color: #e74c3c;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            
+            <div class="sidebar-bottom-menu">
+                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
+                <a href="#" class="sidebar-bottom-item" style="color: #e74c3c; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            </div>
         </div>
     </div>
 
@@ -115,8 +153,10 @@
                 <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item active">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item">✉️ Sohbet</a>
+                <a href="feed.html?tab=bookmarks" class="desktop-nav-item">🔖 Yer İşaretleri</a>
+                <a href="#" class="desktop-nav-item" onclick="window.openSettingsModal()">⚙️ Ayarlar</a>
             </div>
-            <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
+            <button class="desktop-post-btn" onclick="window.location.href='feed.html?action=post'">Gönderi Yayınla</button>
             
             <div class="sidebar-user-menu" onclick="window.goToMyProfile()">
                 <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
@@ -143,12 +183,7 @@
         </main>
 
         <aside class="sidebar-right">
-            <div class="trends-box">
-                <div style="font-size: 20px; font-weight: 800; margin-bottom: 15px;">Abonelik Al</div>
-                <div style="font-size: 15px; color: #0f1419; margin-bottom: 15px;">Reklamlardan kurtul, yeni özellikleri keşfet.</div>
-                <button style="background:#0f1419; color:white; border:none; padding:10px 20px; border-radius:30px; font-weight:bold; cursor:pointer;">Abone ol</button>
-            </div>
-        </aside>
+            </aside>
     </div>
 
     <div class="bottom-nav">
@@ -165,6 +200,25 @@
                 <button class="close-btn" id="close-list-btn">&times;</button>
             </div>
             <div id="users-list-container"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settings-modal" style="align-items:center; z-index: 5000;">
+        <div class="modal-content" style="max-width:400px; padding:0;">
+            <div class="modal-header" style="padding: 15px 20px; margin:0;">
+                <h3 style="margin:0;">Ayarlar</h3>
+                <button class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #eff3f4;" class="settings-row">
+                    <div style="font-size: 18px; font-weight: bold; color: #0f1419;" class="settings-text">🌙 Karanlık Mod</div>
+                    <label class="switch">
+                      <input type="checkbox" id="dark-mode-toggle" onchange="window.toggleDarkMode()">
+                      <span class="slider round"></span>
+                    </label>
+                </div>
+                <div style="font-size: 18px; font-weight: bold; color: #0f1419; cursor: pointer;" class="settings-text" onclick="alert('Yardım ve Destek merkezi çok yakında!')">❓ Yardım ve Destek</div>
+            </div>
         </div>
     </div>
 
@@ -296,6 +350,17 @@
 
         window.acceptRequest = async function(reqUser) { const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", reqUser); try { await setDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }, { merge: true }); await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true }); } catch(e) {} };
         window.rejectRequest = async function(reqUser) { try { await setDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }, { merge: true }); } catch(e) {} };
+    </script>
+    <script>
+        if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); }
+        window.openSettingsModal = function() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            document.getElementById('dark-mode-toggle').checked = document.body.classList.contains('dark-mode');
+        };
+        window.toggleDarkMode = function() {
+            if(document.getElementById('dark-mode-toggle').checked) { document.body.classList.add('dark-mode'); localStorage.setItem('theme', 'dark'); } 
+            else { document.body.classList.remove('dark-mode'); localStorage.setItem('theme', 'light'); }
+        };
     </script>
 </body>
 </html>
