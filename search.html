@@ -149,7 +149,7 @@
                 <a href="feed.html" class="desktop-nav-item">🏠 Anasayfa</a>
                 <a href="search.html" class="desktop-nav-item active">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
-                <a href="chat.html" class="desktop-nav-item">✉️ Mesajlar</a>
+                <a href="chat.html" class="desktop-nav-item">✉️ Sohbet</a>
             </div>
             <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
             
@@ -167,7 +167,7 @@
             <div class="header-sticky">
                 <div class="mobile-header-top">
                     <div id="mobile-avatar-header" style="width:32px; height:32px; border-radius:50%; background:#eee; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">👤</div>
-                    <div style="flex:1; text-align:center; font-weight:900; font-size:20px;">Keşfet</div>
+                    <div style="flex:1; text-align:center; font-weight:900; font-size:20px; color:#1da1f2;">Keşfet</div>
                     <div style="width:32px;"></div>
                 </div>
                 
@@ -185,7 +185,9 @@
         <aside class="sidebar-right">
             <div class="who-to-follow">
                 <div class="wtf-title">Kimi Takip Etmeli</div>
-                <div style="font-size:14px; color:#536471;">Öneriler yakında burada olacak.</div>
+                <div id="who-to-follow-list">
+                    <div style="font-size:14px; color:#536471;">Öneriler yükleniyor...</div>
+                </div>
             </div>
         </aside>
     </div>
@@ -210,12 +212,12 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, doc, setDoc, arrayUnion, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        let allUsers = []; let allPosts = []; let allUsersData = {}; let trendingTags = []; let currentTab = 'users'; let myUsername = null;
+        let allUsers = []; let allPosts = []; let allUsersData = {}; let trendingTags = []; let currentTab = 'users'; let myUsername = null; let myFollowing = [];
         
         const tabUsers = document.getElementById('tab-users'); const tabTags = document.getElementById('tab-tags');
         const searchInput = document.getElementById('search-input'); const resultsContainer = document.getElementById('search-results');
@@ -260,6 +262,67 @@
             } else { window.location.href = "index.html"; }
         });
 
+        // ==========================================
+        // YENİ: KİMİ TAKİP ETMELİ ALGORİTMASI
+        // ==========================================
+        function renderWhoToFollow() {
+            const container = document.getElementById('who-to-follow-list');
+            if (!container) return;
+
+            let eligibleUsers = Object.keys(allUsersData).filter(uid => {
+                return uid !== myUsername && !myFollowing.includes(uid);
+            });
+
+            // Rastgele 3 kullanıcı seç
+            eligibleUsers = eligibleUsers.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+            if (eligibleUsers.length === 0) {
+                container.innerHTML = '<div style="font-size:14px; color:#536471; padding: 10px 0;">Şu an için yeni öneri yok.</div>';
+                return;
+            }
+
+            let html = '';
+            eligibleUsers.forEach(uid => {
+                const uData = allUsersData[uid];
+                const avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+                const fullName = uData.fullName || uid;
+                const vHtml = uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
+                
+                html += `
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${uid}'">
+                        <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                            <div style="width:40px; height:40px; border-radius:50%; background:#eee; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:20px; flex-shrink:0;">${avatarHtml}</div>
+                            <div style="overflow:hidden;">
+                                <div style="font-weight:bold; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f1419;">${fullName} ${vHtml}</div>
+                                <div style="color:#536471; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${uid}</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); window.quickFollow('${uid}')" style="background:#0f1419; color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:bold; cursor:pointer; flex-shrink:0; transition:0.2s;">Takip Et</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        window.quickFollow = async function(targetUser) {
+            try {
+                const myRef = doc(db, "users", myUsername);
+                const targetRef = doc(db, "users", targetUser);
+                const targetData = allUsersData[targetUser] || {};
+                
+                if (targetData.isPrivate) {
+                    await setDoc(targetRef, { followRequests: arrayUnion(myUsername) }, { merge: true });
+                    alert("Hesap gizli. Takip isteği gönderildi!");
+                } else {
+                    await setDoc(myRef, { following: arrayUnion(targetUser) }, { merge: true });
+                    await setDoc(targetRef, { followers: arrayUnion(myUsername) }, { merge: true });
+                    await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUser, createdAt: serverTimestamp() });
+                }
+            } catch (e) {
+                console.error("Takip etme hatası: ", e);
+            }
+        };
+
         function calculateTrendingTags() {
             const tagCounts = {};
             allPosts.forEach(post => {
@@ -278,9 +341,11 @@
                 
                 if(allUsersData[myUsername]) {
                     const u = allUsersData[myUsername];
+                    myFollowing = u.following || [];
+                    
                     document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
                     document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
-                    document.getElementById('sidebar-following-count').innerText = (u.following || []).length;
+                    document.getElementById('sidebar-following-count').innerText = myFollowing.length;
                     document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
                     if(u.avatarUrl) {
                         const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
@@ -292,6 +357,7 @@
                     const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
                     const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                 }
+                renderWhoToFollow(); // Kimi Takip Etmeli Algoritmasını Çağır
                 performSearch(); 
             });
             onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
