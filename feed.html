@@ -44,32 +44,43 @@
         .feed-tab:hover { background-color: #f8fafc; color: #334155; }
         .feed-tab.active { color: #2c3e50; background: #f1f5f9; border-bottom: 3px solid #2c3e50;}
 
-        /* HİKAYELER (STORIES) BÖLÜMÜ */
+        /* INSTAGRAM HİKAYELER (STORIES) BÖLÜMÜ */
         .stories-container { display: flex; gap: 15px; padding: 15px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; margin-top: 10px; overflow-x: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .stories-container::-webkit-scrollbar { display: none; }
         .story-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0; width: 72px;}
-        .story-avatar-wrapper { width: 66px; height: 66px; border-radius: 50%; padding: 3px; background: linear-gradient(45deg, #3b82f6, #6366f1); position: relative;}
-        .story-avatar-wrapper.read { background: #cbd5e1; }
-        .story-avatar-wrapper.add-story { background: #f1f5f9; border: 2px dashed #94a3b8; padding: 2px;}
+        
+        /* INSTAGRAM GRADIENT HALKA */
+        .story-avatar-wrapper { width: 68px; height: 68px; border-radius: 50%; padding: 3px; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); position: relative;}
+        .story-avatar-wrapper.read { background: #cbd5e1; } /* Okunmuş (Gri) */
+        .story-avatar-wrapper.add-story { background: transparent; border: 2px dashed #cbd5e1; padding: 2px;} /* Ekleme Modu */
+        
         .story-avatar { width: 100%; height: 100%; border-radius: 50%; border: 3px solid white; background: #e2e8f0; overflow: hidden; display: flex; justify-content: center; align-items: center; position: relative;}
         .story-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .story-add-badge { position: absolute; bottom: 0; right: 0; background: #3b82f6; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; border: 2px solid white; z-index: 5;}
         .story-username { font-size: 12px; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: center;}
 
         /* HİKAYE İZLEYİCİ (STORY VIEWER) */
-        .story-viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020617; z-index: 5000; flex-direction: column; }
+        .story-viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 5000; flex-direction: column; }
         .story-progress-container { display: flex; gap: 5px; padding: 15px; position: absolute; top: 0; left: 0; width: 100%; z-index: 5010;}
         .story-progress-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 3px; overflow: hidden;}
         .story-progress-fill { height: 100%; background: white; width: 0%; transition: width 0.1s linear;}
         .story-header { display: flex; justify-content: space-between; align-items: center; padding: 25px 15px 15px 15px; position: absolute; top: 15px; left: 0; width: 100%; z-index: 5010; color: white;}
         .story-user-info { display: flex; align-items: center; gap: 10px; }
-        .story-content-area { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; width: 100%; height: 100%;}
-        .story-image { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .story-text { position: absolute; font-size: 26px; font-weight: 800; color: white; text-align: center; padding: 20px 30px; background: rgba(0,0,0,0.6); border-radius: 16px; max-width: 85%; word-wrap: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
+        .story-content-area { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; width: 100%; height: 100%; padding-bottom: 70px;}
+        .story-image { max-width: 100%; max-height: 100%; object-fit: contain; border-radius:12px; }
+        .story-text { position: absolute; font-size: 28px; font-weight: 800; color: white; text-align: center; padding: 20px 30px; background: rgba(0,0,0,0.6); border-radius: 16px; max-width: 85%; word-wrap: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5006;}
         .story-nav-left { position: absolute; top: 0; left: 0; width: 30%; height: 100%; z-index: 5005; cursor: pointer; }
         .story-nav-right { position: absolute; top: 0; right: 0; width: 70%; height: 100%; z-index: 5005; cursor: pointer; }
 
-        /* ÇEKMECE MENÜ (DRAWER) */
+        /* YENİ: INSTAGRAM MESAJ/BEĞENİ ÇUBUĞU */
+        .story-footer { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; display: flex; gap: 15px; align-items: center; z-index: 5010; background: linear-gradient(transparent, rgba(0,0,0,0.8));}
+        .story-reply-input { flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.5); border-radius: 30px; padding: 12px 20px; color: white; font-size: 15px; outline: none; transition: 0.2s;}
+        .story-reply-input:focus { border-color: white;}
+        .story-reply-input::placeholder { color: rgba(255,255,255,0.8);}
+        .story-action-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; transition: 0.2s; padding: 0;}
+        .story-action-btn:hover { transform: scale(1.1);}
+
+        /* ÇEKMECE MENÜ (DRAWER) - PROFESYONEL */
         .mobile-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 4000; cursor: pointer; backdrop-filter: blur(2px); }
         .mobile-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100%; background: white; z-index: 4001; transition: left 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.1); overflow-y: auto; display: flex; flex-direction: column; }
         .mobile-sidebar.open { left: 0; }
@@ -121,6 +132,7 @@
         .verified-badge { color: #2c3e50; font-size: 14px; }
         .post-time { color: #94a3b8; font-size: 13px; margin-left: 4px; }
         
+        /* ••• MENÜSÜ */
         .post-options-btn { background: none; border: none; color: #94a3b8; cursor: pointer; border-radius: 4px; padding: 5px; transition: 0.2s; width:30px; height:30px; display:flex; justify-content:center; align-items:center;}
         .post-options-btn:hover { background: #f1f5f9; color: #334155; }
         .dropdown-menu { display: none; position: absolute; right: 0; top: 30px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 200; overflow: hidden; width: 180px; flex-direction: column;}
@@ -182,7 +194,7 @@
             .fab-button { display: flex; }
         }
 
-        /* MODALLAR */
+        /* KART MODALLAR */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; overflow-y: auto; backdrop-filter: blur(2px);}
         
         .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #e2e8f0;}
@@ -190,11 +202,6 @@
         .close-btn { background: #f8fafc; border: 1px solid #e2e8f0; font-size: 20px; cursor: pointer; color: #334155; display:flex; justify-content:center; align-items:center; width:36px; height:36px; border-radius:8px; transition:0.2s;}
         .close-btn:hover { background:#e2e8f0; color:#0f172a;}
         
-        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px; outline:none; background:white; transition: 0.2s; color:#0f172a;}
-        .modal-input:focus { border-color: #2c3e50;}
-        .modal-btn-save { background: #2c3e50; border: none; padding: 8px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; font-size:15px; transition:0.2s;}
-        .modal-btn-save:hover { background: #1a252f; }
-
         .user-row { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 8px; text-decoration: none; color: #334155; transition: 0.2s; border: 1px solid transparent;}
         .user-row:hover { background: #f8fafc; border-color: #e2e8f0; }
         .row-avatar { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; border: 1px solid #cbd5e1;}
@@ -207,7 +214,7 @@
         .remote-video { width: 100%; height: 100%; object-fit: cover; }
         .local-video { position: absolute; bottom: 120px; right: 20px; width: 100px; height: 150px; background: #334155; border-radius: 8px; object-fit: cover; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 4010; transform: scaleX(-1); }
         .call-controls { position: absolute; bottom: 40px; display: flex; gap: 30px; z-index: 4010; }
-        .call-action-btn { width: 65px; height: 65px; border-radius: 12px; border: none; font-size: 28px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
+        .call-action-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 28px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
         .btn-accept { background: #10b981; color: white; display: none; }
         .btn-end { background: #ef4444; color: white; }
 
@@ -268,7 +275,9 @@
         <div class="sidebar-menu-mobile">
             <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
             <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Yer İşaretleri</a>
+            
             <div class="sidebar-divider"></div>
+            
             <div class="sidebar-bottom-menu">
                 <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
                 <a href="#" class="sidebar-bottom-item" style="color: #ef4444; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
@@ -374,7 +383,7 @@
         <div class="story-progress-container" id="story-progress-container"></div>
         <div class="story-header">
             <div class="story-user-info">
-                <div style="width:40px; height:40px; border-radius:10px; overflow:hidden; border:2px solid white; display:flex; justify-content:center; align-items:center; background:#e2e8f0; font-size:20px;" id="story-viewer-avatar-container"></div>
+                <div style="width:40px; height:40px; border-radius:50%; overflow:hidden; border:2px solid white; display:flex; justify-content:center; align-items:center; background:#e2e8f0; font-size:20px;" id="story-viewer-avatar-container"></div>
                 <div>
                     <div style="font-weight:700; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,0.5);" id="story-viewer-name">Yükleniyor</div>
                     <div style="font-size:12px; opacity:0.8; text-shadow:0 1px 2px rgba(0,0,0,0.5);" id="story-viewer-time"></div>
@@ -387,6 +396,11 @@
             <div class="story-nav-right" onclick="window.nextStory()"></div>
             <img id="story-viewer-image" class="story-image" src="" style="display:none;">
             <div id="story-viewer-text" class="story-text" style="display:none;"></div>
+        </div>
+        <div class="story-footer" id="story-footer">
+            <input type="text" id="story-reply-input" class="story-reply-input" placeholder="Mesaj gönder..." onkeypress="if(event.key === 'Enter') window.sendStoryReply()">
+            <button class="story-action-btn" onclick="window.likeStory()" title="Hikayeyi Beğen">❤️</button>
+            <button class="story-action-btn" onclick="alert('Gönderilecek kişi seçimi yakında eklenecek!')" title="Hikayeyi Paylaş">📤</button>
         </div>
     </div>
 
@@ -626,7 +640,7 @@
                     }
 
                     renderWhoToFollow(); 
-                    renderStories(); // HİKAYELERİ YÜKLE
+                    renderStories(); 
                     renderFeed(); 
                 });
 
@@ -650,7 +664,7 @@
         });
 
         // =====================================
-        // YENİ: HİKAYE SİSTEMİ ALGORİTMALARI
+        // INSTAGRAM HİKAYE SİSTEMİ ALGORİTMALARI
         // =====================================
 
         function renderStories() {
@@ -771,6 +785,7 @@
 
         window.closeStoryViewer = function() {
             document.getElementById('story-viewer-overlay').style.display = 'none';
+            document.getElementById('story-reply-input').value = '';
             clearInterval(storyTimerInterval);
             renderStories(); // Modal kapanınca okundu/okunmadı durumlarını güncelleyerek halkaları gri yap
         }
@@ -798,6 +813,11 @@
             const secs = Math.floor((Date.now() - story.createdAt) / 1000);
             if(secs < 60) timeAgoStr = `${secs}s`; else if (secs < 3600) timeAgoStr = `${Math.floor(secs/60)}d`; else timeAgoStr = `${Math.floor(secs/3600)}s`;
             document.getElementById('story-viewer-time').innerText = timeAgoStr;
+
+            // Kendi hikayen mi kontrol et (DM alanını gizle/göster)
+            const footer = document.getElementById('story-footer');
+            if(userObj.username === myUsername) footer.style.display = 'none';
+            else footer.style.display = 'flex';
 
             // İçeriği güncelle
             const imgEl = document.getElementById('story-viewer-image');
@@ -851,8 +871,62 @@
         }
 
         // =====================================
+        // YENİ: HİKAYE DM VE BEĞENİ FONKSİYONLARI
+        // =====================================
 
+        window.sendStoryReply = async function() {
+            const input = document.getElementById('story-reply-input');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const targetUser = activeStoryUsers[currentStoryUserIndex].username;
+            if (targetUser === myUsername) return; // Kendi kendine atamaz
+
+            const chatId = [myUsername, targetUser].sort().join('_');
+            const story = activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex];
+            
+            let storySummary = "🖼️ Hikayeye Yanıt: ";
+            if(story.imageUrl) storySummary += "(Görsel)";
+            else if(story.text) storySummary += `"${story.text.substring(0, 20)}..."`;
+
+            const messageData = { 
+                text: `${storySummary}\n\n${text}`, 
+                sender: myUsername, 
+                createdAt: serverTimestamp(), 
+                isRead: false, 
+                type: 'regular' 
+            };
+            
+            await addDoc(collection(db, "chats", chatId, "messages"), messageData);
+            await setDoc(doc(db, "chats", chatId), { participants: [myUsername, targetUser], lastMessage: "Hikayeye yanıt", lastSender: myUsername, unreadBy: [targetUser], updatedAt: serverTimestamp() }, { merge: true });
+            
+            alert("Yanıtınız gönderildi! 🚀");
+            input.value = '';
+            window.closeStoryViewer();
+        };
+
+        window.likeStory = async function() {
+            const targetUser = activeStoryUsers[currentStoryUserIndex].username;
+            if (targetUser === myUsername) return;
+
+            const chatId = [myUsername, targetUser].sort().join('_');
+            const messageData = { 
+                text: `❤️ Hikayenizi beğendi.`, 
+                sender: myUsername, 
+                createdAt: serverTimestamp(), 
+                isRead: false, 
+                type: 'system' 
+            };
+            
+            await addDoc(collection(db, "chats", chatId, "messages"), messageData);
+            await setDoc(doc(db, "chats", chatId), { participants: [myUsername, targetUser], lastMessage: "❤️ Hikaye beğenildi", lastSender: myUsername, unreadBy: [targetUser], updatedAt: serverTimestamp() }, { merge: true });
+            
+            alert("Hikaye beğenildi!");
+        };
+
+        // =====================================
         // ÇAĞRI DİNLEME ALGORİTMASI (FEED)
+        // =====================================
         function attachCallListeners() {
             activeChats.forEach(chat => {
                 if (!callListeners[chat.id]) {
