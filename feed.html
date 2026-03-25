@@ -352,8 +352,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1"; 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -362,6 +361,11 @@
         let currentFeedTab = 'for-you'; let myFollowing = [];
         let uploadedImageUrl = null; let mobileUploadedImageUrl = null;
         let postToShare = null; let currentlyEditingPostId = null;
+// YENİ: Sonsuz Kaydırma (Infinite Scroll) Değişkenleri
+        let postLimit = 10;
+        let postsUnsubscribe = null;
+        let isLoadingMore = false;
+        let hasMorePosts = true;
         let activeReplyParentId = null;
 
         document.addEventListener('click', function(event) {
@@ -446,13 +450,40 @@
                     renderFeed(); 
                 });
 
-                onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => { 
-                    globalPosts = []; snapshot.forEach(doc => { globalPosts.push({ id: doc.id, data: doc.data() }); });
-                    
-                    if(window.currentOpenPostId) { window.openPostDetail(window.currentOpenPostId); }
-                    renderFeed(); 
-                });
+                // İlk 10 postu çekmek için fonksiyonu çağırıyoruz
+                loadFeedPosts();
+// YENİ: Sayfa kaydırıldıkça (Scroll) yeni postları getiren algoritma
+        window.addEventListener('scroll', () => {
+            if (isLoadingMore || !hasMorePosts) return;
+            
+            // Sayfanın en altına 200px kadar yaklaşıldıysa
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+                isLoadingMore = true;
+                postLimit += 10; // Limiti 10 artır
+                loadFeedPosts(); // Verileri yeniden çek
+                
+                setTimeout(() => { isLoadingMore = false; }, 1000); // 1 saniye bekleme süresi (spam engelleme)
+            }
+        });
 
+        function loadFeedPosts() {
+            if (postsUnsubscribe) postsUnsubscribe(); // Çakışmaları önlemek için eski dinleyiciyi temizle
+            
+            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(postLimit));
+            
+            postsUnsubscribe = onSnapshot(q, (snapshot) => { 
+                globalPosts = []; 
+                snapshot.forEach(doc => { globalPosts.push({ id: doc.id, data: doc.data() }); });
+                
+                // Eğer gelen veri sayımız limite ulaşamadıysa, demek ki veritabanında daha fazla post kalmamış
+                if (snapshot.docs.length < postLimit) {
+                    hasMorePosts = false;
+                }
+
+                if(window.currentOpenPostId) { window.openPostDetail(window.currentOpenPostId); }
+                renderFeed(); 
+            });
+        }
                 const urlParams = new URLSearchParams(window.location.search);
                 const specificPostId = urlParams.get('post');
                 if(specificPostId) {
