@@ -732,6 +732,7 @@
 
         window.deletePost = async function(postId) { if(confirm("Kalıcı olarak silinsin mi?")) await deleteDoc(doc(db, "posts", postId)); };
         
+        // GÜNCELLENMİŞ REPOST FONKSİYONU
         window.repostPost = async function(postId, originalAuthor, event) {
             event.stopPropagation();
             if(confirm(`@${originalAuthor} adlı kullanıcının gönderisini kendi profilinizde yeniden paylaşmak istiyor musunuz?`)) {
@@ -746,7 +747,7 @@
                         content: originalPost.data.content || '', 
                         imageUrl: originalPost.data.imageUrl || null, 
                         author: myUsername, 
-                        authorEmail: currentUser.email, // 🛡️ EKLENEN GÜVENLİK SATIRI
+                        authorEmail: currentUser.email, // 🛡️ GÜVENLİK KURALINI GEÇMEK İÇİN EKLENDİ
                         createdAt: serverTimestamp(), 
                         likes: [], 
                         comments: [] 
@@ -866,7 +867,7 @@
                 </div>
 
                 <div class=\"comments-wrapper\" style=\"padding: 0 20px;\">
-                    ${buildCommentsTree(postData.comments || [], null)}
+                    ${buildCommentsTree(postData.comments || [], null, 0, postId, originalAuthor)}
                 </div>
                 
                 <div style=\"position:sticky; bottom:0; background:white; padding:15px 20px; border-top:1px solid #eff3f4; display:flex; flex-direction:column; gap:10px;\">
@@ -884,10 +885,12 @@
             document.getElementById('post-detail-modal').style.display = 'flex';
         };
 
-        function buildCommentsTree(allComments, parentId, depth = 0) {
+        // YENİ YORUM AĞACI VE SİLME BUTONU
+        function buildCommentsTree(allComments, parentId, depth = 0, postId = null, postAuthor = null) {
             if (depth > 15) return ''; 
             let html = '';
             const safeParentId = parentId || null;
+            
             const children = allComments.filter(c => (c.parentId || null) === safeParentId).sort((a,b) => a.timestamp - b.timestamp);
             
             children.forEach(c => {
@@ -895,6 +898,11 @@
                 const avatarHtml = cUserData.avatarUrl ? `<img src=\"${cUserData.avatarUrl}\">` : `👤`;
                 const vHtml = cUserData.isVerified ? `<span class=\"verified-badge\" style=\"font-size:12px;\">☑️</span>` : '';
                 const safeCommentId = c.id || ('legacy_' + Math.random().toString(36).substr(2, 9));
+
+                let deleteBtnHtml = '';
+                if (myUsername === c.author || myUsername === postAuthor) {
+                    deleteBtnHtml = `<div class=\"comment-action-btn\" style=\"color:#f4212e;\" onclick=\"window.deleteComment('${postId}', '${safeCommentId}')\">🗑️ Sil</div>`;
+                }
 
                 html += `
                     <div class=\"comment-node\">
@@ -905,11 +913,12 @@
                                 <div class=\"comment-text\">${c.text}</div>
                                 <div class=\"comment-actions\">
                                     <div class=\"comment-action-btn\" onclick=\"window.setDetailReply('${safeCommentId}', '${c.author}')\">💬 Yanıtla</div>
+                                    ${deleteBtnHtml}
                                 </div>
                             </div>
                         </div>
                         <div class=\"comment-replies\">
-                            ${buildCommentsTree(allComments, safeCommentId, depth + 1)}
+                            ${buildCommentsTree(allComments, safeCommentId, depth + 1, postId, postAuthor)}
                         </div>
                     </div>
                 `;
@@ -935,6 +944,26 @@
             await updateDoc(doc(db, "posts", postId), { comments: arrayUnion(newComment) });
             if (postAuthor !== myUsername && !activeReplyParentId) { await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); }
             input.value = ''; window.cancelDetailReply();
+        };
+
+        // YENİ YORUM SİLME FONKSİYONU
+        window.deleteComment = async function(postId, commentId) {
+            if(confirm("Bu yorumu silmek istediğinize emin misiniz?")) {
+                try {
+                    const postRef = doc(db, "posts", postId);
+                    const postSnap = await getDoc(postRef);
+                    if(postSnap.exists()) {
+                        const postData = postSnap.data();
+                        const updatedComments = postData.comments.filter(c => c.id !== commentId && c.parentId !== commentId);
+                        
+                        await updateDoc(postRef, { comments: updatedComments });
+                        window.openPostDetail(postId);
+                    }
+                } catch(e) {
+                    console.error("Yorum silinemedi:", e);
+                    alert("Yorum silinirken bir hata oluştu.");
+                }
+            }
         };
 
         function renderFeed() {
