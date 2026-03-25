@@ -254,8 +254,8 @@
                 </div>
 
                 <div class="feed-tabs">
-                    <div class="feed-tab active">Gönderiler <div class="tab-indicator"></div></div>
-                    <div class="feed-tab" onclick="alert('Yanıtlar özelliği yakında!')">Yanıtlar <div class="tab-indicator" style="display:none;"></div></div>
+                    <div class="feed-tab active" id="tab-profile-posts" onclick="window.switchProfileTab('posts')">Gönderiler <div class="tab-indicator"></div></div>
+                    <div class="feed-tab" id="tab-profile-replies" onclick="window.switchProfileTab('replies')">Yanıtlar <div class="tab-indicator" style="display:none;"></div></div>
                 </div>
             </div>
 
@@ -365,6 +365,25 @@
         let currentUser = null; let myUsername = null; let isFollowing = false; let isRequested = false; let isTargetPrivate = false; let isTargetVerified = false; 
         let allUsersData = {}; let currentProfileFollowers = []; let currentProfileFollowing = []; let unsubscribePosts = null; let currentlyEditingPostId = null; 
         let postToShare = null; let activeReplyParentId = null;
+let currentProfileTab = 'posts'; // Hangi sekmede olduğumuzu tutar
+
+        window.switchProfileTab = function(tabName) {
+            currentProfileTab = tabName;
+            
+            // Tüm sekmelerin aktifliğini kaldır
+            document.querySelectorAll('.feed-tabs .feed-tab').forEach(t => {
+                t.classList.remove('active');
+                t.querySelector('.tab-indicator').style.display = 'none';
+            });
+            
+            // Tıklanan sekmeyi aktif yap
+            const activeTab = document.getElementById(tabName === 'posts' ? 'tab-profile-posts' : 'tab-profile-replies');
+            activeTab.classList.add('active');
+            activeTab.querySelector('.tab-indicator').style.display = 'block';
+            
+            // Sekme değiştiği için postları yeniden yükle
+            loadUserPosts(); 
+        };
 
         document.addEventListener('click', function(event) {
             if (!event.target.classList.contains('post-options-btn')) {
@@ -792,6 +811,7 @@
         };
 
         function loadUserPosts() {
+            if (unsubscribePosts) unsubscribePosts(); // Önceki dinleyiciyi temizleyerek çakışmayı önler
             unsubscribePosts = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
                 const feedContainer = document.getElementById('profile-feed-container'); feedContainer.innerHTML = ''; let userPostCount = 0;
                 
@@ -802,8 +822,22 @@
 
                 snapshot.forEach((postDoc) => {
                     const postData = postDoc.data();
-                    if (postData.author === targetUsername) {
-                        userPostCount++;
+                    
+                    // Gönderi sayısı her zaman kişinin Orijinal gönderilerini saysın
+                    if (postData.author === targetUsername && !postData.isRepost) userPostCount++;
+
+                    // Sekmeye göre gösterim kuralı
+                    let shouldShow = false;
+                    if (currentProfileTab === 'posts') {
+                        // Sadece kendi attıkları veya yeniden paylaştıkları
+                        if (postData.author === targetUsername) shouldShow = true;
+                    } else if (currentProfileTab === 'replies') {
+                        // Kendi gönderilerini + yorum yaptığı başkalarının gönderilerini göster
+                        const hasCommented = (postData.comments || []).some(c => c.author === targetUsername);
+                        if (hasCommented || postData.author === targetUsername) shouldShow = true;
+                    }
+
+                    if (shouldShow) {
                         const postId = postDoc.id;
                         
                         const renderSinglePost = (isPinned) => {
