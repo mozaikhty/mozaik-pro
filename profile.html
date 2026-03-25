@@ -323,7 +323,7 @@
     </div>
 
     <div class="modal-overlay" id="post-detail-modal">
-        <div class="modal-content">
+        <div class="modal-content" id="post-detail-content-box">
             <div class="modal-header" style="padding: 10px 20px;">
                 <h3 style="margin:0;">Gönderi</h3>
                 <button class="close-btn" onclick="window.closePostDetail()">&times;</button>
@@ -425,7 +425,7 @@
 
         let currentUser = null; let myUsername = null; let isFollowing = false; let isRequested = false; let isTargetPrivate = false; let isTargetVerified = false; 
         let allUsersData = {}; let currentProfileFollowers = []; let currentProfileFollowing = []; let unsubscribePosts = null; let currentlyEditingPostId = null; 
-        let postToShare = null; let activeReplyParentId = null;
+        let postToShare = null; let activeReplyParentId = null; let globalPosts = [];
         let currentProfileTab = 'posts'; 
 
         window.switchProfileTab = function(tabName) {
@@ -570,7 +570,6 @@
             document.getElementById('share-dm-modal').style.display = 'none';
         };
 
-        // GÜNCELLENMİŞ REPOST FONKSİYONU
         window.repostPost = async function(postId, originalAuthor, event) {
             event.stopPropagation();
             if(confirm(`@${originalAuthor} adlı kullanıcının gönderisini yeniden paylaşmak istiyor musun?`)) {
@@ -585,7 +584,7 @@
                         content: originalPost.data.content || '', 
                         imageUrl: originalPost.data.imageUrl || null, 
                         author: myUsername, 
-                        authorEmail: currentUser.email, // 🛡️ GÜVENLİK KURALINI GEÇMEK İÇİN EKLENDİ
+                        authorEmail: currentUser.email, 
                         createdAt: serverTimestamp(), 
                         likes: [], 
                         comments: [] 
@@ -773,11 +772,16 @@
         window.openPostDetail = function(postId) {
             window.currentOpenPostId = postId; activeReplyParentId = null;
             const postObj = globalPosts.find(p => p.id === postId); if(!postObj) return;
-            const postData = postObj.data; const authorData = allUsersData[postData.author] || {};
+            const postData = postObj.data; 
+            
+            let originalAuthor = postData.author;
+            if(postData.isRepost) { originalAuthor = postData.originalPostAuthor; }
+            
+            const authorData = allUsersData[originalAuthor] || {};
             const likesArray = postData.likes || []; const isLiked = likesArray.includes(myUsername);
             const vHtml = authorData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
             const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
-            const fullName = authorData.fullName || postData.author;
+            const fullName = authorData.fullName || originalAuthor;
             
             let timeString = "";
             if (postData.createdAt) {
@@ -788,31 +792,35 @@
                 }
             }
 
+            let repostLabel = "";
+            if(postData.isRepost) { repostLabel = `<div style="color:#536471; font-weight:bold; font-size:13px; margin-bottom:10px; padding:0 20px;">🔁 @${postData.author} yeniden paylaştı</div>`; }
+
             let html = `
-                <div style="padding: 20px; border-bottom:1px solid #eff3f4;">
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${postData.author}'">
+                ${repostLabel}
+                <div style="padding: 0 20px 20px 20px; border-bottom:1px solid #eff3f4;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${originalAuthor}'">
                         <div style="width:48px; height:48px; border-radius:50%; background:#eee; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px;">${avatarImg}</div>
                         <div style="flex:1;">
                             <div style="font-weight:bold; font-size:16px;">${fullName} ${vHtml}</div>
-                            <div style="color:#536471; font-size:15px;">@${postData.author}</div>
+                            <div style="color:#536471; font-size:15px;">@${originalAuthor}</div>
                         </div>
                     </div>
                     <div style="font-size:18px; line-height:1.5; color:#0f1419; margin-bottom:15px; word-wrap:break-word;">
-                        ${postData.content ? postData.content.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<span style="color:#1da1f2;">#$1</span>`) : ''}
+                        ${postData.content ? postData.content.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" style="color:#1da1f2; text-decoration:none;">#$1</a>`) : ''}
                     </div>
                     ${postData.imageUrl ? `<img src="${postData.imageUrl}" style="width:100%; border-radius:16px; margin-bottom:15px;">` : ''}
                     <div style="color:#536471; font-size:15px; padding-bottom:15px; border-bottom:1px solid #eff3f4;">${timeString}</div>
                     
                     <div style="display:flex; justify-content:space-around; padding:15px 0; border-bottom:1px solid #eff3f4; color:#536471;">
                         <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="document.getElementById('detail-comment-input').focus()"><span class="action-icon">💬</span> ${(postData.comments || []).length}</div>
-                        <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="window.repostPost('${postId}', '${postData.author}', event)"><span class="action-icon">🔁</span></div>
-                        <div style="display:flex; align-items:center; gap:8px; cursor:pointer; color:${isLiked ? '#f91880' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}', event)"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${postId}', event)">${likesArray.length}</span></div>
+                        <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="window.repostPost('${postId}', '${originalAuthor}', event)"><span class="action-icon">🔁</span></div>
+                        <div style="display:flex; align-items:center; gap:8px; cursor:pointer; color:${isLiked ? '#f91880' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${originalAuthor}', event)"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${postId}', event)">${likesArray.length}</span></div>
                         <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="window.openShareModal('${postId}', event)"><span class="action-icon">📤</span></div>
                     </div>
                 </div>
 
                 <div class="comments-wrapper" style="padding: 0 20px;">
-                    ${buildCommentsTree(postData.comments || [], null, 0, postId, postData.author)}
+                    ${buildCommentsTree(postData.comments || [], null, 0, postId, originalAuthor)}
                 </div>
                 
                 <div style="position:sticky; bottom:0; background:white; padding:15px 20px; border-top:1px solid #eff3f4; display:flex; flex-direction:column; gap:10px;">
@@ -821,15 +829,18 @@
                     </div>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="detail-comment-input" style="flex:1; background:#eff3f4; border:none; padding:12px 20px; border-radius:30px; outline:none; font-size:15px;" placeholder="Yanıtını gönder...">
-                        <button onclick="window.sendDetailComment('${postId}', '${postData.author}')" style="background:#1da1f2; color:white; border:none; border-radius:30px; padding:0 20px; font-weight:bold; cursor:pointer;">Yanıtla</button>
+                        <button onclick="window.sendDetailComment('${postId}', '${originalAuthor}')" style="background:#1da1f2; color:white; border:none; border-radius:30px; padding:0 20px; font-weight:bold; cursor:pointer;">Yanıtla</button>
                     </div>
                 </div>
             `;
+            
+            const contentBox = document.getElementById('post-detail-content-box');
+            if(contentBox) contentBox.scrollTop = 0;
+            
             document.getElementById('post-detail-container').innerHTML = html;
             document.getElementById('post-detail-modal').style.display = 'flex';
         };
 
-        // YENİ YORUM AĞACI VE SİLME BUTONU
         function buildCommentsTree(allComments, parentId, depth = 0, postId = null, postAuthor = null) {
             if (depth > 15) return ''; 
             let html = '';
@@ -890,7 +901,6 @@
             input.value = ''; window.cancelDetailReply();
         };
 
-        // YENİ YORUM SİLME FONKSİYONU
         window.deleteComment = async function(postId, commentId) {
             if(confirm("Bu yorumu silmek istediğinize emin misiniz?")) {
                 try {
@@ -913,6 +923,7 @@
         function loadUserPosts() {
             if (unsubscribePosts) unsubscribePosts(); // Önceki dinleyiciyi temizleyerek çakışmayı önler
             unsubscribePosts = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
+                globalPosts = []; // YENİ: Her seferinde diziyi temizliyoruz
                 const feedContainer = document.getElementById('profile-feed-container'); feedContainer.innerHTML = ''; let userPostCount = 0;
                 
                 let pinnedPostId = null;
@@ -922,6 +933,7 @@
 
                 snapshot.forEach((postDoc) => {
                     const postData = postDoc.data();
+                    globalPosts.push({ id: postDoc.id, data: postData }); // YENİ: Gönderiyi hafızaya alıyoruz
                     
                     // Gönderi sayısı her zaman kişinin Orijinal gönderilerini saysın
                     if (postData.author === targetUsername && !postData.isRepost) userPostCount++;
