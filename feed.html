@@ -855,7 +855,7 @@
                     if(data && data.data && data.data.url) {
                         imgUrl = data.data.url; 
                     } else {
-                        throw new Error("Resim yüklenemedi");
+                        throw new Error("Resim sunucuya yüklenemedi");
                     }
                 }
 
@@ -955,24 +955,34 @@
             });
             container.innerHTML = html;
 
-            // Eğer Hikaye İzleyici açıksa anlık görüntülenme değerlerini güncelle
+            // Eğer Hikaye İzleyici açıksa anlık görüntülenme/beğenme değerlerini güncel veriden al (CANLI VERİ ENTEGRASYONU)
             if (document.getElementById('story-viewer-overlay').style.display === 'flex') {
                 const currentUserObj = activeStoryUsers[currentStoryUserIndex];
                 if (currentUserObj) {
                     const currentStory = currentUserObj.stories[currentStoryIndex];
                     if (currentStory) {
-                        if (currentUserObj.username === myUsername) {
-                            const viewsCount = (currentStory.views || []).length;
-                            const vEl = document.getElementById('story-view-count');
-                            if(vEl) vEl.innerText = viewsCount;
-                            
-                            if (document.getElementById('story-details-modal').style.display === 'flex') {
-                                window.switchStoryDetailsTab(storyDetailsTab);
+                        const freshUserData = allUsersData[currentUserObj.username];
+                        if (freshUserData && freshUserData.stories) {
+                            const freshStory = freshUserData.stories.find(s => s.id === currentStory.id);
+                            if (freshStory) {
+                                // Yerel belleği anında güncelle
+                                activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex] = freshStory;
+                                
+                                if (currentUserObj.username === myUsername) {
+                                    const viewsCount = (freshStory.views || []).length;
+                                    const vEl = document.getElementById('story-view-count');
+                                    if(vEl) vEl.innerText = viewsCount;
+                                    
+                                    // Detaylar modalı açıksa o da canlı aksın
+                                    if (document.getElementById('story-details-modal').style.display === 'flex') {
+                                        window.switchStoryDetailsTab(storyDetailsTab);
+                                    }
+                                } else {
+                                    const isLiked = freshStory.likes && freshStory.likes.includes(myUsername);
+                                    const likeBtn = document.getElementById('story-like-btn');
+                                    if(likeBtn) likeBtn.innerText = isLiked ? '❤️' : '🤍';
+                                }
                             }
-                        } else {
-                            const isLiked = currentStory.likes && currentStory.likes.includes(myUsername);
-                            const likeBtn = document.getElementById('story-like-btn');
-                            if(likeBtn) likeBtn.innerText = isLiked ? '❤️' : '🤍';
                         }
                     }
                 }
@@ -1047,7 +1057,6 @@
                 document.getElementById('story-footer').style.display = 'none';
                 document.getElementById('story-footer-owner').style.display = 'flex';
                 document.getElementById('story-view-count').innerText = (story.views || []).length;
-                document.getElementById('story-like-count-owner').innerText = (story.likes || []).length;
             } else {
                 document.getElementById('story-footer').style.display = 'flex';
                 document.getElementById('story-footer-owner').style.display = 'none';
@@ -1227,6 +1236,7 @@
             if(tabName === 'views') document.getElementById('tab-story-views').classList.add('active');
             else document.getElementById('tab-story-likes').classList.add('active');
             
+            // CANLI VERİDEN GÜNCELLEME (Hızlı Sekme Geçişi)
             const story = activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex];
             const listData = tabName === 'views' ? (story.views || []) : (story.likes || []);
             const container = document.getElementById('story-details-list'); container.innerHTML = '';
