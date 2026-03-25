@@ -73,11 +73,13 @@
         .story-nav-left { position: absolute; top: 0; left: 0; width: 30%; height: 100%; z-index: 5005; cursor: pointer; }
         .story-nav-right { position: absolute; top: 0; right: 0; width: 70%; height: 100%; z-index: 5005; cursor: pointer; }
 
-        .story-footer { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; display: flex; gap: 15px; align-items: center; z-index: 5010; background: linear-gradient(transparent, rgba(0,0,0,0.8));}
+        .story-footer { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; display: flex; gap: 10px; align-items: center; z-index: 5010; background: linear-gradient(transparent, rgba(0,0,0,0.8));}
         .story-reply-input { flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.5); border-radius: 30px; padding: 12px 20px; color: white; font-size: 15px; outline: none; transition: 0.2s;}
-        .story-action-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; transition: 0.2s; padding: 0;}
+        .story-action-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; transition: 0.2s; padding: 0; display: flex; align-items: center; justify-content: center;}
+        .story-action-btn:hover { transform: scale(1.1); }
         .story-footer-owner { position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; display: flex; align-items: center; justify-content: flex-start; z-index: 5010; background: linear-gradient(transparent, rgba(0,0,0,0.8));}
-        .story-view-count-btn { background: none; border: none; color: white; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;}
+        .story-view-count-btn { background: none; border: none; color: white; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; padding: 5px 10px; border-radius: 8px;}
+        .story-view-count-btn:hover { background: rgba(255,255,255,0.1); }
 
         /* YENİ HİKAYE EDİTÖRÜ CSS */
         .story-editor-board { width: 100%; aspect-ratio: 9/16; background: #111; border-radius: 12px; overflow: hidden; position: relative; margin-bottom: 15px; border: 1px solid #e2e8f0;}
@@ -209,7 +211,7 @@
         .close-btn { background: #f8fafc; border: 1px solid #e2e8f0; font-size: 20px; cursor: pointer; color: #334155; display:flex; justify-content:center; align-items:center; width:36px; height:36px; border-radius:8px; transition:0.2s;}
         .close-btn:hover { background:#e2e8f0; color:#0f172a;}
         
-        .user-row { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 8px; text-decoration: none; color: #334155; transition: 0.2s; border: 1px solid transparent;}
+        .user-row { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 8px; text-decoration: none; color: #334155; transition: 0.2s; border: 1px solid transparent; cursor: pointer;}
         .user-row:hover { background: #f8fafc; border-color: #e2e8f0; }
         .row-avatar { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #e2e8f0; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; border: 1px solid #cbd5e1;}
         .row-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -407,13 +409,19 @@
         </div>
         
         <div class="story-footer" id="story-footer">
-            <input type="text" id="story-reply-input" class="story-reply-input" placeholder="Mesaj gönder..." onkeypress="if(event.key === 'Enter') window.sendStoryReply()">
+            <input type="text" id="story-reply-input" class="story-reply-input" placeholder="Mesaj gönder..." onfocus="window.pauseStory()" onblur="window.resumeStory()" onkeypress="if(event.key === 'Enter') window.sendStoryReply()">
+            <button class="story-action-btn" onclick="window.sendStoryReply()" title="Gönder" style="font-size: 20px;">✈️</button>
             <button class="story-action-btn" id="story-like-btn" onclick="window.likeStory()" title="Hikayeyi Beğen">🤍</button>
             <button class="story-action-btn" onclick="window.openStoryShareModal()" title="Hikayeyi Paylaş">📤</button>
         </div>
         
         <div class="story-footer-owner" id="story-footer-owner" style="display:none;">
-            <button class="story-view-count-btn" onclick="window.openStoryDetailsModal()" title="Kimler Gördü?">👁️ <span id="story-view-count">0</span> Görüntüleyenler</button>
+            <button class="story-view-count-btn" onclick="window.openStoryDetailsModal()" title="Detayları İncele">
+                👁️ <span id="story-view-count">0</span> Görüntüleyenler
+            </button>
+            <div style="margin-left: 15px; font-weight: bold; color: white; display:flex; align-items:center; gap:6px;">
+                ❤️ <span id="story-like-count-owner">0</span> Beğeniler
+            </div>
         </div>
     </div>
 
@@ -421,7 +429,7 @@
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
                 <h3 style="margin:0; font-size:16px;">Hikaye Detayları</h3>
-                <button class="close-btn" onclick="document.getElementById('story-details-modal').style.display='none'">&times;</button>
+                <button class="close-btn" onclick="window.closeStoryDetailsModal()">&times;</button>
             </div>
             <div class="feed-tabs" style="margin:0; box-shadow:none; border-radius:0; border-left:none; border-right:none;">
                 <div class="feed-tab active" id="tab-story-views" onclick="window.switchStoryDetailsTab('views')">Görüntüleyenler</div>
@@ -438,7 +446,7 @@
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
                 <h3 style="margin:0; font-size:16px;">Hikayeyi İlet</h3>
-                <button class="close-btn" onclick="document.getElementById('story-share-modal').style.display='none'">&times;</button>
+                <button class="close-btn" onclick="window.closeStoryShareModal()">&times;</button>
             </div>
             <div id="story-share-list" style="max-height:300px; overflow-y:auto; padding: 10px;"></div>
         </div>
@@ -620,6 +628,7 @@
             if (event.target.classList.contains('modal-overlay') && event.target.id !== 'story-viewer-overlay') {
                 event.target.style.display = 'none';
                 if(event.target.id === 'post-detail-modal') { window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; }
+                if(event.target.id === 'story-details-modal' || event.target.id === 'story-share-modal') { window.resumeStory(); }
             }
         });
 
@@ -848,7 +857,6 @@
                 } catch(e) { alert("Resim yüklenemedi!"); btn.disabled = false; btn.innerText = "Hikayemi Yayınla"; return;}
             }
 
-            // Derin kopya ile editor state alınıyor
             const finalLayout = JSON.parse(JSON.stringify(window.editorState));
 
             const newStory = {
@@ -870,6 +878,19 @@
         // =====================================
         // HİKAYE (STORY) GÖSTERİM & MANTIK
         // =====================================
+
+        window.pauseStory = function() {
+            isStoryPaused = true;
+            clearInterval(storyTimerInterval);
+        };
+
+        window.resumeStory = function() {
+            if(document.getElementById('story-viewer-overlay').style.display === 'flex') {
+                isStoryPaused = false;
+                clearInterval(storyTimerInterval);
+                storyTimerInterval = setInterval(window.storyTick, 100);
+            }
+        };
 
         function renderStories() {
             const container = document.getElementById('stories-container');
@@ -926,6 +947,32 @@
                 `;
             });
             container.innerHTML = html;
+
+            // Eğer Hikaye İzleyici açıksa anlık görüntülenme/beğenme değerlerini güncelle
+            if (document.getElementById('story-viewer-overlay').style.display === 'flex') {
+                const currentUserObj = activeStoryUsers[currentStoryUserIndex];
+                if (currentUserObj) {
+                    const currentStory = currentUserObj.stories[currentStoryIndex];
+                    if (currentStory) {
+                        if (currentUserObj.username === myUsername) {
+                            const viewsCount = (currentStory.views || []).length;
+                            const likesCount = (currentStory.likes || []).length;
+                            const vEl = document.getElementById('story-view-count');
+                            const lEl = document.getElementById('story-like-count-owner');
+                            if(vEl) vEl.innerText = viewsCount;
+                            if(lEl) lEl.innerText = likesCount;
+                            
+                            if (document.getElementById('story-details-modal').style.display === 'flex') {
+                                window.switchStoryDetailsTab(storyDetailsTab);
+                            }
+                        } else {
+                            const isLiked = currentStory.likes && currentStory.likes.includes(myUsername);
+                            const likeBtn = document.getElementById('story-like-btn');
+                            if(likeBtn) likeBtn.innerText = isLiked ? '❤️' : '🤍';
+                        }
+                    }
+                }
+            }
         }
 
         window.openStoryViewer = function(username) {
@@ -954,15 +1001,11 @@
 
         window.handleStoryPointerDown = function() {
             storyPressTime = Date.now();
-            isStoryPaused = true;
-            clearInterval(storyTimerInterval);
+            window.pauseStory();
         };
 
         window.handleStoryPointerUp = function(direction) {
-            isStoryPaused = false;
-            clearInterval(storyTimerInterval);
-            storyTimerInterval = setInterval(window.storyTick, 100);
-            
+            window.resumeStory();
             if (Date.now() - storyPressTime < 250) {
                 if (direction === 'next') window.nextStory(); else window.prevStory();
             }
@@ -1000,6 +1043,7 @@
                 document.getElementById('story-footer').style.display = 'none';
                 document.getElementById('story-footer-owner').style.display = 'flex';
                 document.getElementById('story-view-count').innerText = (story.views || []).length;
+                document.getElementById('story-like-count-owner').innerText = (story.likes || []).length;
             } else {
                 document.getElementById('story-footer').style.display = 'flex';
                 document.getElementById('story-footer-owner').style.display = 'none';
@@ -1051,6 +1095,15 @@
         }
 
         async function addStoryView(ownerUsername, storyId) {
+            // Anlık yerel güncelleme (UI hızı için)
+            const userObj = activeStoryUsers.find(u => u.username === ownerUsername);
+            if(userObj) {
+                const s = userObj.stories.find(st => st.id === storyId);
+                if(s && !s.views) s.views = [];
+                if(s && !s.views.includes(myUsername)) s.views.push(myUsername);
+            }
+
+            // Veritabanı Güncellemesi
             try {
                 const userRef = doc(db, "users", ownerUsername);
                 const userSnap = await getDoc(userRef);
@@ -1101,7 +1154,11 @@
             const messageData = { text: `${storySummary}\n\n${text}`, sender: myUsername, createdAt: serverTimestamp(), isRead: false, type: 'regular' };
             await addDoc(collection(db, "chats", chatId, "messages"), messageData);
             await setDoc(doc(db, "chats", chatId), { participants: [myUsername, targetUser], lastMessage: "Hikayeye yanıt", lastSender: myUsername, unreadBy: [targetUser], updatedAt: serverTimestamp() }, { merge: true });
-            alert("Yanıtınız gönderildi! 🚀"); input.value = ''; window.closeStoryViewer();
+            
+            alert("Yanıtınız gönderildi! 🚀"); 
+            input.value = ''; 
+            window.resumeStory();
+            window.closeStoryViewer();
         };
 
         window.likeStory = async function() {
@@ -1109,6 +1166,7 @@
             const story = activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex];
             const isLiked = story.likes && story.likes.includes(myUsername);
             
+            // Hızlı Arayüz (UI) Güncellemesi
             if(isLiked) { story.likes = story.likes.filter(u => u !== myUsername); document.getElementById('story-like-btn').innerText = '🤍'; } 
             else { if(!story.likes) story.likes = []; story.likes.push(myUsername); document.getElementById('story-like-btn').innerText = '❤️'; }
 
@@ -1149,10 +1207,15 @@
         };
 
         window.openStoryDetailsModal = function() {
-            window.handleStoryPointerDown(); // Arkada hikayeyi duraklat
+            window.pauseStory(); 
             document.getElementById('story-details-modal').style.display = 'flex';
             window.switchStoryDetailsTab('views');
         };
+
+        window.closeStoryDetailsModal = function() {
+            document.getElementById('story-details-modal').style.display = 'none';
+            window.resumeStory();
+        }
 
         window.switchStoryDetailsTab = function(tabName) {
             storyDetailsTab = tabName;
@@ -1166,14 +1229,16 @@
 
             if (listData.length === 0) { container.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>`; return; }
 
+            let html = '';
             listData.forEach(uname => {
                 let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
-                container.innerHTML += `<div class="user-row" onclick="window.location.href='profile.html?user=${uname}'"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
+                html += `<div class="user-row" onclick="window.location.href='profile.html?user=${uname}'"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
             });
+            container.innerHTML = html;
         };
 
         window.openStoryShareModal = function() {
-            window.handleStoryPointerDown(); 
+            window.pauseStory(); 
             const container = document.getElementById('story-share-list'); container.innerHTML = '';
             if(myFollowingList.length === 0) { container.innerHTML = '<div style=\"padding:20px; text-align:center; color:#64748b;\">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; } 
             else {
@@ -1185,12 +1250,18 @@
             document.getElementById('story-share-modal').style.display = 'flex';
         };
 
+        window.closeStoryShareModal = function() {
+            document.getElementById('story-share-modal').style.display = 'none';
+            window.resumeStory();
+        }
+
         window.sendStoryAsMessage = async function(targetUser) {
             const chatId = [myUsername, targetUser].sort().join('_'); const storyOwner = activeStoryUsers[currentStoryUserIndex].username;
             const messageData = { text: `🔗 @${storyOwner} adlı kullanıcının hikayesi iletildi.`, sender: myUsername, createdAt: serverTimestamp(), isRead: false, type: 'regular' };
             await addDoc(collection(db, "chats", chatId, "messages"), messageData);
             await setDoc(doc(db, "chats", chatId), { participants: [myUsername, targetUser], lastMessage: '🔗 Hikaye İletildi', lastSender: myUsername, updatedAt: serverTimestamp() }, { merge: true });
-            alert(`Hikaye iletildi.`); document.getElementById('story-share-modal').style.display = 'none';
+            alert(`Hikaye iletildi.`); 
+            window.closeStoryShareModal();
         };
 
         // =====================================
