@@ -169,7 +169,10 @@
         .call-status-text { font-size: 22px; font-weight: bold; margin-bottom: 30px; z-index: 3010; position: absolute; top: 50px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .video-container { position: relative; width: 100%; height: 100%; max-width: 800px; display: flex; justify-content: center; align-items: center; background: #111; }
         .remote-video { width: 100%; height: 100%; object-fit: cover; }
-        .local-video { position: absolute; bottom: 120px; right: 20px; width: 100px; height: 150px; background: #333; border-radius: 12px; object-fit: cover; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 3010; }
+        
+        /* GÜNCELLEME: Ayna Modu (Ters Görüntü) Düzeltmesi */
+        .local-video { position: absolute; bottom: 120px; right: 20px; width: 100px; height: 150px; background: #333; border-radius: 12px; object-fit: cover; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 3010; transform: scaleX(-1); }
+        
         .call-controls { position: absolute; bottom: 40px; display: flex; gap: 30px; z-index: 3010; }
         .call-action-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 28px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
         .btn-accept { background: #2ecc71; color: white; display: none; }
@@ -188,7 +191,7 @@
         @media (max-width: 1000px) {
             .sidebar-left { display: none; }
             .feed-main { width: 100%; border-right: none; padding-bottom: 60px; }
-            .sidebar-right { display: none; width: 100%; padding-bottom: 0 !important; height: 100vh; } /* padding-bottom 0 ile input kutusunu aşağı sabitliyoruz */
+            .sidebar-right { display: none; width: 100%; padding-bottom: 0 !important; height: 100vh; } 
             .bottom-nav { display: flex; }
             .back-btn { display: block !important; }
             .mobile-header-avatar { display: flex; align-items: center; justify-content: center; }
@@ -463,7 +466,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         // IMGBB API Key
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1";
@@ -475,7 +478,9 @@
         let currentReplyData = null; let typingTimeout = null;
         let currentInboxTab = 'all'; 
 
-        let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let isCallVideo = false;
+        // GLOBAL ARAMA YÖNETİM DEĞİŞKENLERİ
+        let callListeners = {};
+        let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
         const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
         const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
 
@@ -483,11 +488,9 @@
         const targetUsername = urlParams.get('user');
         const targetGroupId = urlParams.get('group');
 
-        // YENİ: Üst kısımdan profile yönlendirme fonksiyonu
+        // Profile Yönlendirme Fonksiyonu
         window.goToChatProfile = function() {
-            if (!isGroupChat && targetUsername) {
-                window.location.href = 'profile.html?user=' + targetUsername;
-            }
+            if (!isGroupChat && targetUsername) { window.location.href = 'profile.html?user=' + targetUsername; }
         };
 
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
@@ -599,11 +602,13 @@
                     activeChats = activeChats.filter(c => c.type === 'group'); 
                     snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
                     updateInboxDisplay(); 
+                    attachCallListeners(); // HER YERDE ÇALMASI İÇİN EKLENDİ
                 });
                 onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'private'); 
                     snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); 
                     updateInboxDisplay(); 
+                    attachCallListeners(); // HER YERDE ÇALMASI İÇİN EKLENDİ
                 });
                 onSnapshot(doc(db, "users", myUsername), (docSnap) => { if (docSnap.exists()) { myFollowing = docSnap.data().following || []; } });
 
@@ -618,6 +623,39 @@
             } else { window.location.href = "index.html"; }
         });
 
+        // GELİŞMİŞ ÇAĞRI DİNLEYİCİSİ (Sohbetin dışında olsan da çalar)
+        function attachCallListeners() {
+            activeChats.forEach(chat => {
+                if (!callListeners[chat.id]) {
+                    const colName = chat.type === 'group' ? "groups" : "chats";
+                    const callRef = collection(db, colName, chat.id, "calls");
+                    callListeners[chat.id] = onSnapshot(callRef, (snapshot) => {
+                        snapshot.docChanges().forEach(async (change) => {
+                            const callData = change.doc.data();
+                            if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
+                                currentCallDocId = change.doc.id;
+                                currentCallChatId = chat.id;
+                                currentCallCollection = colName;
+                                isCallVideo = callData.type === 'video';
+                                document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
+                                document.getElementById('accept-call-btn').style.display = 'block';
+                                callOverlay.style.display = 'flex';
+                                document.getElementById('video-container').style.display = isCallVideo ? 'flex' : 'none';
+                            }
+                            if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername && currentCallDocId === change.doc.id) {
+                                document.getElementById('call-status-text').innerText = "Bağlandı";
+                                const desc = new RTCSessionDescription(callData.answer);
+                                await peerConnection.setRemoteDescription(desc);
+                            }
+                            if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed') && currentCallDocId === change.doc.id) {
+                                endCallUI();
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
         document.getElementById('dm-search-input')?.addEventListener('input', updateInboxDisplay);
 
         function updateInboxDisplay() {
@@ -630,7 +668,11 @@
             allConversations.sort((a, b) => { let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0; let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0; return timeB - timeA; });
             
             let filteredConversations = allConversations.filter(conv => {
-                let isUnread = (conv.lastSender && conv.lastSender !== myUsername);
+                // KUSURSUZ OKUNMADI ALGORİTMASI
+                let isUnread = false;
+                if (conv.unreadBy && conv.unreadBy.includes(myUsername)) { isUnread = true; }
+                else if (!conv.unreadBy && conv.lastSender && conv.lastSender !== myUsername) { isUnread = true; }
+
                 if (currentInboxTab === 'unread') return isUnread;
                 if (currentInboxTab === 'groups') return conv.type === 'group';
                 return true; 
@@ -647,7 +689,11 @@
             if (filteredConversations.length > 0) {
                 filteredConversations.forEach(conv => {
                     let title = ''; let avatar = ''; let link = '';
-                    let isUnread = (conv.lastSender && conv.lastSender !== myUsername); 
+                    
+                    let isUnread = false;
+                    if (conv.unreadBy && conv.unreadBy.includes(myUsername)) { isUnread = true; }
+                    else if (!conv.unreadBy && conv.lastSender && conv.lastSender !== myUsername) { isUnread = true; }
+
                     let timeAgoStr = ""; if(conv.updatedAt) { const date = conv.updatedAt.toDate(); timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); }
 
                     if (conv.type === 'private') {
@@ -660,7 +706,7 @@
                     
                     let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı'; 
                     if(lastMsgText.includes('https://i.ibb.co')) lastMsgText = '📷 Fotoğraf';
-                    let subtitleHtml = isUnread ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` : `<span>${lastMsgText}</span>`;
+                    let subtitleHtml = isUnread ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` : `<span style="color:#536471;">${lastMsgText}</span>`;
                     const isActive = (targetUsername && link.includes(targetUsername)) || (targetGroupId && link.includes(targetGroupId));
                     
                     container.innerHTML += `<a href="${link}" class="dm-user-card ${isActive ? 'active' : ''}"><div class="dm-avatar">${avatar}</div><div class="dm-info"><div class="dm-username">${title}</div><div class="dm-subtitle">${subtitleHtml}</div></div><div class="time-badge">${timeAgoStr}</div></a>`;
@@ -729,8 +775,14 @@
                 } catch(e) {}
             }
 
-            // GÜNCELLENDİ: Yazıyor durumu animasyonlu ve net hale getirildi
-            onSnapshot(doc(db, isGroupChat ? "groups" : "chats", chatId), (docSnap) => {
+            const colName = isGroupChat ? "groups" : "chats";
+
+            // SOHBETE GİRİNCE OKUNMUŞ OLARAK İŞARETLE
+            updateDoc(doc(db, colName, chatId), {
+                unreadBy: arrayRemove(myUsername)
+            }).catch(e=>{});
+
+            onSnapshot(doc(db, colName, chatId), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data(); const typingObj = data.typing || {}; let typingUsers = [];
                     for (let usr in typingObj) { if (usr !== myUsername && typingObj[usr] === true) typingUsers.push(usr); }
@@ -742,23 +794,6 @@
                     } 
                     else { indicator.style.display = 'none'; subtitle.style.display = 'block'; }
                 }
-            });
-
-            onSnapshot(collection(db, "chats", chatId, "calls"), (snapshot) => {
-                snapshot.docChanges().forEach(async (change) => {
-                    const callData = change.doc.data();
-                    if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
-                        currentCallDocId = change.doc.id; isCallVideo = callData.type === 'video';
-                        document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
-                        document.getElementById('accept-call-btn').style.display = 'block'; callOverlay.style.display = 'flex';
-                        if(isCallVideo) { document.getElementById('video-container').style.display = 'flex'; } else { document.getElementById('video-container').style.display = 'none'; }
-                    }
-                    if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername) {
-                        document.getElementById('call-status-text').innerText = "Bağlandı";
-                        const desc = new RTCSessionDescription(callData.answer); await peerConnection.setRemoteDescription(desc);
-                    }
-                    if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed')) { endCallUI(); }
-                });
             });
 
             loadMessages();
@@ -823,7 +858,7 @@
 
                     let senderNameHtml = ''; if (isGroupChat && !isMe) senderNameHtml = `<div style="font-size:11px; font-weight:bold; color:#888; margin-bottom:3px; margin-left:10px;">@${data.sender}</div>`;
 
-                    // GÜNCELLENDİ: Daha belirgin İletildi ve Görüldü ikonları
+                    // İLETİLDİ / GÖRÜLDÜ DURUMLARI
                     let tickHtml = '';
                     if (isMe) {
                         let isRead = false; if (isGroupChat) isRead = data.readBy && data.readBy.length > 0; else isRead = data.isRead === true;
@@ -909,10 +944,22 @@
             await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
             
             let summary = text; if(imgUrl) summary = "📷 Fotoğraf";
+            
+            // YENİ: Okunmayanlar listesini güncelle
+            let unreadList = [];
             if (!isGroupChat) {
-                await setDoc(chatRef, { participants: [myUsername, targetUsername], lastMessage: summary, lastSender: myUsername, updatedAt: serverTimestamp() }, { merge: true });
+                unreadList = [targetUsername];
             } else {
-                await updateDoc(chatRef, { lastMessage: summary, lastSender: myUsername, updatedAt: serverTimestamp() });
+                const group = activeChats.find(c => c.id === chatId);
+                if (group) unreadList = group.members.filter(m => m !== myUsername);
+            }
+
+            const updateData = { lastMessage: summary, lastSender: myUsername, unreadBy: unreadList, updatedAt: serverTimestamp() };
+
+            if (!isGroupChat) {
+                await setDoc(chatRef, { participants: [myUsername, targetUsername], ...updateData }, { merge: true });
+            } else {
+                await updateDoc(chatRef, updateData);
             }
         }
 
@@ -923,8 +970,12 @@
         document.getElementById('audio-call-btn')?.addEventListener('click', () => startCall(false));
 
         async function startCall(isVideo) {
-            isCallVideo = isVideo; document.getElementById('call-status-text').innerText = "Aranıyor..."; document.getElementById('accept-call-btn').style.display = 'none'; callOverlay.style.display = 'flex';
-            if(isVideo) { document.getElementById('video-container').style.display = 'flex'; } else { document.getElementById('video-container').style.display = 'none'; }
+            isCallVideo = isVideo; 
+            document.getElementById('call-status-text').innerText = "Aranıyor..."; 
+            document.getElementById('accept-call-btn').style.display = 'none'; 
+            callOverlay.style.display = 'flex';
+            document.getElementById('video-container').style.display = isVideo ? 'flex' : 'none'; 
+            
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
                 if(isVideo) localVideo.srcObject = localStream;
@@ -932,19 +983,39 @@
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
                 remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
                 peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-                const callDocRef = doc(collection(db, "chats", chatId, "calls")); currentCallDocId = callDocRef.id;
-                peerConnection.onicecandidate = event => { if(event.candidate) { addDoc(collection(db, "chats", chatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); } };
-                const offerDescription = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offerDescription);
+                
+                currentCallCollection = isGroupChat ? "groups" : "chats";
+                currentCallChatId = chatId;
+                const callDocRef = doc(collection(db, currentCallCollection, chatId, "calls")); 
+                currentCallDocId = callDocRef.id;
+
+                peerConnection.onicecandidate = event => { 
+                    if(event.candidate) { 
+                        addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); 
+                    } 
+                };
+                
+                const offerDescription = await peerConnection.createOffer(); 
+                await peerConnection.setLocalDescription(offerDescription);
                 
                 await setDoc(callDocRef, { offer: { type: offerDescription.type, sdp: offerDescription.sdp }, caller: myUsername, type: isVideo ? 'video' : 'audio', status: 'ringing', createdAt: serverTimestamp() });
                 
-                onSnapshot(collection(db, "chats", chatId, "calls", currentCallDocId, "calleeCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if(change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); peerConnection.addIceCandidate(candidate); } }); });
+                onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), (snapshot) => { 
+                    snapshot.docChanges().forEach((change) => { 
+                        if(change.type === 'added') { 
+                            const candidate = new RTCIceCandidate(change.doc.data()); 
+                            peerConnection.addIceCandidate(candidate); 
+                        } 
+                    }); 
+                });
             } catch(e) { alert("Erişim reddedildi!"); endCallUI(); }
         }
 
         document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
-            document.getElementById('accept-call-btn').style.display = 'none'; document.getElementById('call-status-text').innerText = "Bağlanıyor...";
-            const callDocRef = doc(db, "chats", chatId, "calls", currentCallDocId); const callData = (await getDoc(callDocRef)).data();
+            document.getElementById('accept-call-btn').style.display = 'none'; 
+            document.getElementById('call-status-text').innerText = "Bağlanıyor...";
+            const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); 
+            const callData = (await getDoc(callDocRef)).data();
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
                 if(isCallVideo) localVideo.srcObject = localStream;
@@ -952,29 +1023,45 @@
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
                 remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
                 peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-                peerConnection.onicecandidate = event => { if(event.candidate) { addDoc(collection(db, "chats", chatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); } };
-                const offerDescription = callData.offer; await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
-                const answerDescription = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answerDescription);
+                
+                peerConnection.onicecandidate = event => { 
+                    if(event.candidate) { 
+                        addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); 
+                    } 
+                };
+                
+                const offerDescription = callData.offer; 
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
+                const answerDescription = await peerConnection.createAnswer(); 
+                await peerConnection.setLocalDescription(answerDescription);
                 
                 await updateDoc(callDocRef, { answer: { type: answerDescription.type, sdp: answerDescription.sdp }, status: 'answered' });
                 
-                onSnapshot(collection(db, "chats", chatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if(change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); peerConnection.addIceCandidate(candidate); } }); });
+                onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { 
+                    snapshot.docChanges().forEach((change) => { 
+                        if(change.type === 'added') { 
+                            const candidate = new RTCIceCandidate(change.doc.data()); 
+                            peerConnection.addIceCandidate(candidate); 
+                        } 
+                    }); 
+                });
                 document.getElementById('call-status-text').innerText = "Bağlandı";
             } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
         });
 
         document.getElementById('end-call-btn')?.addEventListener('click', async () => { 
-            if(currentCallDocId) { 
-                const callSnap = await getDoc(doc(db, "chats", chatId, "calls", currentCallDocId));
+            if(currentCallDocId && currentCallCollection && currentCallChatId) { 
+                const callRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId);
+                const callSnap = await getDoc(callRef);
                 if(callSnap.exists()) {
                     const callData = callSnap.data();
                     if(callData.status === 'ringing') {
-                        await updateDoc(doc(db, "chats", chatId, "calls", currentCallDocId), { status: 'missed' });
-                        await addDoc(collection(db, "chats", chatId, "messages"), {
+                        await updateDoc(callRef, { status: 'missed' });
+                        await addDoc(collection(db, currentCallCollection, currentCallChatId, "messages"), {
                             type: 'system', text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama', sender: myUsername, createdAt: serverTimestamp()
                         });
                     } else {
-                        await updateDoc(doc(db, "chats", chatId, "calls", currentCallDocId), { status: 'ended' });
+                        await updateDoc(callRef, { status: 'ended' });
                     }
                 }
             } 
@@ -986,7 +1073,8 @@
             if(localStream) { localStream.getTracks().forEach(track => track.stop()); } 
             if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } 
             if(peerConnection) { peerConnection.close(); } 
-            localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; localVideo.srcObject = null; remoteVideo.srcObject = null; 
+            localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; currentCallChatId = null; currentCallCollection = null;
+            localVideo.srcObject = null; remoteVideo.srcObject = null; 
         }
     </script>
     <script>
