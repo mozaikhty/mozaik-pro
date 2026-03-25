@@ -253,7 +253,6 @@
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item">✉️ Sohbet</a>
                 <a href="#" class="desktop-nav-item" onclick="window.showBookmarksTab()">🔖 Yer İşaretleri</a>
-                <a href="#" class="desktop-nav-item" id="desktop-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
             </div>
             <button class="desktop-post-btn" onclick="window.openMainPostModal()">Gönderi Yayınla</button>
             
@@ -514,7 +513,7 @@
                         document.getElementById('sidebar-following-count').innerText = myFollowingList.length;
                         document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
                         if(u.avatarUrl) {
-                            const imgTag = `<img src=\"${u.avatarUrl}\" style=\"width:100%;height:100%;object-fit:cover;\">`;
+                            const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
                             document.getElementById('desktop-input-avatar').innerHTML = imgTag;
                             document.getElementById('mobile-avatar-header').innerHTML = imgTag;
                             document.getElementById('sidebar-avatar-mobile').innerHTML = imgTag;
