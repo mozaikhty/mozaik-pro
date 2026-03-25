@@ -229,7 +229,6 @@
                 <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
                 <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
                 <a href="chat.html" class="desktop-nav-item active">✉️ Sohbet</a>
-                <a href="#" class="desktop-nav-item" id="desktop-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
             </div>
             <button class="desktop-post-btn" onclick="window.location.href='feed.html'">Gönderi Yayınla</button>
             
@@ -496,7 +495,6 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
-                document.getElementById('desktop-profile-link').href = `profile.html?user=${myUsername}`;
                 
                 onSnapshot(collection(db, "users"), (snapshot) => { 
                     allUsersData = {}; 
