@@ -955,37 +955,31 @@
             });
             container.innerHTML = html;
 
-            // Eğer Hikaye İzleyici açıksa anlık görüntülenme/beğenme değerlerini güncel veriden al (CANLI VERİ ENTEGRASYONU)
-            if (document.getElementById('story-viewer-overlay').style.display === 'flex') {
-                const currentUserObj = activeStoryUsers[currentStoryUserIndex];
-                if (currentUserObj) {
-                    const currentStory = currentUserObj.stories[currentStoryIndex];
-                    if (currentStory) {
-                        const freshUserData = allUsersData[currentUserObj.username];
-                        if (freshUserData && freshUserData.stories) {
-                            const freshStory = freshUserData.stories.find(s => s.id === currentStory.id);
-                            if (freshStory) {
-                                // Yerel belleği anında güncelle
-                                activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex] = freshStory;
+            // CANLI VERİ ENTEGRASYONU (Hata Korumalı ve Hızlı Hali)
+            const viewerOverlay = document.getElementById('story-viewer-overlay');
+            if (viewerOverlay && viewerOverlay.style.display === 'flex') {
+                try {
+                    const currentUserObj = activeStoryUsers[currentStoryUserIndex];
+                    if (currentUserObj && currentUserObj.stories) {
+                        const currentStory = currentUserObj.stories[currentStoryIndex];
+                        if (currentStory) {
+                            if (currentUserObj.username === myUsername) {
+                                const viewsCount = (currentStory.views || []).length;
+                                const vEl = document.getElementById('story-view-count');
+                                if(vEl) vEl.innerText = viewsCount;
                                 
-                                if (currentUserObj.username === myUsername) {
-                                    const viewsCount = (freshStory.views || []).length;
-                                    const vEl = document.getElementById('story-view-count');
-                                    if(vEl) vEl.innerText = viewsCount;
-                                    
-                                    // Detaylar modalı açıksa o da canlı aksın
-                                    if (document.getElementById('story-details-modal').style.display === 'flex') {
-                                        window.switchStoryDetailsTab(storyDetailsTab);
-                                    }
-                                } else {
-                                    const isLiked = freshStory.likes && freshStory.likes.includes(myUsername);
-                                    const likeBtn = document.getElementById('story-like-btn');
-                                    if(likeBtn) likeBtn.innerText = isLiked ? '❤️' : '🤍';
+                                const detailsModal = document.getElementById('story-details-modal');
+                                if (detailsModal && detailsModal.style.display === 'flex') {
+                                    window.switchStoryDetailsTab(storyDetailsTab);
                                 }
+                            } else {
+                                const isLiked = currentStory.likes && currentStory.likes.includes(myUsername);
+                                const likeBtn = document.getElementById('story-like-btn');
+                                if(likeBtn) likeBtn.innerText = isLiked ? '❤️' : '🤍';
                             }
                         }
                     }
-                }
+                } catch(e) { console.error("Arayüz güncellenirken JavaScript hatası:", e); }
             }
         }
 
@@ -1107,8 +1101,7 @@
             if (!isStoryPaused) { storyTimerInterval = setInterval(window.storyTick, 100); }
         }
 
-        async function addStoryView(ownerUsername, storyId) {
-            // Anlık yerel güncelleme (UI hızı için)
+       async function addStoryView(ownerUsername, storyId) {
             const userObj = activeStoryUsers.find(u => u.username === ownerUsername);
             if(userObj) {
                 const s = userObj.stories.find(st => st.id === storyId);
@@ -1116,7 +1109,6 @@
                 if(s && !s.views.includes(myUsername)) s.views.push(myUsername);
             }
 
-            // Veritabanı Güncellemesi
             try {
                 const userRef = doc(db, "users", ownerUsername);
                 const userSnap = await getDoc(userRef);
@@ -1134,7 +1126,9 @@
                         await updateDoc(userRef, { stories: updatedStories });
                     }
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("Görüntüleme (View) sisteme yazılamadı:", e);
+            }
         }
 
         window.nextStory = function() {
@@ -1174,34 +1168,50 @@
             window.closeStoryViewer();
         };
 
-        window.likeStory = async function() {
-            const targetUser = activeStoryUsers[currentStoryUserIndex].username; if (targetUser === myUsername) return;
+      window.likeStory = async function() {
+            const targetUser = activeStoryUsers[currentStoryUserIndex]?.username; 
+            if (!targetUser || targetUser === myUsername) return;
+            
             const story = activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex];
+            if (!story) return;
+
             const isLiked = story.likes && story.likes.includes(myUsername);
             
-            // Hızlı Arayüz (UI) Güncellemesi
-            if(isLiked) { story.likes = story.likes.filter(u => u !== myUsername); document.getElementById('story-like-btn').innerText = '🤍'; } 
-            else { if(!story.likes) story.likes = []; story.likes.push(myUsername); document.getElementById('story-like-btn').innerText = '❤️'; }
+            // Hızlı UI Güncellemesi (Kullanıcı beklememesi için)
+            if(isLiked) { 
+                story.likes = story.likes.filter(u => u !== myUsername); 
+                document.getElementById('story-like-btn').innerText = '🤍'; 
+            } else { 
+                if(!story.likes) story.likes = []; 
+                story.likes.push(myUsername); 
+                document.getElementById('story-like-btn').innerText = '❤️'; 
+            }
 
             try {
-                const userRef = doc(db, "users", targetUser); const userSnap = await getDoc(userRef);
+                const userRef = doc(db, "users", targetUser); 
+                const userSnap = await getDoc(userRef);
                 if(userSnap.exists()) {
                     const userData = userSnap.data();
                     const updatedStories = userData.stories.map(s => {
                         if(s.id === story.id) {
                             let sLikes = s.likes || [];
-                            if(isLiked) sLikes = sLikes.filter(u => u !== myUsername); else { if(!sLikes.includes(myUsername)) sLikes.push(myUsername); }
+                            if(isLiked) sLikes = sLikes.filter(u => u !== myUsername); 
+                            else { if(!sLikes.includes(myUsername)) sLikes.push(myUsername); }
                             return { ...s, likes: sLikes };
                         }
                         return s;
                     });
                     await updateDoc(userRef, { stories: updatedStories });
+                    
                     if(!isLiked) {
                         const chatId = [myUsername, targetUser].sort().join('_');
                         await setDoc(doc(db, "chats", chatId), { participants: [myUsername, targetUser], lastMessage: "❤️ Hikaye beğenildi", lastSender: myUsername, unreadBy: [targetUser], updatedAt: serverTimestamp() }, { merge: true });
                     }
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error("Firebase Beğeni Kaydetme Hatası:", e); 
+                alert("Beğeni kaydedilemedi! Lütfen F12 konsolunu açıp kırmızı hatayı kontrol edin.");
+            }
         };
 
         window.deleteCurrentStory = async function() {
@@ -1230,25 +1240,40 @@
             window.resumeStory();
         }
 
-        window.switchStoryDetailsTab = function(tabName) {
+       window.switchStoryDetailsTab = function(tabName) {
             storyDetailsTab = tabName;
             document.querySelectorAll('#story-details-modal .feed-tab').forEach(t => t.classList.remove('active'));
             if(tabName === 'views') document.getElementById('tab-story-views').classList.add('active');
             else document.getElementById('tab-story-likes').classList.add('active');
             
-            // CANLI VERİDEN GÜNCELLEME (Hızlı Sekme Geçişi)
-            const story = activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex];
-            const listData = tabName === 'views' ? (story.views || []) : (story.likes || []);
-            const container = document.getElementById('story-details-list'); container.innerHTML = '';
+            const container = document.getElementById('story-details-list');
+            container.innerHTML = '';
 
-            if (listData.length === 0) { container.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>`; return; }
+            try {
+                const userObj = activeStoryUsers[currentStoryUserIndex];
+                if (!userObj || !userObj.stories) return; // Veri henüz akmadıysa iptal et
+                
+                const story = userObj.stories[currentStoryIndex];
+                if (!story) return;
 
-            let html = '';
-            listData.forEach(uname => {
-                let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
-                html += `<div class="user-row" onclick="window.location.href='profile.html?user=${uname}'"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
-            });
-            container.innerHTML = html;
+                const listData = tabName === 'views' ? (story.views || []) : (story.likes || []);
+
+                if (listData.length === 0) { 
+                    container.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>`; 
+                    return; 
+                }
+
+                let html = '';
+                listData.forEach(uname => {
+                    let uData = allUsersData[uname] || {}; 
+                    let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; 
+                    let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
+                    html += `<div class="user-row" onclick="window.location.href='profile.html?user=${uname}'"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
+                });
+                container.innerHTML = html;
+            } catch(e) {
+                console.error("Modal listesi yüklenemedi:", e);
+            }
         };
 
         window.openStoryShareModal = function() {
