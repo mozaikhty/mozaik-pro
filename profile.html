@@ -572,11 +572,28 @@
 
         window.repostPost = async function(postId, originalAuthor, event) {
             event.stopPropagation();
-            if(confirm(`@${originalAuthor} adlı kullanıcının gönderisini yeniden paylaşmak istiyor musun?`)) {
+            if(confirm(`@${originalAuthor} adlı kullanıcının gönderisini kendi profilinizde yeniden paylaşmak istiyor musunuz?`)) {
                 const originalPost = globalPosts.find(p => p.id === postId);
                 if(!originalPost) return;
-                await addDoc(collection(db, "posts"), { isRepost: true, originalPostId: postId, originalPostAuthor: originalAuthor, content: originalPost.data.content || '', imageUrl: originalPost.data.imageUrl || null, author: myUsername, createdAt: serverTimestamp(), likes: [], comments: [] });
-                alert("Başarıyla yeniden paylaşıldı!");
+                
+                try {
+                    await addDoc(collection(db, "posts"), { 
+                        isRepost: true, 
+                        originalPostId: postId, 
+                        originalPostAuthor: originalAuthor, 
+                        content: originalPost.data.content || '', 
+                        imageUrl: originalPost.data.imageUrl || null, 
+                        author: myUsername, 
+                        authorEmail: currentUser.email, // 🛡️ EKLENEN GÜVENLİK SATIRI
+                        createdAt: serverTimestamp(), 
+                        likes: [], 
+                        comments: [] 
+                    });
+                    alert("Başarıyla yeniden paylaşıldı! 🔁");
+                } catch (error) {
+                    console.error("Yeniden paylaşma hatası: ", error);
+                    alert("Güvenlik kuralları veya ağ sebebiyle paylaşılamadı!");
+                }
             }
         };
 
