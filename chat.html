@@ -185,14 +185,13 @@
         @media (max-width: 1000px) {
             .sidebar-left { display: none; }
             .feed-main { width: 100%; border-right: none; padding-bottom: 60px; }
-            .sidebar-right { display: none; width: 100%; padding-bottom: 0; }
+            .sidebar-right { display: none; width: 100%; padding-bottom: 60px; }
             .bottom-nav { display: flex; }
             .back-btn { display: block !important; }
             .mobile-header-avatar { display: flex; align-items: center; justify-content: center; }
             
             body.chat-active .feed-main { display: none !important; }
             body.chat-active .sidebar-right { display: flex !important; }
-            body.chat-active .bottom-nav { display: none; }
             .msg-actions { opacity: 1; }
         }
     </style>
@@ -392,6 +391,13 @@
             </div>
             <div id="users-list-container"></div>
         </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="feed.html" class="nav-item">🏠</a>
+        <a href="search.html" class="nav-item">🔍</a>
+        <a href="chat.html" class="nav-item active">✉️</a>
+        <a href="notifications.html" class="nav-item">🔔</a>
     </div>
 
     <script type="module">
