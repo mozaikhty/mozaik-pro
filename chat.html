@@ -97,10 +97,10 @@
         .back-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #0f1419; font-weight: bold; transition: 0.2s; border-radius: 50%; padding: 5px 10px; display: none; }
         .back-btn:hover { background: #eff3f4; }
         
-        .chat-avatar-header { width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; flex-shrink: 0; }
+        .chat-avatar-header { width: 40px; height: 40px; border-radius: 50%; background: #eee; display: flex; justify-content: center; align-items: center; overflow: hidden; flex-shrink: 0; cursor: pointer;}
         .chat-avatar-header img { width: 100%; height: 100%; object-fit: cover; }
         
-        .chat-header-info { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+        .chat-header-info { display: flex; flex-direction: column; justify-content: center; min-width: 0; cursor: pointer;}
         .chat-username-text { font-size: 16px; font-weight: bold; color: #0f1419; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
         .chat-subtitle { font-size: 13px; color: #536471; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -108,7 +108,7 @@
         .call-btn:hover { background: #eff3f4; }
         .call-btn.danger:hover { background: #fee2e2; color: #f4212e; border-color: #f4212e; }
 
-        .typing-indicator { font-size: 12px; color: #1da1f2; font-weight: normal; display: none; margin-top: 2px; }
+        .typing-indicator { font-size: 12px; color: #1da1f2; font-weight: bold; display: none; margin-top: 2px; font-style: italic;}
 
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background-color: #fff; min-width: 0;}
         .message-wrapper { display: flex; flex-direction: column; max-width: 65%; min-width: 0; }
@@ -127,7 +127,7 @@
         .msg-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 5px; }
         .msg-time { font-size: 11px; opacity: 0.8; }
         .msg-edited { font-size: 11px; opacity: 0.8; font-style: italic; margin-right: 4px; }
-        .msg-tick { font-size: 12px; font-weight: bold; }
+        .msg-tick { font-size: 11px; font-weight: bold; margin-left: 4px;}
 
         .msg-actions { display: flex; gap: 10px; font-size: 12px; margin-top: 4px; opacity: 0; transition: 0.2s; color: #536471; }
         .message-wrapper:hover .msg-actions { opacity: 1; }
@@ -184,16 +184,19 @@
         .row-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; font-size: 20px; overflow: hidden; }
         .row-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
+        /* MOBİL GÖRÜNÜM GÜNCELLEMESİ (HATA DÜZELTMESİ) */
         @media (max-width: 1000px) {
             .sidebar-left { display: none; }
             .feed-main { width: 100%; border-right: none; padding-bottom: 60px; }
-            .sidebar-right { display: none; width: 100%; padding-bottom: 60px; }
+            .sidebar-right { display: none; width: 100%; padding-bottom: 0 !important; height: 100vh; } /* padding-bottom 0 ile input kutusunu aşağı sabitliyoruz */
             .bottom-nav { display: flex; }
             .back-btn { display: block !important; }
             .mobile-header-avatar { display: flex; align-items: center; justify-content: center; }
             
             body.chat-active .feed-main { display: none !important; }
             body.chat-active .sidebar-right { display: flex !important; }
+            body.chat-active .bottom-nav { display: none !important; } /* Sohbet içindeyken alt menüyü gizliyoruz */
+            body.chat-active { overflow: hidden; } /* Dış çerçevenin kaymasını önlüyoruz */
             .msg-actions { opacity: 1; }
         }
 
@@ -336,8 +339,8 @@
                 <div class="chat-header">
                     <div class="header-left">
                         <button class="back-btn" onclick="window.location.href='chat.html'">⬅</button>
-                        <div class="chat-avatar-header" id="chat-avatar">👤</div>
-                        <div class="chat-header-info">
+                        <div class="chat-avatar-header" id="chat-avatar" onclick="window.goToChatProfile()">👤</div>
+                        <div class="chat-header-info" onclick="window.goToChatProfile()">
                             <div class="chat-username-text" id="chat-username-text">Yükleniyor...</div>
                             <div class="chat-subtitle" id="chat-subtitle"></div>
                             <div id="typing-indicator" class="typing-indicator">yazıyor...</div>
@@ -462,7 +465,7 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        // IMGBB API Key eklendi
+        // IMGBB API Key
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1";
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -479,6 +482,13 @@
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
         const targetGroupId = urlParams.get('group');
+
+        // YENİ: Üst kısımdan profile yönlendirme fonksiyonu
+        window.goToChatProfile = function() {
+            if (!isGroupChat && targetUsername) {
+                window.location.href = 'profile.html?user=' + targetUsername;
+            }
+        };
 
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
         window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
@@ -719,12 +729,17 @@
                 } catch(e) {}
             }
 
+            // GÜNCELLENDİ: Yazıyor durumu animasyonlu ve net hale getirildi
             onSnapshot(doc(db, isGroupChat ? "groups" : "chats", chatId), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data(); const typingObj = data.typing || {}; let typingUsers = [];
                     for (let usr in typingObj) { if (usr !== myUsername && typingObj[usr] === true) typingUsers.push(usr); }
                     const indicator = document.getElementById('typing-indicator'); const subtitle = document.getElementById('chat-subtitle');
-                    if (typingUsers.length > 0) { subtitle.style.display = 'none'; indicator.style.display = 'block'; indicator.innerText = isGroupChat ? `${typingUsers.join(', ')} yazıyor...` : "yazıyor..."; } 
+                    if (typingUsers.length > 0) { 
+                        subtitle.style.display = 'none'; 
+                        indicator.style.display = 'flex'; 
+                        indicator.innerHTML = `<span>${isGroupChat ? typingUsers.join(', ') + ' yazıyor...' : 'yazıyor...'}</span>`; 
+                    } 
                     else { indicator.style.display = 'none'; subtitle.style.display = 'block'; }
                 }
             });
@@ -808,10 +823,11 @@
 
                     let senderNameHtml = ''; if (isGroupChat && !isMe) senderNameHtml = `<div style="font-size:11px; font-weight:bold; color:#888; margin-bottom:3px; margin-left:10px;">@${data.sender}</div>`;
 
+                    // GÜNCELLENDİ: Daha belirgin İletildi ve Görüldü ikonları
                     let tickHtml = '';
                     if (isMe) {
                         let isRead = false; if (isGroupChat) isRead = data.readBy && data.readBy.length > 0; else isRead = data.isRead === true;
-                        tickHtml = `<span class="msg-tick" style="color:${isRead ? '#fff' : 'rgba(255,255,255,0.6)'};">${isRead ? '✓✓' : '✓'}</span>`;
+                        tickHtml = `<span class="msg-tick" style="color:${isRead ? '#fff' : 'rgba(255,255,255,0.7)'};" title="${isRead ? 'Görüldü' : 'İletildi'}">${isRead ? '✓✓ Görüldü' : '✓ İletildi'}</span>`;
                     }
 
                     let replyHtml = ''; if (data.replyTo) replyHtml = `<div class="quoted-msg"><b>@${data.replyTo.sender}</b>: ${data.replyTo.text}</div>`;
