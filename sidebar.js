@@ -10,6 +10,7 @@ function loadSidebar() {
                 <a href="chat.html" class="desktop-nav-item" id="nav-chat">✉️ Sohbet</a>
                 <a href="feed.html?tab=bookmarks" class="desktop-nav-item" id="nav-bookmarks">🔖 Yer İşaretleri</a>
                 <a href="#" class="desktop-nav-item" onclick="window.openSettingsModal()">⚙️ Ayarlar</a>
+                <a href="#" class="desktop-nav-item" style="color: #ef4444;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
             </div>
             <button class="desktop-post-btn" onclick="window.location.href='feed.html?action=post'">İçerik Paylaş</button>
             
