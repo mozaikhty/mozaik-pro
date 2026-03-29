@@ -179,26 +179,7 @@
     </div>
 
     <div class="app-container">
-        <nav class="sidebar-left">
-            <a href="feed.html" class="logo-desktop">Mozaik.</a>
-            <div class="desktop-nav">
-                <a href="feed.html" class="desktop-nav-item">🏠 Anasayfa</a>
-                <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
-                <a href="notifications.html" class="desktop-nav-item active">🔔 Bildirimler</a>
-                <a href="chat.html" class="desktop-nav-item">✉️ Sohbet</a>
-                <a href="feed.html?tab=bookmarks" class="desktop-nav-item">🔖 Yer İşaretleri</a>
-                <a href="#" class="desktop-nav-item" onclick="window.openSettingsModal()">⚙️ Ayarlar</a>
-            </div>
-            <button class="desktop-post-btn" onclick="window.location.href='feed.html?action=post'">İçerik Paylaş</button>
-            
-            <div class="sidebar-user-menu" onclick="window.goToMyProfile()">
-                <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-name" id="desktop-sidebar-name">Yükleniyor...</div>
-                    <div class="sidebar-user-handle" id="desktop-sidebar-handle">@bekleniyor</div>
-                </div>
-            </div>
-        </nav>
+        <div id="sidebar-container"></div>
 
         <main class="feed-main">
             <div class="header-sticky">
@@ -475,5 +456,6 @@
             else { document.body.classList.remove('dark-mode'); localStorage.setItem('theme', 'light'); }
         };
     </script>
+<script src="sidebar.js"></script>
 </body>
 </html>
