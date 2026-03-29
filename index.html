@@ -97,6 +97,11 @@
             </div>
 
             <div class="input-group">
+                <label class="input-label">Şifre (En az 6 hane, Harf ve Rakam)</label>
+                <input type="password" id="reg-pass" placeholder="Şifre belirleyin" required>
+            </div>
+
+            <div class="input-group">
                 <label class="input-label">Şifreyi Tekrar Girin</label>
                 <input type="password" id="reg-pass-confirm" placeholder="Şifrenizi doğrulayın" required>
             </div>
@@ -222,6 +227,7 @@
                 window.location.href = "feed.html"; 
                 
             } catch (error) { 
+                console.error("Kayıt Hatası Detayı:", error); // YENİ: Konsolda hatanın tam sebebini gösterir
                 isRegistering = false; // Hata verirse yeniden denemek için sıfırla
                 if(error.code === 'auth/email-already-in-use') showError("Bu e-posta adresi zaten kullanılıyor.");
                 else showError("Kayıt sırasında bir hata oluştu.");
