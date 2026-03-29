@@ -495,11 +495,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
         // IMGBB ÜCRETSİZ SİSTEMİ GERİ GETİRİLDİ
-        const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1";
+        
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
-        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app); const storage = getStorage(app);
 
         let currentUser = null; let myUsername = null; let chatId = null; let isGroupChat = false;
         let allUsersData = {}; let activeChats = []; let myFollowing = [];
@@ -955,9 +956,10 @@
             
             let imgUrl = null;
             if(file) {
-                const formData = new FormData(); formData.append("image", file);
-                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-                const data = await res.json(); imgUrl = data.data.url;
+                const fileName = `chats/${Date.now()}_${file.name}`;
+                const storageRef = ref(storage, fileName);
+                await uploadBytes(storageRef, file);
+                imgUrl = await getDownloadURL(storageRef);
             }
             
             await sendActualMessage(text, imgUrl);
