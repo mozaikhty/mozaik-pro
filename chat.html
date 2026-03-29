@@ -877,7 +877,11 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 messagesContainer.innerHTML = ''; 
 
                 snapshot.forEach((docSnap) => {
-                    const data = docSnap.data(); const isMe = data.sender === myUsername;
+                    let data = docSnap.data(); 
+                    // Gelen mesajları zararlı kodlardan (XSS) arındırıyoruz
+                    if(data.text) data.text = DOMPurify.sanitize(data.text);
+                    if(data.replyTo && data.replyTo.text) data.replyTo.text = DOMPurify.sanitize(data.replyTo.text);
+                    const isMe = data.sender === myUsername;
                     
                     let timeString = ''; let timeMillis = 0;
                     if (data.createdAt) {

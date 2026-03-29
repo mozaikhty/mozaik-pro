@@ -1088,7 +1088,10 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 }
 
                 snapshot.forEach((postDoc) => {
-                    const postData = postDoc.data();
+                    let postData = postDoc.data();
+                    // Zararlı kodları (XSS) temizliyoruz
+                    if(postData.content) postData.content = DOMPurify.sanitize(postData.content);
+                    if(postData.comments) postData.comments.forEach(c => { if(c.text) c.text = DOMPurify.sanitize(c.text); });
                     globalPosts.push({ id: postDoc.id, data: postData }); 
                     
                     if (postData.author === targetUsername && !postData.isRepost) userPostCount++;

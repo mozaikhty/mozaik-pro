@@ -293,27 +293,7 @@
 
     <div class="app-container">
         
-        <nav class="sidebar-left">
-            <a href="feed.html" class="logo-desktop">Mozaik.</a>
-            <div class="desktop-nav">
-                <a href="feed.html" class="desktop-nav-item active">🏠 Anasayfa</a>
-                <a href="search.html" class="desktop-nav-item">🔍 Keşfet</a>
-                <a href="notifications.html" class="desktop-nav-item">🔔 Bildirimler</a>
-                <a href="chat.html" class="desktop-nav-item">✉️ Sohbet</a>
-                <a href="feed.html?tab=bookmarks" class="desktop-nav-item">🔖 Yer İşaretleri</a>
-                <a href="#" class="desktop-nav-item" onclick="window.openSettingsModal()">⚙️ Ayarlar</a>
-                <a href="#" class="desktop-nav-item" style="color: #ef4444;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
-            </div>
-            <button class="desktop-post-btn" onclick="window.openMainPostModal()">İçerik Paylaş</button>
-            
-            <div class="sidebar-user-menu" onclick="window.goToMyProfile()">
-                <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-name" id="desktop-sidebar-name">Yükleniyor...</div>
-                    <div class="sidebar-user-handle" id="desktop-sidebar-handle">@bekleniyor</div>
-                </div>
-            </div>
-        </nav>
+        <div id="sidebar-container"></div>
 
         <main class="feed-main">
             <div class="header-sticky">
@@ -1403,7 +1383,13 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(postLimit));
             postsUnsubscribe = onSnapshot(q, (snapshot) => { 
                 globalPosts = []; 
-                snapshot.forEach(doc => { globalPosts.push({ id: doc.id, data: doc.data() }); });
+                snapshot.forEach(doc => { 
+                    let safeData = doc.data();
+                    // Zararlı kodları (XSS) temizliyoruz
+                    if(safeData.content) safeData.content = DOMPurify.sanitize(safeData.content);
+                    if(safeData.comments) safeData.comments.forEach(c => { if(c.text) c.text = DOMPurify.sanitize(c.text); });
+                    globalPosts.push({ id: doc.id, data: safeData }); 
+                });
                 if (snapshot.docs.length < postLimit) { hasMorePosts = false; }
                 if(window.currentOpenPostId) { window.openPostDetail(window.currentOpenPostId); }
                 renderFeed(); 
@@ -1807,5 +1793,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             else { document.body.classList.remove('dark-mode'); localStorage.setItem('theme', 'light'); }
         };
     </script>
+<script src="sidebar.js"></script>
 </body>
 </html>
