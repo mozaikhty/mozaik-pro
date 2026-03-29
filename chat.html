@@ -495,7 +495,6 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        // IMGBB API Key
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1";
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -505,17 +504,25 @@
         let currentReplyData = null; let typingTimeout = null;
         let currentInboxTab = 'all'; 
 
-        // GLOBAL ARAMA YÖNETİM DEĞİŞKENLERİ
         let callListeners = {};
         let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
         const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
-        const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+        
+        // ---------- SİZE ÖZEL YENİ TURN SUNUCU AYARLARI ----------
+        const servers = { 
+            iceServers: [
+                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+                { urls: "turn:a.relay.metered.ca:80", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" },
+                { urls: "turn:a.relay.metered.ca:443", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" },
+                { urls: "turn:a.relay.metered.ca:443?transport=tcp", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" }
+            ] 
+        };
+        // ---------------------------------------------------------
 
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
         const targetGroupId = urlParams.get('group');
 
-        // Profile Yönlendirme Fonksiyonu
         window.goToChatProfile = function() {
             if (!isGroupChat && targetUsername) { window.location.href = 'profile.html?user=' + targetUsername; }
         };

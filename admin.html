@@ -140,7 +140,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        // GÜVENLİK İÇİN getDoc EKLENDİ
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -150,10 +151,21 @@
         let recentPostsLog = [];
         let recentNotifsLog = [];
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const myUsername = user.displayName || user.email.split('@')[0];
-                if (myUsername !== ADMIN_USERNAME) { window.location.href = "feed.html"; return; }
+                
+                // --- YENİ GÜVENLİK KONTROLÜ: Kullanıcı veritabanında gerçekten admin mi? ---
+                const adminDocRef = doc(db, "admins", user.uid);
+                const adminDoc = await getDoc(adminDocRef);
+
+                if (!adminDoc.exists()) { 
+                    alert("Sistem Yönetimi sayfasına giriş yetkiniz bulunmamaktadır!");
+                    window.location.href = "feed.html"; 
+                    return; 
+                }
+                // --------------------------------------------------------------------------
+
                 document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
                 
                 loadUsers(); 
@@ -162,7 +174,6 @@
             } else { window.location.href = "index.html"; }
         });
 
-        // SEKME DEĞİŞTİRME MANTIĞI
         const secUsers = document.getElementById('users-section');
         const secActivity = document.getElementById('activity-section');
         const secTickets = document.getElementById('tickets-section');
@@ -174,10 +185,6 @@
         btnActivity.addEventListener('click', () => { secUsers.style.display='none'; secActivity.style.display='block'; secTickets.style.display='none'; btnActivity.classList.add('active'); btnUsers.classList.remove('active'); btnTickets.classList.remove('active'); });
         btnTickets.addEventListener('click', () => { secUsers.style.display='none'; secActivity.style.display='none'; secTickets.style.display='block'; btnTickets.classList.add('active'); btnUsers.classList.remove('active'); btnActivity.classList.remove('active'); });
 
-
-        // ==========================================
-        // 1. KULLANICI YÖNETİMİ
-        // ==========================================
         function loadUsers() {
             onSnapshot(collection(db, "users"), (snapshot) => {
                 allUsers = [];
@@ -256,18 +263,11 @@
             }
         };
 
-
-        // ==========================================
-        // 2. AKTİVİTE (LOGLAR) SİSTEMİ & DOSYALAMA
-        // ==========================================
-        
-        // Veritabanından logları arka planda çeker
         function loadActivityStream() {
             const qPosts = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(300));
             onSnapshot(qPosts, (snapshot) => {
                 recentPostsLog = [];
                 snapshot.forEach(docSnap => { recentPostsLog.push({ id: docSnap.id, _actType: 'post', ...docSnap.data() }); });
-                // Eğer bir kullanıcı açıkken veri gelirse anında yenile
                 if(document.getElementById('activity-search-input').value.startsWith('@')) {
                     const currentUsername = document.getElementById('activity-search-input').value.replace('@','');
                     renderUserFolders(currentUsername);
@@ -285,7 +285,6 @@
             });
         }
 
-        // OTOMATİK TAMAMLAMA (AUTOCOMPLETE) MANTIĞI
         const actSearchInput = document.getElementById('activity-search-input');
         const actAutoList = document.getElementById('activity-autocomplete-list');
 
@@ -293,7 +292,6 @@
             let text = e.target.value.toLowerCase().trim();
             actAutoList.innerHTML = '';
             
-            // Eğer giriş boşsa veya kişi seçiliyken siliyorsa listeyi gizle
             if(!text) { 
                 actAutoList.style.display = 'none'; 
                 document.getElementById('activity-list').innerHTML = '';
@@ -301,7 +299,6 @@
                 return; 
             }
             
-            // Başındaki @ işaretini kaldırarak arama yap
             if(text.startsWith('@')) text = text.substring(1);
             
             const filtered = allUsers.filter(u => u.id.toLowerCase().includes(text));
@@ -317,22 +314,20 @@
                 div.className = 'autocomplete-item';
                 div.innerHTML = `👤 <span>@${u.id}</span>`;
                 div.onclick = () => {
-                    actSearchInput.value = '@' + u.id; // Kutuyu isme çevir
-                    actAutoList.style.display = 'none'; // Listeyi kapat
-                    renderUserFolders(u.id); // Arşivi aç
+                    actSearchInput.value = '@' + u.id; 
+                    actAutoList.style.display = 'none'; 
+                    renderUserFolders(u.id); 
                 };
                 actAutoList.appendChild(div);
             });
         });
 
-        // Dışarı tıklanınca listeyi gizle
         document.addEventListener('click', function(event) {
             if (!actSearchInput.contains(event.target) && !actAutoList.contains(event.target)) {
                 actAutoList.style.display = 'none';
             }
         });
 
-        // Tekil Log HTML Üretici
         function createLogHtml(log) {
             let timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Az önce';
             if (log._actType === 'post') {
@@ -350,9 +345,9 @@
                 if (log.type === 'like') { icon = '❤️'; actionText = 'gönderisini beğendi.'; cssClass = 'act-like'; }
                 else if (log.type === 'comment') { icon = '💬'; actionText = 'gönderisine yorum yaptı.'; cssClass = 'act-comment'; }
                 else if (log.type === 'follow') { icon = '🤝'; actionText = 'takip etmeye başladı.'; cssClass = 'act-follow'; }
-                else if (log.type === 'admin_delete') { return ''; } // Admin işlemlerini arşivde gizleyebiliriz
+                else if (log.type === 'admin_delete') { return ''; } 
 
-                if(log.sender === log.recipient) return ''; // Kendine bildirim atmışsa gizle
+                if(log.sender === log.recipient) return ''; 
 
                 return `
                     <div class="activity-item ${cssClass}">
@@ -365,14 +360,12 @@
             }
         }
 
-        // HEDEF KULLANICI İÇİN DOSYA (ACCORDION) ÜRETİCİ
         function renderUserFolders(username) {
             document.getElementById('activity-info-text').style.display = 'none';
             const listDiv = document.getElementById('activity-list');
             
             let combinedLogs = [...recentPostsLog, ...recentNotifsLog];
             
-            // Sadece Hedef Kullanıcının Geçtiği Loglar
             let filteredLogs = combinedLogs.filter(log => {
                 let u1 = log.author ? log.author.toLowerCase() : "";
                 let u2 = log.sender ? log.sender.toLowerCase() : "";
@@ -380,7 +373,6 @@
                 return (u1 === username || u2 === username || u3 === username);
             });
 
-            // Sırala
             filteredLogs.sort((a, b) => {
                 let timeA = a.createdAt ? a.createdAt.toMillis() : 0;
                 let timeB = b.createdAt ? b.createdAt.toMillis() : 0;
@@ -392,7 +384,6 @@
                 return;
             }
 
-            // Kategorilere Ayırma (Klasörleme)
             let catPosts = filteredLogs.filter(l => l._actType === 'post');
             let catLikes = filteredLogs.filter(l => l._actType === 'notif' && l.type === 'like');
             let catComments = filteredLogs.filter(l => l._actType === 'notif' && l.type === 'comment');
@@ -400,7 +391,6 @@
             
             let finalHtml = `<div style="margin-bottom:15px; font-size:15px;"><b>@${username}</b> adlı kişinin arşiv dosyaları:</div>`;
 
-            // Klasör Oluşturma Motoru (<details> ve <summary> ile tıklayınca açılır)
             function buildFolder(title, color, items) {
                 if(items.length === 0) return '';
                 let html = `<details class="log-folder" style="border-left-color:${color};"><summary>📁 ${title} (${items.length})</summary><div class="folder-content">`;
@@ -417,9 +407,6 @@
             listDiv.innerHTML = finalHtml;
         }
 
-        // ==========================================
-        // 3. DESTEK TALEPLERİ
-        // ==========================================
         function loadTickets() {
             onSnapshot(query(collection(db, "tickets"), orderBy("createdAt", "desc")), (snapshot) => {
                 const list = document.getElementById('tickets-list'); list.innerHTML = '';
