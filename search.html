@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Keşfet / Mozaik</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <style>
         /* PROFESYONEL VE CİDDİ TASARIM SIFIRLAMASI */
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 0; color: #1e293b; overflow-x: hidden; }
@@ -271,7 +272,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy, doc, setDoc, arrayUnion, addDoc, serverTimestamp, where, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, doc, setDoc, arrayUnion, addDoc, serverTimestamp, where, getDoc, updateDoc, limit, startAt, endAt, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -509,13 +510,24 @@
             trendingTags = Object.keys(tagCounts).map(tag => { return { tag: tag, count: tagCounts[tag] }; }).sort((a, b) => b.count - a.count).slice(0, 15);
         }
 
+        // YENİ: EKSİK KULLANICILARI ÇEKEN AKILLI FONKSİYON
+        window.fetchMissingUsers = async function(usernamesArray) {
+            const missing = usernamesArray.filter(u => u && !allUsersData[u]);
+            if (missing.length === 0) return;
+            await Promise.all(missing.map(async (uname) => {
+                try {
+                    const uSnap = await getDoc(doc(db, "users", uname));
+                    if (uSnap.exists()) allUsersData[uname] = uSnap.data();
+                } catch(e) {}
+            }));
+        };
+
         function fetchData() {
-            onSnapshot(collection(db, "users"), (snapshot) => {
-                allUsers = []; allUsersData = {};
-                snapshot.forEach(doc => { allUsersData[doc.id] = doc.data(); allUsers.push({ username: doc.id, avatarUrl: doc.data().avatarUrl || null, isVerified: doc.data().isVerified || false }); });
-                
-                if(allUsersData[myUsername]) {
-                    const u = allUsersData[myUsername];
+            // 1. SADECE KENDİ PROFİLİMİZİ DİNLİYORUZ (Tüm veritabanı yerine)
+            onSnapshot(doc(db, "users", myUsername), (docSnap) => {
+                if(docSnap.exists()) {
+                    const u = docSnap.data();
+                    allUsersData[myUsername] = u;
                     myFollowing = u.following || [];
                     
                     document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
@@ -526,28 +538,48 @@
                         const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
                         document.getElementById('mobile-avatar-header').innerHTML = imgTag;
                         document.getElementById('sidebar-avatar-mobile').innerHTML = imgTag;
-                        
                         const deskAv = document.getElementById('desktop-sidebar-avatar'); if(deskAv) deskAv.innerHTML = imgTag;
                     }
                     const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
                     const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                 }
                 renderWhoToFollow(); 
-                performSearch(); 
             });
-            onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
-                allPosts = []; snapshot.forEach(doc => { allPosts.push(doc.data()); }); calculateTrendingTags(); 
-                const urlParams = new URLSearchParams(window.location.search); if(urlParams.get('tag')) switchTab('tags'); else performSearch();
+
+            // 2. GÜNDEM İÇİN SADECE SON 100 GÖNDERİYİ ÇEKİYORUZ (Faturaları kurtaran hamle)
+            onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100)), async (snapshot) => {
+                allPosts = []; 
+                let neededUsers = new Set();
+                snapshot.forEach(docSnap => { 
+                    const data = docSnap.data();
+                    allPosts.push(data); 
+                    neededUsers.add(data.author);
+                }); 
+                
+                await window.fetchMissingUsers(Array.from(neededUsers));
+                calculateTrendingTags(); 
+                
+                const urlParams = new URLSearchParams(window.location.search); 
+                if(urlParams.get('tag') && currentTab === 'users') switchTab('tags'); else performSearch();
             });
         }
 
         function formatHashtags(text) { if (!text) return ""; let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); return safeText.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`); }
 
-        searchInput.addEventListener('input', performSearch);
+        // DEBOUNCE: Kullanıcı yazarken her harfte sorgu atmayı engeller
+        let searchTimeout = null;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch();
+            }, 500); // 500ms bekler, yazma bitince arar
+        });
+        
         window.clickTrendingTag = function(tagWord) { searchInput.value = tagWord; performSearch(); };
 
-        function performSearch() {
-            const typedText = searchInput.value.toLowerCase().trim(); resultsContainer.innerHTML = ''; 
+        async function performSearch() {
+            const typedText = searchInput.value.toLowerCase().trim(); 
+            resultsContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Aranıyor... 🔍</div>'; 
 
             if (typedText === '') {
                 if (currentTab === 'users') {
@@ -568,29 +600,50 @@
             }
 
             if (currentTab === 'users') {
-                const filteredUsers = allUsers.filter(user => user.username.toLowerCase().includes(typedText));
-                if (filteredUsers.length === 0) { resultsContainer.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">Kişi bulunamadı...</div>'; return; }
-                let html = '';
-                filteredUsers.forEach(user => {
-                    const avatarHtml = user.avatarUrl ? `<img src="${user.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
-                    const fullName = allUsersData[user.username]?.fullName || user.username;
-                    const vHtml = user.isVerified ? '<span style="color:#1da1f2; font-size:15px; margin-left:4px;">☑️</span>' : '';
-                    html += `<a href="profile.html?user=${user.username}" class="search-user-item">
-                                <div class="search-avatar">${avatarHtml}</div>
-                                <div class="search-user-info">
-                                    <div class="search-username">${fullName} ${vHtml}</div>
-                                    <div class="search-handle">@${user.username}</div>
-                                </div>
-                             </a>`;
-                });
-                resultsContainer.innerHTML = html;
+                // FIREBASE CANLI ARAMA (Sadece veritabanından aranan kişileri çeker)
+                try {
+                    const q = query(collection(db, "users"), orderBy("__name__"), startAt(typedText), endAt(typedText + '\uf8ff'), limit(15));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (querySnapshot.empty) { resultsContainer.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">Kişi bulunamadı...</div>'; return; }
+                    
+                    let html = '';
+                    querySnapshot.forEach(docSnap => {
+                        const user = docSnap.data();
+                        const username = docSnap.id;
+                        allUsersData[username] = user; // Profil için önbelleğe al
+                        
+                        const avatarHtml = user.avatarUrl ? `<img src="${user.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
+                        const fullName = user.fullName || username;
+                        const vHtml = user.isVerified ? '<span style="color:#1da1f2; font-size:15px; margin-left:4px;">☑️</span>' : '';
+                        html += `<a href="profile.html?user=${username}" class="search-user-item">
+                                    <div class="search-avatar">${avatarHtml}</div>
+                                    <div class="search-user-info">
+                                        <div class="search-username">${fullName} ${vHtml}</div>
+                                        <div class="search-handle">@${username}</div>
+                                    </div>
+                                 </a>`;
+                    });
+                    resultsContainer.innerHTML = html;
+                } catch(e) { 
+                    console.error("Arama hatası:", e); 
+                    resultsContainer.innerHTML = '<div style="color:#ef4444; padding:40px; text-align:center;">Arama yapılamadı.</div>'; 
+                }
             } else {
+                // ETİKET (GÜNDEM) ARAMASI
                 const searchTag = typedText.startsWith('#') ? typedText : `#${typedText}`;
                 const filteredPosts = allPosts.filter(post => post.content && post.content.toLowerCase().includes(searchTag));
+                
                 if (filteredPosts.length === 0) { resultsContainer.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">Bu etikete sahip içerik yok...</div>'; return; }
+                
+                let neededUsers = new Set();
+                filteredPosts.forEach(p => neededUsers.add(p.author));
+                await window.fetchMissingUsers(Array.from(neededUsers));
+
                 let html = '';
                 filteredPosts.forEach(post => {
-                    const formattedContent = formatHashtags(post.content);
+                    const cleanContent = DOMPurify.sanitize(post.content || '');
+                    const formattedContent = formatHashtags(cleanContent);
                     const authorData = allUsersData[post.author] || {};
                     const vHtml = authorData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
                     const fullName = authorData.fullName || post.author;

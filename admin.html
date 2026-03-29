@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Yönetimi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; padding-bottom: 80px; }
         .header { text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-bottom: 20px; }
@@ -141,7 +142,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         // GÜVENLİK İÇİN getDoc EKLENDİ
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -153,25 +154,33 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const myUsername = user.displayName || user.email.split('@')[0];
-                
-                // --- YENİ GÜVENLİK KONTROLÜ: Kullanıcı veritabanında gerçekten admin mi? ---
-                const adminDocRef = doc(db, "admins", user.uid);
-                const adminDoc = await getDoc(adminDocRef);
+                try {
+                    // --- YENİ GÜVENLİK KONTROLÜ: Kullanıcı veritabanında gerçekten admin mi? ---
+                    const adminDocRef = doc(db, "admins", user.uid);
+                    const adminDoc = await getDoc(adminDocRef);
 
-                if (!adminDoc.exists()) { 
-                    alert("Sistem Yönetimi sayfasına giriş yetkiniz bulunmamaktadır!");
-                    window.location.href = "feed.html"; 
-                    return; 
+                    if (!adminDoc.exists()) { 
+                        alert("Sistem Yönetimi sayfasına giriş yetkiniz bulunmamaktadır!");
+                        window.location.href = "feed.html"; 
+                        return; 
+                    }
+                    
+                    // Admin ise sayfayı yüklemeye başla
+                    const myUsername = user.displayName || user.email.split('@')[0];
+                    document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
+                    
+                    loadUsers(); 
+                    loadTickets();
+                    loadActivityStream(); 
+                    
+                } catch (error) {
+                    console.error("Yetki kontrolü sırasında hata oluştu:", error);
+                    alert("Bağlantı hatası veya yetkisiz erişim. Anasayfaya yönlendiriliyorsunuz.");
+                    window.location.href = "feed.html";
                 }
-                // --------------------------------------------------------------------------
-
-                document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
-                
-                loadUsers(); 
-                loadTickets();
-                loadActivityStream(); 
-            } else { window.location.href = "index.html"; }
+            } else { 
+                window.location.href = "index.html"; 
+            }
         });
 
         const secUsers = document.getElementById('users-section');
@@ -185,8 +194,11 @@
         btnActivity.addEventListener('click', () => { secUsers.style.display='none'; secActivity.style.display='block'; secTickets.style.display='none'; btnActivity.classList.add('active'); btnUsers.classList.remove('active'); btnTickets.classList.remove('active'); });
         btnTickets.addEventListener('click', () => { secUsers.style.display='none'; secActivity.style.display='none'; secTickets.style.display='block'; btnTickets.classList.add('active'); btnUsers.classList.remove('active'); btnActivity.classList.remove('active'); });
 
+        // YENİ: Sistemin çökmesini engelleyen "Sınırlandırılmış" Veri Çekme
         function loadUsers() {
-            onSnapshot(collection(db, "users"), (snapshot) => {
+            // Sadece ilk 50 kullanıcıyı getir. Tüm veritabanını indirme!
+            const q = query(collection(db, "users"), limit(50));
+            onSnapshot(q, (snapshot) => {
                 allUsers = [];
                 snapshot.forEach(docSnap => { allUsers.push({ id: docSnap.id, ...docSnap.data() }); });
                 renderUserList(allUsers);
@@ -195,6 +207,8 @@
 
         function renderUserList(users) {
             const list = document.getElementById('users-list'); list.innerHTML = '';
+            if(users.length === 0) { list.innerHTML = '<p style="color:#aaa; text-align:center;">Kullanıcı bulunamadı.</p>'; return; }
+            
             users.forEach(user => {
                 const isVerified = user.isVerified || false; const isBanned = user.isBanned || false;
                 let badgesHtml = ''; if (isVerified) badgesHtml += '<span class="badge bg-blue">VIP</span>'; if (isBanned) badgesHtml += '<span class="badge bg-red">BANLI</span>';
@@ -213,8 +227,25 @@
             });
         }
 
-        document.getElementById('admin-user-search').addEventListener('input', (e) => {
-            const text = e.target.value.toLowerCase().trim(); const filtered = allUsers.filter(u => u.id.toLowerCase().includes(text)); renderUserList(filtered);
+        // YENİ: Akıllı Firebase Araması (Debounce)
+        let searchTimeoutAdmin = null;
+        document.getElementById('admin-user-search').addEventListener('input', async (e) => {
+            const text = e.target.value.toLowerCase().trim();
+            clearTimeout(searchTimeoutAdmin);
+            
+            if (!text) { renderUserList(allUsers); return; } // Arama kutusu boşsa varsayılan 50 kişiyi göster
+
+            searchTimeoutAdmin = setTimeout(async () => {
+                document.getElementById('users-list').innerHTML = '<p style="color:#aaa; text-align:center;">Aranıyor... 🔍</p>';
+                try {
+                    // Veritabanında o harfle başlayan ilk 20 kişiyi anlık olarak bul ve getir
+                    const q = query(collection(db, "users"), orderBy("__name__"), startAt(text), endAt(text + '\uf8ff'), limit(20));
+                    const snap = await getDocs(q);
+                    let searchResults = [];
+                    snap.forEach(d => searchResults.push({ id: d.id, ...d.data() }));
+                    renderUserList(searchResults);
+                } catch(error) { console.error("Admin arama hatası:", error); }
+            }, 500); // Admin yazmayı bitirdikten 500ms sonra arar
         });
 
         window.toggleVerify = async function(username, status) { if(confirm("Emin misin?")) await updateDoc(doc(db, "users", username), { isVerified: !status }); };
@@ -243,10 +274,12 @@
             let html = '';
             snap.forEach(d => {
                 const data = d.data();
-                const imageHtml = data.imageUrl ? `<img src="${data.imageUrl}" style="max-width:100%; border-radius:5px; margin-bottom:10px;">` : '';
+                // YENİ: XSS Koruması
+                const cleanContent = DOMPurify.sanitize(data.content || '');
+                const imageHtml = data.imageUrl ? `<img src="${data.imageUrl}" style="max-width:100%; border-radius:5px; margin-bottom:10px; pointer-events:none;">` : '';
                 html += `
                     <div class="admin-post-item" id="admin-post-${d.id}">
-                        <div class="admin-post-content">${data.content || ''}</div>
+                        <div class="admin-post-content">${cleanContent}</div>
                         ${imageHtml}
                         <button class="admin-delete-post-btn" onclick="window.adminDeletePost('${d.id}', '${username}')">🚨 Kurallara Aykırı - Sil ve Bildir</button>
                     </div>
@@ -413,7 +446,9 @@
                 if(snapshot.empty) { list.innerHTML = '<p>Bekleyen destek talebi yok.</p>'; return; }
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data(); let dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString() : "";
-                    list.innerHTML += `<div class="ticket-item"><div class="ticket-header"><span>Şikayet Eden: <b>@${data.sender}</b> 👉 Şikayet Edilen: <b>@${data.reportedProfile}</b></span><span>${dateStr}</span></div><div class="ticket-msg">"${data.message}"</div><button class="delete-ticket" onclick="window.deleteTicket('${docSnap.id}')">Talebi Kapat</button><div style="clear:both;"></div></div>`;
+                    // YENİ: XSS Koruması
+                    const cleanMsg = DOMPurify.sanitize(data.message || '');
+                    list.innerHTML += `<div class="ticket-item"><div class="ticket-header"><span>Şikayet Eden: <b>@${data.sender}</b> 👉 Şikayet Edilen: <b>@${data.reportedProfile}</b></span><span>${dateStr}</span></div><div class="ticket-msg">"${cleanMsg}"</div><button class="delete-ticket" onclick="window.deleteTicket('${docSnap.id}')">Talebi Kapat</button><div style="clear:both;"></div></div>`;
                 });
             });
         }

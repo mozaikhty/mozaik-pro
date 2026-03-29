@@ -92,8 +92,13 @@
             </div>
 
             <div class="input-group">
-                <label class="input-label">Şifre (En az 6 hane)</label>
+                <label class="input-label">Şifre (En az 6 hane, Harf ve Rakam)</label>
                 <input type="password" id="reg-pass" placeholder="Şifre belirleyin" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Şifreyi Tekrar Girin</label>
+                <input type="password" id="reg-pass-confirm" placeholder="Şifrenizi doğrulayın" required>
             </div>
 
             <button id="register-btn">Kayıt Ol ve Katıl</button>
@@ -181,10 +186,13 @@
             const gender = document.getElementById('reg-gender').value;
             const location = document.getElementById('reg-location').value.trim();
             const pass = document.getElementById('reg-pass').value;
+            const passConfirm = document.getElementById('reg-pass-confirm').value;
             
-            if(!username || !fullName || !email || !birthDate || !gender || !location || !pass) return showError("Lütfen tüm bilgileri eksiksiz doldurun.");
+            if(!username || !fullName || !email || !birthDate || !gender || !location || !pass || !passConfirm) return showError("Lütfen tüm bilgileri eksiksiz doldurun.");
             if(username.includes(' ')) return showError("Kullanıcı adında boşluk olamaz.");
             if(pass.length < 6) return showError("Şifre en az 6 karakter olmalıdır.");
+            if(pass !== passConfirm) return showError("Şifreler birbiriyle eşleşmiyor!");
+            if(!/\d/.test(pass) || !/[a-zA-Z]/.test(pass)) return showError("Şifreniz en az bir harf ve bir rakam içermelidir.");
 
             // YENİ: Kayıt işleminin başladığını sisteme bildir
             isRegistering = true; 

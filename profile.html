@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kullanıcı Profili / Mozaik</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <style>
         /* PROFESYONEL VE CİDDİ TASARIM SIFIRLAMASI */
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 0; color: #1e293b; overflow-x: hidden; }
@@ -502,12 +503,12 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
                 if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
                 
-                onSnapshot(collection(db, "users"), (snapshot) => { 
-                    allUsersData = {}; 
-                    snapshot.forEach(userDoc => { allUsersData[userDoc.id] = userDoc.data(); });
-                    
-                    if(allUsersData[myUsername]) {
-                        const u = allUsersData[myUsername];
+                // 1. GÜNCELLEME: SADECE KENDİ PROFİLİMİZİ DİNLİYORUZ (Fatura Tasarrufu)
+                onSnapshot(doc(db, "users", myUsername), (docSnap) => { 
+                    if(docSnap.exists()) {
+                        const u = docSnap.data();
+                        allUsersData[myUsername] = u; // Kendi verimizi önbelleğe al
+                        
                         document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
                         document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
                         document.getElementById('sidebar-following-count').innerText = (u.following || []).length;
@@ -521,6 +522,21 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                         const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                     }
                 });
+
+                // YENİ: EKSİK KULLANICILARI İHTİYAÇ DUYULDUKÇA ÇEKEN AKILLI FONKSİYON
+                window.fetchMissingUsers = async function(usernamesArray) {
+                    // Sadece elimizde (allUsersData içinde) OLMAYAN kullanıcıları filtrele
+                    const missing = usernamesArray.filter(u => u && !allUsersData[u]);
+                    if (missing.length === 0) return; // Eksik yoksa Firebase'i hiç yorma
+                    
+                    // Eksik olanları tek seferde getir ve kaydet
+                    await Promise.all(missing.map(async (uname) => {
+                        try {
+                            const uSnap = await getDoc(doc(db, "users", uname));
+                            if (uSnap.exists()) allUsersData[uname] = uSnap.data();
+                        } catch(e) { console.error("Kullanıcı çekilemedi:", uname); }
+                    }));
+                };
 
                 // GELİŞMİŞ ÇAĞRI DİNLEYİCİSİ (Global)
                 onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
@@ -1059,21 +1075,47 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
         function loadUserPosts() {
             if (unsubscribePosts) unsubscribePosts(); 
-            unsubscribePosts = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snapshot) => {
+            // YENİ: Fonksiyonu 'async' (asenkron) yaptık çünkü kullanıcıları bekleyeceğiz
+            unsubscribePosts = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), async (snapshot) => {
                 globalPosts = []; 
-                const feedContainer = document.getElementById('profile-feed-container'); feedContainer.innerHTML = ''; let userPostCount = 0;
+                const feedContainer = document.getElementById('profile-feed-container'); 
+                let userPostCount = 0;
+                
+                let neededUsers = new Set(); // Ekranda göstereceğimiz yazarların/yorumcuların listesi
+                
+                // Hedef profilin kullanıcısını da listeye ekle (banner/profil için lazım olabilir)
+                if(targetUsername) neededUsers.add(targetUsername); 
+
+                // 1. AŞAMA: Önce gelen veriyi tara ve kimlerin profiline ihtiyacımız olduğunu bul
+                snapshot.forEach((postDoc) => {
+                    let postData = postDoc.data();
+                    if(postData.content) postData.content = DOMPurify.sanitize(postData.content);
+                    if(postData.comments) postData.comments.forEach(c => { 
+                        if(c.text) c.text = DOMPurify.sanitize(c.text); 
+                        if(c.author) neededUsers.add(c.author); // Yorum sahibini de ekle
+                    });
+                    
+                    neededUsers.add(postData.author); // Post sahibini ekle
+                    if(postData.isRepost && postData.originalPostAuthor) neededUsers.add(postData.originalPostAuthor);
+
+                    globalPosts.push({ id: postDoc.id, data: postData }); 
+                });
+
+                // 2. AŞAMA: Ekrana basmadan ÖNCE eksik kullanıcıları Firebase'den çek
+                await window.fetchMissingUsers(Array.from(neededUsers));
+
+                // 3. AŞAMA: Artık herkesin verisi elimizde, ekrana güvenle basabiliriz
+                feedContainer.innerHTML = ''; // Temizle
                 
                 let pinnedPostId = null;
                 if(allUsersData[targetUsername] && allUsersData[targetUsername].pinnedPostId) {
                     pinnedPostId = allUsersData[targetUsername].pinnedPostId;
                 }
-
-                snapshot.forEach((postDoc) => {
-                    let postData = postDoc.data();
-                    // Zararlı kodları (XSS) temizliyoruz
-                    if(postData.content) postData.content = DOMPurify.sanitize(postData.content);
-                    if(postData.comments) postData.comments.forEach(c => { if(c.text) c.text = DOMPurify.sanitize(c.text); });
-                    globalPosts.push({ id: postDoc.id, data: postData }); 
+                
+                // (Orijinal snapshot.forEach döngünüzün UI kısımları aynen devam ediyor...)
+                globalPosts.forEach((postObj) => {
+                    let postData = postObj.data;
+                    const postId = postObj.id; 
                     
                     if (postData.author === targetUsername && !postData.isRepost) userPostCount++;
 

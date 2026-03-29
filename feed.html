@@ -657,14 +657,29 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
                 if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
 
-                onSnapshot(collection(db, "users"), (snapshot) => { 
-                    allUsersData = {}; 
-                    snapshot.forEach(d => { allUsersData[d.id] = d.data(); });
-                    
-                    if(allUsersData[myUsername]) {
-                        const u = allUsersData[myUsername];
-                        myFollowingList = u.following || []; myBookmarks = u.bookmarks || []; 
+                // YENİ: EKSİK KULLANICILARI ÇEKEN AKILLI FONKSİYON
+                window.fetchMissingUsers = async function(usernamesArray) {
+                    const missing = usernamesArray.filter(u => u && !allUsersData[u]);
+                    if (missing.length === 0) return;
+                    await Promise.all(missing.map(async (uname) => {
+                        try {
+                            const uSnap = await getDoc(doc(db, "users", uname));
+                            if (uSnap.exists()) allUsersData[uname] = uSnap.data();
+                        } catch(e) {}
+                    }));
+                };
+
+                // 1. AŞAMA: SADECE KENDİ PROFİLİMİZİ DİNLİYORUZ
+                onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
+                    if(docSnap.exists()) {
+                        const u = docSnap.data();
+                        allUsersData[myUsername] = u;
+                        myFollowingList = u.following || []; 
+                        myBookmarks = u.bookmarks || []; 
                         
+                        // Kendi takip ettiklerimizi önbelleğe alalım (Hikayeler ve Akış için lazım)
+                        await window.fetchMissingUsers(myFollowingList);
+
                         document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
                         document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
                         document.getElementById('sidebar-following-count').innerText = myFollowingList.length;
@@ -1382,17 +1397,36 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         function loadFeedPosts() {
             if (postsUnsubscribe) postsUnsubscribe(); 
             const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(postLimit));
-            postsUnsubscribe = onSnapshot(q, (snapshot) => { 
+            // YENİ: asenkron (async) hale getirildi
+            postsUnsubscribe = onSnapshot(q, async (snapshot) => { 
                 globalPosts = []; 
+                let neededUsers = new Set(); // Eksik kullanıcıları tespit etmek için liste oluştur
+
                 snapshot.forEach(doc => { 
                     let safeData = doc.data();
-                    // Zararlı kodları (XSS) temizliyoruz
+                    
                     if(safeData.content) safeData.content = DOMPurify.sanitize(safeData.content);
-                    if(safeData.comments) safeData.comments.forEach(c => { if(c.text) c.text = DOMPurify.sanitize(c.text); });
+                    
+                    // Gönderideki tüm aktörleri (yazar, reposter, yorumcular) listeye ekle
+                    neededUsers.add(safeData.author); 
+                    if(safeData.isRepost && safeData.originalPostAuthor) neededUsers.add(safeData.originalPostAuthor); 
+
+                    if(safeData.comments) {
+                        safeData.comments.forEach(c => { 
+                            if(c.text) c.text = DOMPurify.sanitize(c.text); 
+                            if(c.author) neededUsers.add(c.author); 
+                        });
+                    }
                     globalPosts.push({ id: doc.id, data: safeData }); 
                 });
+
+                // Ekrana basmadan ÖNCE eksik profil bilgilerini çek (Tek Seferlik, faturayı inanılmaz düşürür)
+                await window.fetchMissingUsers(Array.from(neededUsers));
+
                 if (snapshot.docs.length < postLimit) { hasMorePosts = false; }
                 if(window.currentOpenPostId) { window.openPostDetail(window.currentOpenPostId); }
+                
+                renderWhoToFollow(); // Yeni çekilen kullanıcılara göre sağ taraftaki önerileri güncelle
                 renderFeed(); 
             });
         }

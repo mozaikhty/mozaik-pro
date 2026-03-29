@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sohbet / Mozaik</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <style>
         /* PROFESYONEL VE CİDDİ TASARIM SIFIRLAMASI */
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 0; color: #1e293b; overflow: hidden; }
@@ -592,48 +593,73 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             if (user) {
                 currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                 
-                onSnapshot(collection(db, "users"), (snapshot) => { 
-                    allUsersData = {}; 
-                    snapshot.forEach(d => { allUsersData[d.id] = d.data(); }); 
-                    
-                    if(allUsersData[myUsername]) {
-                        const u = allUsersData[myUsername];
+                // YENİ: EKSİK KULLANICILARI ÇEKEN AKILLI FONKSİYON
+                window.fetchMissingUsers = async function(usernamesArray) {
+                    const missing = usernamesArray.filter(u => u && !allUsersData[u]);
+                    if (missing.length === 0) return;
+                    await Promise.all(missing.map(async (uname) => {
+                        try {
+                            const uSnap = await getDoc(doc(db, "users", uname));
+                            if (uSnap.exists()) allUsersData[uname] = uSnap.data();
+                        } catch(e) {}
+                    }));
+                };
+
+                // 1. AŞAMA: SADECE KENDİ PROFİLİMİZİ DİNLİYORUZ (10.000 veri çekmek yerine 1 veri)
+                onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
+                    if(docSnap.exists()) {
+                        const u = docSnap.data();
+                        allUsersData[myUsername] = u;
+                        myFollowing = u.following || [];
+                        
+                        // Kendi ağımızdaki kişileri de sessizce çekelim ki "Yeni Sohbet" aramalarında direkt çıksınlar
+                        await window.fetchMissingUsers(myFollowing);
+                        
                         document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
                         document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
-                        document.getElementById('sidebar-following-count').innerText = (u.following || []).length;
+                        document.getElementById('sidebar-following-count').innerText = myFollowing.length;
                         document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
                         if(u.avatarUrl) {
                             const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-                            
-                            const mobAv = document.getElementById('mobile-avatar-header'); 
-                            if(mobAv) mobAv.innerHTML = imgTag;
-                            
-                            const sideAv = document.getElementById('sidebar-avatar-mobile'); 
-                            if(sideAv) sideAv.innerHTML = imgTag;
-                            
-                            const deskAv = document.getElementById('desktop-sidebar-avatar'); 
-                            if(deskAv) deskAv.innerHTML = imgTag;
+                            const mobAv = document.getElementById('mobile-avatar-header'); if(mobAv) mobAv.innerHTML = imgTag;
+                            const sideAv = document.getElementById('sidebar-avatar-mobile'); if(sideAv) sideAv.innerHTML = imgTag;
+                            const deskAv = document.getElementById('desktop-sidebar-avatar'); if(deskAv) deskAv.innerHTML = imgTag;
                         }
                         const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
                         const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                     }
-                    
                     updateInboxDisplay(); 
                 });
                 
-                onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
+                // 2. AŞAMA: SADECE SOHBETİMİZ OLAN KİŞİLERİ ÇEKİYORUZ
+                onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), async (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'group'); 
-                    snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
+                    let neededUsers = new Set();
+                    snapshot.forEach(docSnap => { 
+                        const data = docSnap.data();
+                        activeChats.push({ id: docSnap.id, ...data, type:'private' }); 
+                        if(data.participants) data.participants.forEach(p => neededUsers.add(p));
+                    }); 
+                    // Ekrana basmadan önce konuştuğumuz kişilerin profil verilerini getir
+                    await window.fetchMissingUsers(Array.from(neededUsers));
                     updateInboxDisplay(); 
                     attachCallListeners(); 
                 });
-                onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
+
+                // 3. AŞAMA: GRUPLARDAKİ KİŞİLERİ ÇEKİYORUZ
+                onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), async (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'private'); 
-                    snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); 
+                    let neededUsers = new Set();
+                    snapshot.forEach(docSnap => { 
+                        const data = docSnap.data();
+                        activeChats.push({ id: docSnap.id, ...data, type:'group' }); 
+                        if(data.members) data.members.forEach(m => neededUsers.add(m));
+                    }); 
+                    // Ekrana basmadan önce grup üyelerinin profil verilerini getir
+                    await window.fetchMissingUsers(Array.from(neededUsers));
                     updateInboxDisplay(); 
                     attachCallListeners(); 
                 });
-                onSnapshot(doc(db, "users", myUsername), (docSnap) => { if (docSnap.exists()) { myFollowing = docSnap.data().following || []; } });
 
                 if (targetUsername || targetGroupId) {
                     document.body.classList.add('chat-active');
