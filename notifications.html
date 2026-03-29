@@ -154,7 +154,8 @@
     </style>
 </head>
 <body>
-
+<body>
+    <script>if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');</script>
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
@@ -464,7 +465,7 @@
         };
     </script>
     <script>
-        if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); document.getElementById('dark-mode-toggle').checked = true; }
+        if(localStorage.getItem('theme') === 'dark' && document.getElementById('dark-mode-toggle')) { document.getElementById('dark-mode-toggle').checked = true; }
         window.openSettingsModal = function() {
             document.getElementById('settings-modal').style.display = 'flex';
             document.getElementById('dark-mode-toggle').checked = document.body.classList.contains('dark-mode');

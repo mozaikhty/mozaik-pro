@@ -262,7 +262,8 @@
     </style>
 </head>
 <body>
-
+<body>
+    <script>if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');</script>
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
@@ -1493,8 +1494,21 @@
         document.getElementById('share-btn').addEventListener('click', () => submitPost('post-text', 'image-input', 'share-btn', 'image-preview-text', false));
         document.getElementById('modal-share-btn').addEventListener('click', () => submitPost('modal-post-text', 'modal-image-input', 'modal-share-btn', 'modal-image-preview-text', true));
 
+        // SPAM ENGELLEYİCİ KİLİT SİSTEMİ (1.5 Saniye Bekletir)
+        window.actionLocks = {};
+        window.isActionLocked = function(actionId) {
+            if (window.actionLocks[actionId]) return true;
+            window.actionLocks[actionId] = true;
+            setTimeout(() => { window.actionLocks[actionId] = false; }, 1500); 
+            return false;
+        };
+
         window.toggleLike = async function(postId, isLiked, postAuthor, event) { 
             event.stopPropagation();
+            
+            // Eğer butona yeni basıldıysa (kilitliyse) işlemi durdur!
+            if (window.isActionLocked('like_' + postId)) return; 
+
             const postRef = doc(db, "posts", postId); 
             if (isLiked) { await updateDoc(postRef, { likes: arrayRemove(myUsername) }); } 
             else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } } 
@@ -1786,7 +1800,7 @@
         }
     </script>
     <script>
-        if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); document.getElementById('dark-mode-toggle').checked = true; }
+        if(localStorage.getItem('theme') === 'dark' && document.getElementById('dark-mode-toggle')) { document.getElementById('dark-mode-toggle').checked = true; }
         window.openSettingsModal = function() {
             document.getElementById('settings-modal').style.display = 'flex';
             document.getElementById('dark-mode-toggle').checked = document.body.classList.contains('dark-mode');

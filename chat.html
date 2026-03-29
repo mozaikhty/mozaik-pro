@@ -261,7 +261,8 @@
     </style>
 </head>
 <body>
-
+<body>
+    <script>if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');</script>
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
@@ -495,6 +496,7 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
+        // IMGBB ÜCRETSİZ SİSTEMİ GERİ GETİRİLDİ
         const IMGBB_API_KEY = "8bcb48095c084fbadfe18d4bced144e1";
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -508,7 +510,7 @@
         let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
         const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
         
-        // ---------- SİZE ÖZEL YENİ TURN SUNUCU AYARLARI ----------
+        // ---------- GÖRÜNTÜLÜ ARAMA İÇİN TURN SUNUCU AYARLARI ----------
         const servers = { 
             iceServers: [
                 { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
@@ -517,7 +519,7 @@
                 { urls: "turn:a.relay.metered.ca:443?transport=tcp", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" }
             ] 
         };
-        // ---------------------------------------------------------
+        // ---------------------------------------------------------------
 
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
@@ -1113,7 +1115,7 @@
         }
     </script>
     <script>
-        if(localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark-mode'); document.getElementById('dark-mode-toggle').checked = true; }
+        if(localStorage.getItem('theme') === 'dark' && document.getElementById('dark-mode-toggle')) { document.getElementById('dark-mode-toggle').checked = true; }
         window.openSettingsModal = function() {
             document.getElementById('settings-modal').style.display = 'flex';
             document.getElementById('dark-mode-toggle').checked = document.body.classList.contains('dark-mode');
