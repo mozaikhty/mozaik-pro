@@ -441,13 +441,22 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
         import { getAuth, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, setDoc, getDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
          
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
-        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app); const storage = getStorage(app);
+        const app = initializeApp(firebaseConfig); 
+        
+        // GÖRÜNMEZ SPAM VE BOT KORUMASI (APP CHECK)
+        const appCheck = initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider('6LcwbZ4sAAAAAPJm8ty9Edqyjn_-6COG2rj_axCA'),
+            isTokenAutoRefreshEnabled: true
+        });
+
+        const auth = getAuth(app); const db = getFirestore(app); const storage = getStorage(app);
         let currentUser = null; let myUsername = null; let isFollowing = false; let isRequested = false; let isTargetPrivate = false; let isTargetVerified = false; 
         let allUsersData = {}; let currentProfileFollowers = []; let currentProfileFollowing = []; let unsubscribePosts = null; let currentlyEditingPostId = null; 
         let postToShare = null; let activeReplyParentId = null; let globalPosts = [];
