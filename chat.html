@@ -936,31 +936,33 @@
         document.getElementById('cancel-reply-btn')?.addEventListener('click', window.cancelReply);
 
         window.deleteMessage = async function(msgId) {
-            if(confirm("Silmek istediğinize emin misiniz?")) { await deleteDoc(doc(db, "chats", chatId, "messages", msgId)); }
+            const colName = isGroupChat ? "groups" : "chats";
+            if(confirm("Silmek istediğinize emin misiniz?")) { await deleteDoc(doc(db, colName, chatId, "messages", msgId)); }
         };
 
         window.editMessage = async function(msgId, oldText, timeMillis) {
             const now = Date.now();
+            const colName = isGroupChat ? "groups" : "chats";
             if (now - timeMillis > 900000) { alert("Sadece son 15 dakika içinde gönderilen mesajları düzenleyebilirsiniz!"); return; }
             const newText = prompt("Düzenleyin:", oldText);
-            if (newText !== null && newText.trim() !== "" && newText !== oldText) { await updateDoc(doc(db, "chats", chatId, "messages", msgId), { text: newText.trim(), isEdited: true }); }
+            if (newText !== null && newText.trim() !== "" && newText !== oldText) { await updateDoc(doc(db, colName, chatId, "messages", msgId), { text: newText.trim(), isEdited: true }); }
         };
 
         function loadMessages() {
-            const messagesRef = collection(db, "chats", chatId, "messages");
+            const colName = isGroupChat ? "groups" : "chats";
+            const messagesRef = collection(db, colName, chatId, "messages");
             onSnapshot(query(messagesRef, orderBy("createdAt", "asc")), (snapshot) => {
                 const messagesContainer = document.getElementById('chat-messages');
                 messagesContainer.innerHTML = ''; 
 
                 snapshot.forEach((docSnap) => {
                     let data = docSnap.data(); 
-                    // Gelen mesajları zararlı kodlardan (XSS) arındırıyoruz
                     if(data.text) data.text = DOMPurify.sanitize(data.text);
                     if(data.replyTo && data.replyTo.text) data.replyTo.text = DOMPurify.sanitize(data.replyTo.text);
                     const isMe = data.sender === myUsername;
                     
                     let timeString = ''; let timeMillis = 0;
-                    if (data.createdAt) {
+                    if (data.createdAt && typeof data.createdAt.toDate === 'function') {
                         const date = data.createdAt.toDate(); timeMillis = data.createdAt.toMillis();
                         timeString = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
                     }
@@ -973,7 +975,7 @@
                         return; 
                     }
 
-                    if (!isMe && !data.isRead) { updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), { isRead: true }).catch(e=>{}); }
+                    if (!isMe && !data.isRead) { updateDoc(doc(db, colName, chatId, "messages", docSnap.id), { isRead: true }).catch(e=>{}); }
 
                     let senderNameHtml = ''; if (isGroupChat && !isMe) senderNameHtml = `<div class="msg-sender-name">@${data.sender}</div>`;
 
@@ -1063,20 +1065,11 @@
         }
 
         async function sendActualMessage(text, imgUrl) {
-            const chatRef = doc(db, isGroupChat ? "groups" : "chats", chatId);
-            const messagesRef = collection(db, "chats", chatId, "messages");
+            const colName = isGroupChat ? "groups" : "chats";
+            const chatRef = doc(db, colName, chatId);
+            const messagesRef = collection(db, colName, chatId, "messages");
             
             let finalTxt = text; if(!text && imgUrl) finalTxt = "📷 Fotoğraf";
-            
-            const msgData = { 
-                text: finalTxt, sender: myUsername, createdAt: serverTimestamp(), imageUrl: imgUrl,
-                replyTo: currentReplyData ? { sender: currentReplyData.sender, text: currentReplyData.text } : null,
-                isEdited: false, isRead: false, type: 'regular'
-            };
-
-            await addDoc(messagesRef, msgData);
-            await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
-            
             let summary = text; if(imgUrl) summary = "📷 Fotoğraf";
             
             let unreadList = [];
@@ -1089,11 +1082,23 @@
 
             const updateData = { lastMessage: summary, lastSender: myUsername, unreadBy: unreadList, updatedAt: serverTimestamp() };
 
+            // 1. ADIM: ÖNCE SOHBET BELGESİNİ OLUŞTUR (Kurallara takılmamak için)
             if (!isGroupChat) {
                 await setDoc(chatRef, { participants: [myUsername, targetUsername], ...updateData }, { merge: true });
             } else {
                 await updateDoc(chatRef, updateData);
             }
+
+            // 2. ADIM: SONRA MESAJI EKLE
+            const msgData = { 
+                text: finalTxt, sender: myUsername, createdAt: serverTimestamp(), imageUrl: imgUrl,
+                replyTo: currentReplyData ? { sender: currentReplyData.sender, text: currentReplyData.text } : null,
+                isEdited: false, isRead: false, type: 'regular'
+            };
+            await addDoc(messagesRef, msgData);
+            
+            // 3. ADIM: YAZIYOR DURUMUNU SIFIRLA
+            await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
         }
 
         sendBtn?.addEventListener('click', sendMessage);
