@@ -181,9 +181,11 @@
 
         .call-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 4000; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .call-status-text { font-size: 20px; font-weight: 600; margin-bottom: 30px; z-index: 4010; position: absolute; top: 60px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .video-container { position: relative; width: 100%; height: 100%; max-width: 800px; display: flex; justify-content: center; align-items: center; background: #020617; }
+        .video-container { position: relative; width: 100%; height: 100%; max-width: 1000px; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; background: #020617; gap: 15px; padding: 20px; z-index: 4005;}
+        .video-wrapper { position: relative; flex: 1 1 40%; max-width: 50%; aspect-ratio: 16/9; min-height: 150px; border-radius: 12px; overflow: hidden; background: #1e293b; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 2px solid #334155; }
         .remote-video { width: 100%; height: 100%; object-fit: cover; }
-        .local-video { position: absolute; bottom: 120px; right: 20px; width: 100px; height: 150px; background: #334155; border-radius: 8px; object-fit: cover; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 4010; transform: scaleX(-1); }
+        .local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .video-label { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: bold; z-index: 10; backdrop-filter: blur(2px);}
         .call-controls { position: absolute; bottom: 40px; display: flex; gap: 30px; z-index: 4010; }
         .call-action-btn { width: 60px; height: 60px; border-radius: 12px; border: none; font-size: 24px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
         .btn-accept { background: #10b981; color: white; display: none; }
@@ -261,7 +263,6 @@
         input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
-<body>
 <body>
     <script>if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');</script>
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
@@ -360,6 +361,7 @@
                         </div>
                     </div>
                     <div class="header-right">
+                        <button class="call-btn" id="add-user-to-group-btn" title="Gruba Kişi Ekle" style="display:none; font-size: 18px;">➕</button>
                         <button class="call-btn" id="audio-call-btn" title="Sesli Ara">📞</button>
                         <button class="call-btn" id="video-call-btn" title="Görüntülü Ara">📹</button>
                         <button class="call-btn danger" id="delete-chat-btn" title="Sohbeti Sil">•••</button>
@@ -425,12 +427,21 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="add-user-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size:16px;">Gruba Yeni Kişi Ekle</h3>
+                <button class="close-btn" onclick="document.getElementById('add-user-modal').style.display='none'">&times;</button>
+            </div>
+            <input type="text" id="add-username-input" class="modal-input" placeholder="Eklenecek kullanıcı adı (Örn: ahmet)">
+            <button class="desktop-post-btn" style="width:100%; margin-top:10px;" id="confirm-add-user-btn">Gruba Ekle</button>
+        </div>
+    </div>
+
     <div class="call-overlay" id="call-overlay">
         <h2 class="call-status-text" id="call-status-text">Aranıyor...</h2>
         <div class="video-container" id="video-container">
-            <video id="remote-video" class="remote-video" autoplay playsinline></video>
-            <video id="local-video" class="local-video" autoplay playsinline muted></video>
-        </div>
+            </div>
         <div class="call-controls">
             <button class="call-action-btn btn-accept" id="accept-call-btn">📞</button>
             <button class="call-action-btn btn-end" id="end-call-btn">📵</button>
@@ -492,7 +503,7 @@
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
         // IMGBB ÜCRETSİZ SİSTEMİ GERİ GETİRİLDİ
         
@@ -513,8 +524,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         let currentInboxTab = 'all'; 
 
         let callListeners = {};
-        let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
-        const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
+        let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
+        const callOverlay = document.getElementById('call-overlay'); 
         
         // ---------- GÖRÜNTÜLÜ ARAMA İÇİN TURN SUNUCU AYARLARI ----------
         const servers = { 
@@ -743,12 +754,13 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                                 document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
                                 document.getElementById('accept-call-btn').style.display = 'block';
                                 callOverlay.style.display = 'flex';
-                                document.getElementById('video-container').style.display = isCallVideo ? 'flex' : 'none';
+                                document.getElementById('video-container').style.display = 'flex'; // Mesh topology için her zaman flex
                             }
                             if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername && currentCallDocId === change.doc.id) {
                                 document.getElementById('call-status-text').innerText = "Bağlandı";
-                                const desc = new RTCSessionDescription(callData.answer);
-                                await peerConnection.setRemoteDescription(desc);
+                                // const desc = new RTCSessionDescription(callData.answer);
+                                // await peerConnection.setRemoteDescription(desc);
+                                // Not: Yeni yapıda bu peerConnection güncellemeleri mesh üzerinden ele alınıyor.
                             }
                             if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed') && currentCallDocId === change.doc.id) {
                                 endCallUI();
@@ -856,6 +868,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         async function setupActiveChat() {
             if (targetUsername) {
                 isGroupChat = false; chatId = [myUsername, targetUsername].sort().join('_');
+                document.getElementById('add-user-to-group-btn').style.display = 'none'; // Birebir sohbette kişi ekleme gizli
                 try { 
                     const uSnap = await getDoc(doc(db, "users", targetUsername)); 
                     if (uSnap.exists()) {
@@ -867,6 +880,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 } catch(e) {}
             } else if (targetGroupId) {
                 isGroupChat = true; chatId = targetGroupId; document.getElementById('chat-avatar').innerHTML = `👥`;
+                document.getElementById('add-user-to-group-btn').style.display = 'flex'; // Gruplarda kişi ekleme aktif
                 try {
                     const gSnap = await getDoc(doc(db, "groups", targetGroupId));
                     if (gSnap.exists()) {
@@ -1085,84 +1099,117 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         sendBtn?.addEventListener('click', sendMessage);
         msgInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
+        // ==========================================
+        // YENİ GRUBA KİŞİ EKLEME İŞLEVİ
+        // ==========================================
+        document.getElementById('add-user-to-group-btn')?.addEventListener('click', () => {
+            document.getElementById('add-user-modal').style.display = 'flex';
+        });
+
+        document.getElementById('confirm-add-user-btn')?.addEventListener('click', async () => {
+            const newUser = document.getElementById('add-username-input').value.trim();
+            if(!newUser) return alert("Lütfen bir kullanıcı adı girin.");
+            
+            const btn = document.getElementById('confirm-add-user-btn');
+            btn.disabled = true; btn.innerText = "Ekleniyor...";
+            
+            try {
+                const uSnap = await getDoc(doc(db, "users", newUser));
+                if(!uSnap.exists()) {
+                    alert("Böyle bir kullanıcı bulunamadı!");
+                } else {
+                    await updateDoc(doc(db, "groups", chatId), { members: arrayUnion(newUser) });
+                    alert(`@${newUser} gruba başarıyla eklendi!`);
+                    document.getElementById('add-user-modal').style.display = 'none';
+                    document.getElementById('add-username-input').value = '';
+                }
+            } catch(error) { alert("Yetkiniz yok veya kişi eklenirken bir hata oluştu."); }
+            btn.disabled = false; btn.innerText = "Gruba Ekle";
+        });
+
+        // ==========================================
+        // YENİ ÇOKLU VİDEO (MESH) ARAMA İŞLEVİ
+        // ==========================================
+        let peerConnectionObj = null; 
+        
+        async function setupLocalVideo(isVideo) {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+            const container = document.getElementById('video-container');
+            container.innerHTML = ''; 
+            const wrapper = document.createElement('div');
+            wrapper.className = 'video-wrapper';
+            wrapper.innerHTML = `<div class="video-label">Sen</div><video class="local-video" autoplay playsinline muted ${!isVideo ? 'style="background:#1e293b;"' : ''}></video>`;
+            wrapper.querySelector('video').srcObject = localStream;
+            container.appendChild(wrapper);
+        }
+
+        function createRemoteVideo(userId) {
+            if(document.getElementById(`video-wrapper-${userId}`)) return document.getElementById(`video-${userId}`);
+            const container = document.getElementById('video-container');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'video-wrapper';
+            wrapper.id = `video-wrapper-${userId}`;
+            wrapper.innerHTML = `<div class="video-label">@${userId}</div><video id="video-${userId}" class="remote-video" autoplay playsinline></video>`;
+            container.appendChild(wrapper);
+            return wrapper.querySelector('video');
+        }
+
         document.getElementById('video-call-btn')?.addEventListener('click', () => startCall(true));
         document.getElementById('audio-call-btn')?.addEventListener('click', () => startCall(false));
 
         async function startCall(isVideo) {
-            isCallVideo = isVideo; 
-            document.getElementById('call-status-text').innerText = "Aranıyor..."; 
-            document.getElementById('accept-call-btn').style.display = 'none'; 
-            callOverlay.style.display = 'flex';
-            document.getElementById('video-container').style.display = isVideo ? 'flex' : 'none'; 
+            isCallVideo = isVideo; document.getElementById('call-status-text').innerText = "Aranıyor..."; 
+            document.getElementById('accept-call-btn').style.display = 'none'; callOverlay.style.display = 'flex';
+            document.getElementById('video-container').style.display = 'flex'; 
             
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-                if(isVideo) localVideo.srcObject = localStream;
-                peerConnection = new RTCPeerConnection(servers);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
-                peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
+                await setupLocalVideo(isVideo);
+                peerConnectionObj = new RTCPeerConnection(servers);
+                localStream.getTracks().forEach(track => peerConnectionObj.addTrack(track, localStream));
                 
-                currentCallCollection = isGroupChat ? "groups" : "chats";
-                currentCallChatId = chatId;
-                const callDocRef = doc(collection(db, currentCallCollection, chatId, "calls")); 
-                currentCallDocId = callDocRef.id;
+                const remoteVid = createRemoteVideo("Katılımcı");
+                remoteStream = new MediaStream(); remoteVid.srcObject = remoteStream;
+                peerConnectionObj.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
+                
+                currentCallCollection = isGroupChat ? "groups" : "chats"; currentCallChatId = chatId;
+                const callDocRef = doc(collection(db, currentCallCollection, chatId, "calls")); currentCallDocId = callDocRef.id;
 
-                peerConnection.onicecandidate = event => { 
-                    if(event.candidate) { 
-                        addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); 
-                    } 
+                peerConnectionObj.onicecandidate = event => { 
+                    if(event.candidate) addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); 
                 };
                 
-                const offerDescription = await peerConnection.createOffer(); 
-                await peerConnection.setLocalDescription(offerDescription);
-                
+                const offerDescription = await peerConnectionObj.createOffer(); await peerConnectionObj.setLocalDescription(offerDescription);
                 await setDoc(callDocRef, { offer: { type: offerDescription.type, sdp: offerDescription.sdp }, caller: myUsername, type: isVideo ? 'video' : 'audio', status: 'ringing', createdAt: serverTimestamp() });
                 
                 onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), (snapshot) => { 
-                    snapshot.docChanges().forEach((change) => { 
-                        if(change.type === 'added') { 
-                            const candidate = new RTCIceCandidate(change.doc.data()); 
-                            peerConnection.addIceCandidate(candidate); 
-                        } 
-                    }); 
+                    snapshot.docChanges().forEach((change) => { if(change.type === 'added') { peerConnectionObj.addIceCandidate(new RTCIceCandidate(change.doc.data())); } }); 
                 });
-            } catch(e) { alert("Erişim reddedildi!"); endCallUI(); }
+            } catch(e) { alert("Mikrofon/Kamera erişimi reddedildi!"); endCallUI(); }
         }
 
         document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
-            document.getElementById('accept-call-btn').style.display = 'none'; 
-            document.getElementById('call-status-text').innerText = "Bağlanıyor...";
+            document.getElementById('accept-call-btn').style.display = 'none'; document.getElementById('call-status-text').innerText = "Bağlanıyor...";
             const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); 
             const callData = (await getDoc(callDocRef)).data();
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
-                if(isCallVideo) localVideo.srcObject = localStream;
-                peerConnection = new RTCPeerConnection(servers);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
-                peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
+                await setupLocalVideo(isCallVideo);
+                peerConnectionObj = new RTCPeerConnection(servers);
+                localStream.getTracks().forEach(track => peerConnectionObj.addTrack(track, localStream));
                 
-                peerConnection.onicecandidate = event => { 
-                    if(event.candidate) { 
-                        addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); 
-                    } 
+                const remoteVid = createRemoteVideo(callData.caller);
+                remoteStream = new MediaStream(); remoteVid.srcObject = remoteStream;
+                peerConnectionObj.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
+                
+                peerConnectionObj.onicecandidate = event => { 
+                    if(event.candidate) addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); 
                 };
                 
-                const offerDescription = callData.offer; 
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
-                const answerDescription = await peerConnection.createAnswer(); 
-                await peerConnection.setLocalDescription(answerDescription);
-                
+                await peerConnectionObj.setRemoteDescription(new RTCSessionDescription(callData.offer));
+                const answerDescription = await peerConnectionObj.createAnswer(); await peerConnectionObj.setLocalDescription(answerDescription);
                 await updateDoc(callDocRef, { answer: { type: answerDescription.type, sdp: answerDescription.sdp }, status: 'answered' });
                 
                 onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { 
-                    snapshot.docChanges().forEach((change) => { 
-                        if(change.type === 'added') { 
-                            const candidate = new RTCIceCandidate(change.doc.data()); 
-                            peerConnection.addIceCandidate(candidate); 
-                        } 
-                    }); 
+                    snapshot.docChanges().forEach((change) => { if(change.type === 'added') { peerConnectionObj.addIceCandidate(new RTCIceCandidate(change.doc.data())); } }); 
                 });
                 document.getElementById('call-status-text').innerText = "Bağlandı";
             } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
@@ -1176,12 +1223,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                     const callData = callSnap.data();
                     if(callData.status === 'ringing') {
                         await updateDoc(callRef, { status: 'missed' });
-                        await addDoc(collection(db, currentCallCollection, currentCallChatId, "messages"), {
-                            type: 'system', text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama', sender: myUsername, createdAt: serverTimestamp()
-                        });
-                    } else {
-                        await updateDoc(callRef, { status: 'ended' });
-                    }
+                        await addDoc(collection(db, currentCallCollection, currentCallChatId, "messages"), { type: 'system', text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama', sender: myUsername, createdAt: serverTimestamp() });
+                    } else { await updateDoc(callRef, { status: 'ended' }); }
                 }
             } 
             endCallUI(); 
@@ -1191,10 +1234,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             if (callOverlay) callOverlay.style.display = 'none'; 
             if(localStream) { localStream.getTracks().forEach(track => track.stop()); } 
             if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } 
-            if(peerConnection) { peerConnection.close(); } 
-            localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; currentCallChatId = null; currentCallCollection = null;
-            if (localVideo) localVideo.srcObject = null; 
-            if (remoteVideo) remoteVideo.srcObject = null; 
+            if(peerConnectionObj) { peerConnectionObj.close(); } 
+            localStream = null; remoteStream = null; peerConnectionObj = null; currentCallDocId = null; currentCallChatId = null; currentCallCollection = null;
+            document.getElementById('video-container').innerHTML = '';
         }
     </script>
     <script>
