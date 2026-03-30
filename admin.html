@@ -441,18 +441,37 @@
         }
 
         function loadTickets() {
-            onSnapshot(query(collection(db, "tickets"), orderBy("createdAt", "desc")), (snapshot) => {
+            onSnapshot(query(collection(db, "support_tickets"), orderBy("createdAt", "desc")), (snapshot) => {
                 const list = document.getElementById('tickets-list'); list.innerHTML = '';
-                if(snapshot.empty) { list.innerHTML = '<p>Bekleyen destek talebi yok.</p>'; return; }
+                if(snapshot.empty) { list.innerHTML = '<p style="color:#aaa; text-align:center;">Bekleyen destek veya şikayet talebi yok. Her şey yolunda! 🎉</p>'; return; }
+                
                 snapshot.forEach(docSnap => {
-                    const data = docSnap.data(); let dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString() : "";
-                    // YENİ: XSS Koruması
+                    const data = docSnap.data(); 
+                    let dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit'}) : "";
+                    
+                    // XSS Koruması ile mesajı güvenli hale getiriyoruz
                     const cleanMsg = DOMPurify.sanitize(data.message || '');
-                    list.innerHTML += `<div class="ticket-item"><div class="ticket-header"><span>Şikayet Eden: <b>@${data.sender}</b> 👉 Şikayet Edilen: <b>@${data.reportedProfile}</b></span><span>${dateStr}</span></div><div class="ticket-msg">"${cleanMsg}"</div><button class="delete-ticket" onclick="window.deleteTicket('${docSnap.id}')">Talebi Kapat</button><div style="clear:both;"></div></div>`;
+                    
+                    list.innerHTML += `
+                        <div class="ticket-item">
+                            <div class="ticket-header">
+                                <span style="color:#3498db;">Gönderen: <b style="color:white;">@${data.sender}</b></span>
+                                <span>${dateStr}</span>
+                            </div>
+                            <div class="ticket-msg" style="margin-top:10px; margin-bottom:15px;">"${cleanMsg}"</div>
+                            <button class="delete-ticket" onclick="window.deleteTicket('${docSnap.id}')">Çözüldü Olarak İşaretle (Sil)</button>
+                            <div style="clear:both;"></div>
+                        </div>
+                    `;
                 });
             });
         }
-        window.deleteTicket = async function(id) { if(confirm("Talep çözüldü olarak işaretlenip kapatılsın mı?")) await deleteDoc(doc(db, "tickets", id)); };
+        
+        window.deleteTicket = async function(id) { 
+            if(confirm("Bu destek talebini çözüldü olarak işaretleyip silmek istiyor musunuz?")) { 
+                await deleteDoc(doc(db, "support_tickets", id)); 
+            } 
+        };
 
     </script>
 </body>
