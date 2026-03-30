@@ -441,24 +441,28 @@
         }
 
         function loadTickets() {
-            onSnapshot(query(collection(db, "support_tickets"), orderBy("createdAt", "desc")), (snapshot) => {
+            onSnapshot(query(collection(db, "tickets"), orderBy("createdAt", "desc")), (snapshot) => {
                 const list = document.getElementById('tickets-list'); list.innerHTML = '';
-                if(snapshot.empty) { list.innerHTML = '<p style="color:#aaa; text-align:center;">Bekleyen destek veya şikayet talebi yok. Her şey yolunda! 🎉</p>'; return; }
+                
+                if(snapshot.empty) { 
+                    list.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">Bekleyen destek veya şikayet talebi yok. Her şey yolunda! 🎉</p>'; 
+                    return; 
+                }
                 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data(); 
-                    let dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit'}) : "";
+                    let dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit'}) : "Az önce";
                     
-                    // XSS Koruması ile mesajı güvenli hale getiriyoruz
+                    // Zararlı kodlara karşı XSS Koruması
                     const cleanMsg = DOMPurify.sanitize(data.message || '');
                     
                     list.innerHTML += `
                         <div class="ticket-item">
                             <div class="ticket-header">
-                                <span style="color:#3498db;">Gönderen: <b style="color:white;">@${data.sender}</b></span>
+                                <span style="color:#3498db;">Gönderen: <b style="color:white;">@${data.sender || 'Bilinmeyen'}</b></span>
                                 <span>${dateStr}</span>
                             </div>
-                            <div class="ticket-msg" style="margin-top:10px; margin-bottom:15px;">"${cleanMsg}"</div>
+                            <div class="ticket-msg" style="margin-top:10px; margin-bottom:15px; font-style:italic;">"${cleanMsg}"</div>
                             <button class="delete-ticket" onclick="window.deleteTicket('${docSnap.id}')">Çözüldü Olarak İşaretle (Sil)</button>
                             <div style="clear:both;"></div>
                         </div>
@@ -468,8 +472,8 @@
         }
         
         window.deleteTicket = async function(id) { 
-            if(confirm("Bu destek talebini çözüldü olarak işaretleyip silmek istiyor musunuz?")) { 
-                await deleteDoc(doc(db, "support_tickets", id)); 
+            if(confirm("Bu destek talebini çözüldü olarak işaretleyip listeden silmek istiyor musunuz?")) { 
+                await deleteDoc(doc(db, "tickets", id)); 
             } 
         };
 

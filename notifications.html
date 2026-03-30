@@ -294,7 +294,7 @@
             btn.innerText = "Gönderiliyor...";
 
             try {
-                await addDoc(collection(db, "support_tickets"), {
+                await addDoc(collection(db, "tickets"), {
                     sender: myUsername || "Bilinmeyen Kullanıcı",
                     message: message,
                     createdAt: serverTimestamp(),
