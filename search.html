@@ -696,12 +696,14 @@
                     const fullName = authorData.fullName || post.author;
                     const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
                     
+                    let locationHtml = post.location ? `<span style="font-size:13px; color:#3b82f6; margin-left:8px;">📍 ${post.location}</span>` : '';
+                    
                     html += `
                         <div class="post" onclick="window.location.href='profile.html?user=${post.author}'">
                             <div class="post-left"><div class="post-avatar-img">${avatarImg}</div></div>
                             <div class="post-right">
                                 <div class="post-header-info">
-                                    <div class="author-group"><span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${post.author}</span></div>
+                                    <div class="author-group"><span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${post.author}</span> ${locationHtml}</div>
                                 </div>
                                 <div class="post-content">${formattedContent}</div>
                             </div>
