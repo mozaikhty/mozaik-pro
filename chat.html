@@ -504,13 +504,10 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
-
-        // IMGBB ÜCRETSİZ SİSTEMİ GERİ GETİRİLDİ
         
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); 
         
-        // GÖRÜNMEZ SPAM VE BOT KORUMASI (APP CHECK)
         const appCheck = initializeAppCheck(app, {
             provider: new ReCaptchaV3Provider('6LcwbZ4sAAAAAPJm8ty9Edqyjn_-6COG2rj_axCA'),
             isTokenAutoRefreshEnabled: true
@@ -524,10 +521,11 @@
         let currentInboxTab = 'all'; 
 
         let callListeners = {};
+        let peerConnectionObj = null; 
         let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
+        
         const callOverlay = document.getElementById('call-overlay'); 
         
-        // ---------- GÖRÜNTÜLÜ ARAMA İÇİN TURN SUNUCU AYARLARI ----------
         const servers = { 
             iceServers: [
                 { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
@@ -536,7 +534,6 @@
                 { urls: "turn:a.relay.metered.ca:443?transport=tcp", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" }
             ] 
         };
-        // ---------------------------------------------------------------
 
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
@@ -560,37 +557,18 @@
         window.sendSupportMessage = async function() {
             const btn = document.getElementById('send-support-btn');
             const message = document.getElementById('support-message-input').value.trim();
-            
             if (!message) { alert("Lütfen bir mesaj yazın."); return; }
-
-            btn.disabled = true;
-            btn.innerText = "Gönderiliyor...";
-
+            btn.disabled = true; btn.innerText = "Gönderiliyor...";
             try {
-                await addDoc(collection(db, "tickets"), {
-                    sender: myUsername || "Bilinmeyen Kullanıcı",
-                    message: message,
-                    createdAt: serverTimestamp(),
-                    status: "Yeni"
-                });
+                await addDoc(collection(db, "tickets"), { sender: myUsername || "Bilinmeyen Kullanıcı", message: message, createdAt: serverTimestamp(), status: "Yeni" });
                 alert("Mesajınız başarıyla iletildi. Teşekkür ederiz!");
                 document.getElementById('support-modal').style.display = 'none';
-            } catch (error) {
-                console.error("Hata:", error);
-                alert("Mesaj gönderilirken bir hata oluştu.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Gönder";
-            }
+            } catch (error) { alert("Mesaj gönderilirken bir hata oluştu."); } 
+            finally { btn.disabled = false; btn.innerText = "Gönder"; }
         };
-        window.showMyFollowing = function() {
-            window.closeMobileSidebar();
-            if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); }
-        };
-        window.showMyFollowers = function() {
-            window.closeMobileSidebar();
-            if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); }
-        };
+
+        window.showMyFollowing = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); } };
+        window.showMyFollowers = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); } };
         window.showUserList = function(title, userArray) {
             const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
             const container = document.getElementById('users-list-container'); if(!container) return;
@@ -621,10 +599,8 @@
         document.querySelectorAll('#inbox-tabs .feed-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 document.querySelectorAll('#inbox-tabs .feed-tab').forEach(t => t.classList.remove('active'));
-                const target = e.currentTarget;
-                target.classList.add('active');
-                currentInboxTab = target.getAttribute('data-tab');
-                updateInboxDisplay();
+                const target = e.currentTarget; target.classList.add('active');
+                currentInboxTab = target.getAttribute('data-tab'); updateInboxDisplay();
             });
         });
 
@@ -634,17 +610,13 @@
         });
         document.querySelectorAll('#chat-emoji-picker .emoji-item').forEach(el => {
             el.addEventListener('click', (e) => {
-                const input = document.getElementById('msg-input');
-                input.value += e.target.innerText;
+                const input = document.getElementById('msg-input'); input.value += e.target.innerText;
                 document.getElementById('send-btn').disabled = false;
             });
         });
         document.addEventListener('click', function(event) {
-            const btn = document.getElementById('open-emoji-btn');
-            const picker = document.getElementById('chat-emoji-picker');
-            if (btn && picker && !btn.contains(event.target) && !picker.contains(event.target)) {
-                picker.style.display = 'none';
-            }
+            const btn = document.getElementById('open-emoji-btn'); const picker = document.getElementById('chat-emoji-picker');
+            if (btn && picker && !btn.contains(event.target) && !picker.contains(event.target)) { picker.style.display = 'none'; }
         });
 
         document.getElementById('chat-image-input')?.addEventListener('change', (e) => {
@@ -659,7 +631,6 @@
             if (user) {
                 currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                 
-                // YENİ: EKSİK KULLANICILARI ÇEKEN AKILLI FONKSİYON
                 window.fetchMissingUsers = async function(usernamesArray) {
                     const missing = usernamesArray.filter(u => u && !allUsersData[u]);
                     if (missing.length === 0) return;
@@ -671,14 +642,11 @@
                     }));
                 };
 
-                // 1. AŞAMA: SADECE KENDİ PROFİLİMİZİ DİNLİYORUZ (10.000 veri çekmek yerine 1 veri)
                 onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
                     if(docSnap.exists()) {
                         const u = docSnap.data();
                         allUsersData[myUsername] = u;
                         myFollowing = u.following || [];
-                        
-                        // Kendi ağımızdaki kişileri de sessizce çekelim ki "Yeni Sohbet" aramalarında direkt çıksınlar
                         await window.fetchMissingUsers(myFollowing);
                         
                         document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
@@ -697,7 +665,6 @@
                     updateInboxDisplay(); 
                 });
                 
-                // 2. AŞAMA: SADECE SOHBETİMİZ OLAN KİŞİLERİ ÇEKİYORUZ
                 onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), async (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'group'); 
                     let neededUsers = new Set();
@@ -706,13 +673,10 @@
                         activeChats.push({ id: docSnap.id, ...data, type:'private' }); 
                         if(data.participants) data.participants.forEach(p => neededUsers.add(p));
                     }); 
-                    // Ekrana basmadan önce konuştuğumuz kişilerin profil verilerini getir
                     await window.fetchMissingUsers(Array.from(neededUsers));
-                    updateInboxDisplay(); 
-                    attachCallListeners(); 
+                    updateInboxDisplay(); attachCallListeners(); 
                 });
 
-                // 3. AŞAMA: GRUPLARDAKİ KİŞİLERİ ÇEKİYORUZ
                 onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), async (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'private'); 
                     let neededUsers = new Set();
@@ -721,10 +685,8 @@
                         activeChats.push({ id: docSnap.id, ...data, type:'group' }); 
                         if(data.members) data.members.forEach(m => neededUsers.add(m));
                     }); 
-                    // Ekrana basmadan önce grup üyelerinin profil verilerini getir
                     await window.fetchMissingUsers(Array.from(neededUsers));
-                    updateInboxDisplay(); 
-                    attachCallListeners(); 
+                    updateInboxDisplay(); attachCallListeners(); 
                 });
 
                 if (targetUsername || targetGroupId) {
@@ -734,7 +696,6 @@
                     document.getElementById('chat-view').style.display = 'flex';
                     setupActiveChat();
                 }
-
             } else { window.location.href = "index.html"; }
         });
 
@@ -747,20 +708,14 @@
                         snapshot.docChanges().forEach(async (change) => {
                             const callData = change.doc.data();
                             if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
-                                currentCallDocId = change.doc.id;
-                                currentCallChatId = chat.id;
-                                currentCallCollection = colName;
-                                isCallVideo = callData.type === 'video';
+                                currentCallDocId = change.doc.id; currentCallChatId = chat.id; currentCallCollection = colName; isCallVideo = callData.type === 'video';
                                 document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
                                 document.getElementById('accept-call-btn').style.display = 'block';
                                 callOverlay.style.display = 'flex';
-                                document.getElementById('video-container').style.display = 'flex'; // Mesh topology için her zaman flex
+                                document.getElementById('video-container').style.display = 'flex'; 
                             }
                             if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername && currentCallDocId === change.doc.id) {
                                 document.getElementById('call-status-text').innerText = "Bağlandı";
-                                // const desc = new RTCSessionDescription(callData.answer);
-                                // await peerConnection.setRemoteDescription(desc);
-                                // Not: Yeni yapıda bu peerConnection güncellemeleri mesh üzerinden ele alınıyor.
                             }
                             if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed') && currentCallDocId === change.doc.id) {
                                 endCallUI();
@@ -775,8 +730,7 @@
 
         function updateInboxDisplay() {
             const text = document.getElementById('dm-search-input')?.value.toLowerCase().trim() || "";
-            const container = document.getElementById('dm-list'); 
-            if(!container) return;
+            const container = document.getElementById('dm-list'); if(!container) return;
             container.innerHTML = '';
             
             let allConversations = [...activeChats];
@@ -786,7 +740,6 @@
                 let isUnread = false;
                 if (conv.unreadBy && conv.unreadBy.includes(myUsername)) { isUnread = true; }
                 else if (!conv.unreadBy && conv.lastSender && conv.lastSender !== myUsername) { isUnread = true; }
-
                 if (currentInboxTab === 'unread') return isUnread;
                 if (currentInboxTab === 'groups') return conv.type === 'group';
                 return true; 
@@ -803,12 +756,11 @@
             if (filteredConversations.length > 0) {
                 filteredConversations.forEach(conv => {
                     let title = ''; let avatar = ''; let link = '';
-                    
                     let isUnread = false;
                     if (conv.unreadBy && conv.unreadBy.includes(myUsername)) { isUnread = true; }
                     else if (!conv.unreadBy && conv.lastSender && conv.lastSender !== myUsername) { isUnread = true; }
 
-                    let timeAgoStr = ""; if(conv.updatedAt) { const date = conv.updatedAt.toDate(); timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); }
+                    let timeAgoStr = ""; if(conv.updatedAt && typeof conv.updatedAt.toDate === 'function') { const date = conv.updatedAt.toDate(); timeAgoStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); }
 
                     if (conv.type === 'private') {
                         const otherUser = conv.participants.find(p => p !== myUsername); const uData = allUsersData[otherUser] || {};
@@ -819,7 +771,7 @@
                     }
                     
                     let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı'; 
-                    if(lastMsgText.includes('https://i.ibb.co')) lastMsgText = '📷 Fotoğraf';
+                    if(lastMsgText.includes('https://i.ibb.co') || lastMsgText.includes('firebasestorage')) lastMsgText = '📷 Fotoğraf';
                     let subtitleHtml = isUnread ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` : `<span class="read-text">${lastMsgText}</span>`;
                     const isActive = (targetUsername && link.includes(targetUsername)) || (targetGroupId && link.includes(targetGroupId));
                     
@@ -868,7 +820,7 @@
         async function setupActiveChat() {
             if (targetUsername) {
                 isGroupChat = false; chatId = [myUsername, targetUsername].sort().join('_');
-                document.getElementById('add-user-to-group-btn').style.display = 'none'; // Birebir sohbette kişi ekleme gizli
+                document.getElementById('add-user-to-group-btn').style.display = 'none';
                 try { 
                     const uSnap = await getDoc(doc(db, "users", targetUsername)); 
                     if (uSnap.exists()) {
@@ -880,7 +832,7 @@
                 } catch(e) {}
             } else if (targetGroupId) {
                 isGroupChat = true; chatId = targetGroupId; document.getElementById('chat-avatar').innerHTML = `👥`;
-                document.getElementById('add-user-to-group-btn').style.display = 'flex'; // Gruplarda kişi ekleme aktif
+                document.getElementById('add-user-to-group-btn').style.display = 'flex';
                 try {
                     const gSnap = await getDoc(doc(db, "groups", targetGroupId));
                     if (gSnap.exists()) {
@@ -893,9 +845,7 @@
 
             const colName = isGroupChat ? "groups" : "chats";
 
-            updateDoc(doc(db, colName, chatId), {
-                unreadBy: arrayRemove(myUsername)
-            }).catch(e=>{});
+            updateDoc(doc(db, colName, chatId), { unreadBy: arrayRemove(myUsername) }).catch(e=>{});
 
             onSnapshot(doc(db, colName, chatId), (docSnap) => {
                 if (docSnap.exists()) {
@@ -903,11 +853,9 @@
                     for (let usr in typingObj) { if (usr !== myUsername && typingObj[usr] === true) typingUsers.push(usr); }
                     const indicator = document.getElementById('typing-indicator'); const subtitle = document.getElementById('chat-subtitle');
                     if (typingUsers.length > 0) { 
-                        subtitle.style.display = 'none'; 
-                        indicator.style.display = 'flex'; 
+                        subtitle.style.display = 'none'; indicator.style.display = 'flex'; 
                         indicator.innerHTML = `<span>${isGroupChat ? typingUsers.join(', ') + ' yazıyor...' : 'yazıyor...'}</span>`; 
-                    } 
-                    else { indicator.style.display = 'none'; subtitle.style.display = 'block'; }
+                    } else { indicator.style.display = 'none'; subtitle.style.display = 'block'; }
                 }
             });
 
@@ -915,24 +863,21 @@
         }
 
         document.getElementById('delete-chat-btn')?.addEventListener('click', async () => {
+            const colName = isGroupChat ? "groups" : "chats";
             if(confirm("Sohbeti kalıcı olarak silmek istediğinize emin misiniz?")) {
-                await deleteDoc(doc(db, isGroupChat ? "groups" : "chats", chatId)); window.location.href = "chat.html";
+                await deleteDoc(doc(db, colName, chatId)); window.location.href = "chat.html";
             }
         });
 
         window.prepareReply = function(msgId, sender, text) {
-            let summary = text; if (text.includes('i.ibb.co')) summary = '📷 Fotoğraf';
+            let summary = text; if (text.includes('firebasestorage') || text.includes('i.ibb.co')) summary = '📷 Fotoğraf';
             currentReplyData = { id: msgId, sender: sender, text: summary };
             document.getElementById('reply-preview-sender').innerText = sender;
             document.getElementById('reply-preview-msg').innerText = summary.length > 50 ? summary.substring(0, 50) + "..." : summary;
             document.getElementById('reply-preview-box').style.display = 'flex'; document.getElementById('msg-input').focus();
         };
 
-        window.cancelReply = function() { 
-            currentReplyData = null; 
-            document.getElementById('reply-preview-box').style.display = 'none'; 
-        };
-        
+        window.cancelReply = function() { currentReplyData = null; document.getElementById('reply-preview-box').style.display = 'none'; };
         document.getElementById('cancel-reply-btn')?.addEventListener('click', window.cancelReply);
 
         window.deleteMessage = async function(msgId) {
@@ -941,8 +886,7 @@
         };
 
         window.editMessage = async function(msgId, oldText, timeMillis) {
-            const now = Date.now();
-            const colName = isGroupChat ? "groups" : "chats";
+            const now = Date.now(); const colName = isGroupChat ? "groups" : "chats";
             if (now - timeMillis > 900000) { alert("Sadece son 15 dakika içinde gönderilen mesajları düzenleyebilirsiniz!"); return; }
             const newText = prompt("Düzenleyin:", oldText);
             if (newText !== null && newText.trim() !== "" && newText !== oldText) { await updateDoc(doc(db, colName, chatId, "messages", msgId), { text: newText.trim(), isEdited: true }); }
@@ -971,8 +915,7 @@
                         const sysDiv = document.createElement('div'); sysDiv.className = 'system-message';
                         const icon = data.text.includes('görüntülü') ? '📹' : '📞';
                         sysDiv.innerHTML = `<span>${icon} ${data.text} - ${timeString}</span>`;
-                        messagesContainer.appendChild(sysDiv);
-                        return; 
+                        messagesContainer.appendChild(sysDiv); return; 
                     }
 
                     if (!isMe && !data.isRead) { updateDoc(doc(db, colName, chatId, "messages", docSnap.id), { isRead: true }).catch(e=>{}); }
@@ -1024,23 +967,20 @@
 
         msgInput?.addEventListener('input', () => {
             if (!chatId) return;
-            const chatRef = doc(db, isGroupChat ? "groups" : "chats", chatId);
+            const colName = isGroupChat ? "groups" : "chats";
+            const chatRef = doc(db, colName, chatId);
             updateDoc(chatRef, { [`typing.${myUsername}`]: true }).catch(e=>{});
             clearTimeout(typingTimeout); typingTimeout = setTimeout(() => { updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{}); }, 1500);
         });
 
         async function sendMessage() {
-            const text = msgInput.value.trim(); 
-            const file = imgInput.files[0];
+            const text = msgInput.value.trim(); const file = imgInput.files[0];
             if (!text && !file) return;
 
-            // 5 MB GÜVENLİK KONTROLÜ
             if (file && file.size > 5 * 1024 * 1024) {
                 alert("Göndermek istediğiniz fotoğraf 5 MB'dan büyük olamaz!");
-                imgInput.value = ''; 
-                document.getElementById('img-upload-label').style.color = '#64748b'; 
-                if (text.length === 0) sendBtn.disabled = true;
-                return; 
+                imgInput.value = ''; document.getElementById('img-upload-label').style.color = '#64748b'; 
+                if (text.length === 0) sendBtn.disabled = true; return; 
             }
 
             sendBtn.disabled = true; msgInput.value = ''; document.getElementById('chat-emoji-picker').style.display = 'none';
@@ -1054,12 +994,8 @@
                     await uploadBytes(storageRef, file);
                     imgUrl = await getDownloadURL(storageRef);
                 }
-                
                 await sendActualMessage(text, imgUrl);
-            } catch(e) {
-                console.error("Mesaj gönderim hatası:", e);
-                alert("Mesaj gönderilirken hata oluştu!");
-            }
+            } catch(e) { alert("Mesaj gönderilirken hata oluştu!"); }
             
             sendBtn.disabled = false; msgInput.focus(); imgInput.value = ''; window.cancelReply();
         }
@@ -1073,56 +1009,35 @@
             let summary = text; if(imgUrl) summary = "📷 Fotoğraf";
             
             let unreadList = [];
-            if (!isGroupChat) {
-                unreadList = [targetUsername];
-            } else {
-                const group = activeChats.find(c => c.id === chatId);
-                if (group) unreadList = group.members.filter(m => m !== myUsername);
-            }
+            if (!isGroupChat) { unreadList = [targetUsername]; } 
+            else { const group = activeChats.find(c => c.id === chatId); if (group) unreadList = group.members.filter(m => m !== myUsername); }
 
             const updateData = { lastMessage: summary, lastSender: myUsername, unreadBy: unreadList, updatedAt: serverTimestamp() };
 
-            // 1. ADIM: ÖNCE SOHBET BELGESİNİ OLUŞTUR (Kurallara takılmamak için)
-            if (!isGroupChat) {
-                await setDoc(chatRef, { participants: [myUsername, targetUsername], ...updateData }, { merge: true });
-            } else {
-                await updateDoc(chatRef, updateData);
-            }
+            if (!isGroupChat) { await setDoc(chatRef, { participants: [myUsername, targetUsername], ...updateData }, { merge: true }); } 
+            else { await updateDoc(chatRef, updateData); }
 
-            // 2. ADIM: SONRA MESAJI EKLE
             const msgData = { 
                 text: finalTxt, sender: myUsername, createdAt: serverTimestamp(), imageUrl: imgUrl,
                 replyTo: currentReplyData ? { sender: currentReplyData.sender, text: currentReplyData.text } : null,
                 isEdited: false, isRead: false, type: 'regular'
             };
             await addDoc(messagesRef, msgData);
-            
-            // 3. ADIM: YAZIYOR DURUMUNU SIFIRLA
             await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
         }
 
         sendBtn?.addEventListener('click', sendMessage);
         msgInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-        // ==========================================
-        // YENİ GRUBA KİŞİ EKLEME İŞLEVİ
-        // ==========================================
-        document.getElementById('add-user-to-group-btn')?.addEventListener('click', () => {
-            document.getElementById('add-user-modal').style.display = 'flex';
-        });
-
+        document.getElementById('add-user-to-group-btn')?.addEventListener('click', () => { document.getElementById('add-user-modal').style.display = 'flex'; });
         document.getElementById('confirm-add-user-btn')?.addEventListener('click', async () => {
             const newUser = document.getElementById('add-username-input').value.trim();
             if(!newUser) return alert("Lütfen bir kullanıcı adı girin.");
-            
-            const btn = document.getElementById('confirm-add-user-btn');
-            btn.disabled = true; btn.innerText = "Ekleniyor...";
-            
+            const btn = document.getElementById('confirm-add-user-btn'); btn.disabled = true; btn.innerText = "Ekleniyor...";
             try {
                 const uSnap = await getDoc(doc(db, "users", newUser));
-                if(!uSnap.exists()) {
-                    alert("Böyle bir kullanıcı bulunamadı!");
-                } else {
+                if(!uSnap.exists()) { alert("Böyle bir kullanıcı bulunamadı!"); } 
+                else {
                     await updateDoc(doc(db, "groups", chatId), { members: arrayUnion(newUser) });
                     alert(`@${newUser} gruba başarıyla eklendi!`);
                     document.getElementById('add-user-modal').style.display = 'none';
@@ -1132,17 +1047,10 @@
             btn.disabled = false; btn.innerText = "Gruba Ekle";
         });
 
-        // ==========================================
-        // YENİ ÇOKLU VİDEO (MESH) ARAMA İŞLEVİ
-        // ==========================================
-        let peerConnectionObj = null; 
-        
         async function setupLocalVideo(isVideo) {
             localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-            const container = document.getElementById('video-container');
-            container.innerHTML = ''; 
-            const wrapper = document.createElement('div');
-            wrapper.className = 'video-wrapper';
+            const container = document.getElementById('video-container'); container.innerHTML = ''; 
+            const wrapper = document.createElement('div'); wrapper.className = 'video-wrapper';
             wrapper.innerHTML = `<div class="video-label">Sen</div><video class="local-video" autoplay playsinline muted ${!isVideo ? 'style="background:#1e293b;"' : ''}></video>`;
             wrapper.querySelector('video').srcObject = localStream;
             container.appendChild(wrapper);
@@ -1151,9 +1059,7 @@
         function createRemoteVideo(userId) {
             if(document.getElementById(`video-wrapper-${userId}`)) return document.getElementById(`video-${userId}`);
             const container = document.getElementById('video-container');
-            const wrapper = document.createElement('div');
-            wrapper.className = 'video-wrapper';
-            wrapper.id = `video-wrapper-${userId}`;
+            const wrapper = document.createElement('div'); wrapper.className = 'video-wrapper'; wrapper.id = `video-wrapper-${userId}`;
             wrapper.innerHTML = `<div class="video-label">@${userId}</div><video id="video-${userId}" class="remote-video" autoplay playsinline></video>`;
             container.appendChild(wrapper);
             return wrapper.querySelector('video');
@@ -1164,24 +1070,19 @@
 
         async function startCall(isVideo) {
             isCallVideo = isVideo; document.getElementById('call-status-text').innerText = "Aranıyor..."; 
-            document.getElementById('accept-call-btn').style.display = 'none'; callOverlay.style.display = 'flex';
-            document.getElementById('video-container').style.display = 'flex'; 
-            
+            document.getElementById('accept-call-btn').style.display = 'none'; callOverlay.style.display = 'flex'; document.getElementById('video-container').style.display = 'flex'; 
             try {
                 await setupLocalVideo(isVideo);
                 peerConnectionObj = new RTCPeerConnection(servers);
                 localStream.getTracks().forEach(track => peerConnectionObj.addTrack(track, localStream));
                 
-                const remoteVid = createRemoteVideo("Katılımcı");
-                remoteStream = new MediaStream(); remoteVid.srcObject = remoteStream;
+                const remoteVid = createRemoteVideo("Katılımcı"); remoteStream = new MediaStream(); remoteVid.srcObject = remoteStream;
                 peerConnectionObj.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
                 
                 currentCallCollection = isGroupChat ? "groups" : "chats"; currentCallChatId = chatId;
                 const callDocRef = doc(collection(db, currentCallCollection, chatId, "calls")); currentCallDocId = callDocRef.id;
 
-                peerConnectionObj.onicecandidate = event => { 
-                    if(event.candidate) addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); 
-                };
+                peerConnectionObj.onicecandidate = event => { if(event.candidate) addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); };
                 
                 const offerDescription = await peerConnectionObj.createOffer(); await peerConnectionObj.setLocalDescription(offerDescription);
                 await setDoc(callDocRef, { offer: { type: offerDescription.type, sdp: offerDescription.sdp }, caller: myUsername, type: isVideo ? 'video' : 'audio', status: 'ringing', createdAt: serverTimestamp() });
@@ -1194,20 +1095,16 @@
 
         document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
             document.getElementById('accept-call-btn').style.display = 'none'; document.getElementById('call-status-text').innerText = "Bağlanıyor...";
-            const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); 
-            const callData = (await getDoc(callDocRef)).data();
+            const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); const callData = (await getDoc(callDocRef)).data();
             try {
                 await setupLocalVideo(isCallVideo);
                 peerConnectionObj = new RTCPeerConnection(servers);
                 localStream.getTracks().forEach(track => peerConnectionObj.addTrack(track, localStream));
                 
-                const remoteVid = createRemoteVideo(callData.caller);
-                remoteStream = new MediaStream(); remoteVid.srcObject = remoteStream;
+                const remoteVid = createRemoteVideo(callData.caller); remoteStream = new MediaStream(); remoteVid.srcObject = remoteStream;
                 peerConnectionObj.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
                 
-                peerConnectionObj.onicecandidate = event => { 
-                    if(event.candidate) addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); 
-                };
+                peerConnectionObj.onicecandidate = event => { if(event.candidate) addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); };
                 
                 await peerConnectionObj.setRemoteDescription(new RTCSessionDescription(callData.offer));
                 const answerDescription = await peerConnectionObj.createAnswer(); await peerConnectionObj.setLocalDescription(answerDescription);
@@ -1222,8 +1119,7 @@
 
         document.getElementById('end-call-btn')?.addEventListener('click', async () => { 
             if(currentCallDocId && currentCallCollection && currentCallChatId) { 
-                const callRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId);
-                const callSnap = await getDoc(callRef);
+                const callRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); const callSnap = await getDoc(callRef);
                 if(callSnap.exists()) {
                     const callData = callSnap.data();
                     if(callData.status === 'ringing') {
