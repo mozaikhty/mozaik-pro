@@ -890,6 +890,12 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             const file = document.getElementById('story-image-input').files[0];
             if(!textVal && !file) return;
 
+            // 5 MB GÜVENLİK KONTROLÜ
+            if (file && file.size > 5 * 1024 * 1024) {
+                alert("Hikaye fotoğrafı 5 MB'dan büyük olamaz! Lütfen daha küçük bir dosya seçin.");
+                return; 
+            }
+
             const btn = document.getElementById('submit-story-btn');
             btn.disabled = true; btn.innerText = "Yükleniyor...";
             
@@ -1577,26 +1583,44 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         document.getElementById('modal-image-input').addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('modal-image-preview-text').style.display = 'block'; document.getElementById('modal-share-btn').classList.add('active'); }});
 
         async function submitPost(textId, imageId, btnId, previewId, isModal) {
-            const text = document.getElementById(textId).value.trim(); const file = document.getElementById(imageId).files[0];
+            const text = document.getElementById(textId).value.trim(); 
+            const file = document.getElementById(imageId).files[0];
             let loc = isModal ? currentModalLocation : currentPostLocation;
-            if(!text && !file && !loc) return; 
             
-            const btn = document.getElementById(btnId); btn.disabled = true; btn.innerText = "..."; let url = null;
-            if(file) { 
-                const fileName = `posts/${Date.now()}_${file.name}`;
-                const storageRef = ref(storage, fileName);
-                await uploadBytes(storageRef, file);
-                url = await getDownloadURL(storageRef);
+            if(!text && !file && !loc) return; 
+
+            // 5 MB GÜVENLİK KONTROLÜ
+            if (file && file.size > 5 * 1024 * 1024) {
+                alert("Seçtiğiniz fotoğraf 5 MB'dan büyük olamaz! Lütfen daha küçük boyutlu bir dosya seçin.");
+                document.getElementById(imageId).value = ''; 
+                document.getElementById(previewId).style.display = 'none'; 
+                document.getElementById(btnId).classList.remove('active');
+                return; 
             }
             
-            await addDoc(collection(db, "posts"), { content: text, imageUrl: url, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false });
+            const btn = document.getElementById(btnId); btn.disabled = true; btn.innerText = "..."; let url = null;
             
-            document.getElementById(textId).value = ''; document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; 
-            window.removeLocation(isModal);
-            
-            btn.disabled = false; btn.innerText = "Yayınla"; btn.classList.remove('active');
-            updateCharCount(textId, isModal ? 'modal-char-count' : 'inline-char-count', btnId);
-            if (isModal) window.closeMainPostModal();
+            try {
+                if(file) { 
+                    const fileName = `posts/${Date.now()}_${file.name}`;
+                    const storageRef = ref(storage, fileName);
+                    await uploadBytes(storageRef, file);
+                    url = await getDownloadURL(storageRef);
+                }
+                
+                await addDoc(collection(db, "posts"), { content: text, imageUrl: url, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false });
+                
+                document.getElementById(textId).value = ''; document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; 
+                window.removeLocation(isModal);
+                
+                btn.disabled = false; btn.innerText = "Yayınla"; btn.classList.remove('active');
+                updateCharCount(textId, isModal ? 'modal-char-count' : 'inline-char-count', btnId);
+                if (isModal) window.closeMainPostModal();
+            } catch(e) {
+                console.error("Gönderi paylaşılırken hata:", e);
+                alert("İçerik paylaşılırken bir hata oluştu!");
+                btn.disabled = false; btn.innerText = "Yayınla";
+            }
         }
 
         document.getElementById('share-btn').addEventListener('click', () => submitPost('post-text', 'image-input', 'share-btn', 'image-preview-text', false));

@@ -1005,21 +1005,36 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         });
 
         async function sendMessage() {
-            const text = msgInput.value.trim(); const file = imgInput.files[0];
+            const text = msgInput.value.trim(); 
+            const file = imgInput.files[0];
             if (!text && !file) return;
+
+            // 5 MB GÜVENLİK KONTROLÜ
+            if (file && file.size > 5 * 1024 * 1024) {
+                alert("Göndermek istediğiniz fotoğraf 5 MB'dan büyük olamaz!");
+                imgInput.value = ''; 
+                document.getElementById('img-upload-label').style.color = '#64748b'; 
+                if (text.length === 0) sendBtn.disabled = true;
+                return; 
+            }
 
             sendBtn.disabled = true; msgInput.value = ''; document.getElementById('chat-emoji-picker').style.display = 'none';
             document.getElementById('img-upload-label').style.color = '#64748b';
             
-            let imgUrl = null;
-            if(file) {
-                const fileName = `chats/${Date.now()}_${file.name}`;
-                const storageRef = ref(storage, fileName);
-                await uploadBytes(storageRef, file);
-                imgUrl = await getDownloadURL(storageRef);
+            try {
+                let imgUrl = null;
+                if(file) {
+                    const fileName = `chats/${Date.now()}_${file.name}`;
+                    const storageRef = ref(storage, fileName);
+                    await uploadBytes(storageRef, file);
+                    imgUrl = await getDownloadURL(storageRef);
+                }
+                
+                await sendActualMessage(text, imgUrl);
+            } catch(e) {
+                console.error("Mesaj gönderim hatası:", e);
+                alert("Mesaj gönderilirken hata oluştu!");
             }
-            
-            await sendActualMessage(text, imgUrl);
             
             sendBtn.disabled = false; msgInput.focus(); imgInput.value = ''; window.cancelReply();
         }

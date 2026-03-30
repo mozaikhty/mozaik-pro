@@ -878,7 +878,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         document.getElementById('cancel-edit-btn').addEventListener('click', () => { document.getElementById('edit-modal').style.display = 'none'; });
         
         document.getElementById('save-edit-btn').addEventListener('click', async () => {
-            const saveBtn = document.getElementById('save-edit-btn'); saveBtn.innerText = "Kaydediliyor..."; saveBtn.disabled = true;
+            const saveBtn = document.getElementById('save-edit-btn'); 
             const newFullName = document.getElementById('edit-fullname-input').value.trim();
             const newBirthDate = document.getElementById('edit-birthdate-input').value;
             const newGender = document.getElementById('edit-gender-input').value;
@@ -890,7 +890,19 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             const avatarFile = document.getElementById('edit-avatar-input').files[0]; 
             const bannerFile = document.getElementById('edit-banner-input').files[0]; 
 
-            if(!newFullName) { alert("İsim zorunludur!"); saveBtn.disabled = false; saveBtn.innerText = "Güncelle"; return; }
+            if(!newFullName) { alert("İsim zorunludur!"); return; }
+
+            // 5 MB GÜVENLİK KONTROLÜ (AVATAR VE BANNER)
+            if (avatarFile && avatarFile.size > 5 * 1024 * 1024) {
+                alert("Profil fotoğrafı 5 MB'dan büyük olamaz!");
+                return;
+            }
+            if (bannerFile && bannerFile.size > 5 * 1024 * 1024) {
+                alert("Kapak fotoğrafı 5 MB'dan büyük olamaz!");
+                return;
+            }
+
+            saveBtn.innerText = "Kaydediliyor..."; saveBtn.disabled = true;
             
             let newAvatarUrl = document.getElementById('profile-avatar').querySelector('img') ? document.getElementById('profile-avatar').querySelector('img').src : null; 
             let newBannerUrl = document.getElementById('profile-banner').querySelector('img') ? document.getElementById('profile-banner').querySelector('img').src : null;
@@ -914,7 +926,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 }, { merge: true });
                 
                 document.getElementById('edit-modal').style.display = 'none';
-            } catch (e) { alert("Yükleme sırasında hata oluştu!"); } 
+            } catch (e) { alert("Yükleme sırasında hata oluştu!"); console.error(e); } 
             finally { saveBtn.innerText = "Güncelle"; saveBtn.disabled = false; }
         });
 
