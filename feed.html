@@ -317,12 +317,13 @@
                 <div class="input-form">
                     <textarea id="post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..."></textarea>
                     <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">✓ Fotoğraf Eklendi</div>
+                    <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">📍 <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
                     <input type="file" id="image-input" accept="image/*" style="display: none;">
                     
                     <div class="input-actions">
                         <div class="action-icons">
                             <label for="image-input" class="icon-btn" title="Medya">🖼️</label>
-                            <div class="icon-btn" title="Konum" onclick="alert('Konum özelliği yakında!')">📍</div>
+                            <div class="icon-btn" title="Konum" onclick="window.addLocation(false)">📍</div>
                         </div>
                         <div style="display:flex; align-items:center;">
                             <span class="char-counter" id="inline-char-count" style="margin-right: 15px;">280</span>
@@ -490,11 +491,12 @@
                     <textarea id="modal-post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..." style="width:100%; border:none; font-size:18px; outline:none; resize:none; min-height:120px; font-family:inherit; color:#0f172a; background:transparent;"></textarea>
                     <input type="file" id="modal-image-input" accept="image/*" style="display: none;">
                     <div id="modal-image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">✓ Fotoğraf Eklendi</div>
+                    <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">📍 <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">✖</span></div>
                     
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px;">
                         <div class="action-icons">
                             <label for="modal-image-input" class="icon-btn" title="Medya">🖼️</label>
-                            <label onclick="alert('Konum ekleme yakında!')" class="icon-btn" title="Konum">📍</label>
+                            <label onclick="window.addLocation(true)" class="icon-btn" title="Konum">📍</label>
                         </div>
                         <div class="char-counter" id="modal-char-count">280</div>
                     </div>
@@ -1529,10 +1531,46 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         document.getElementById('modal-post-text').addEventListener('input', () => updateCharCount('modal-post-text', 'modal-char-count', 'modal-share-btn'));
 
         window.openMainPostModal = function() { document.getElementById('main-post-modal').style.display = 'flex'; document.getElementById('modal-post-text').focus(); };
+        let currentPostLocation = null;
+        let currentModalLocation = null;
+
+        window.addLocation = function(isModal) {
+            if (!navigator.geolocation) { alert("Tarayıcınız konum özelliğini desteklemiyor."); return; }
+            const btn = isModal ? document.getElementById('modal-share-btn') : document.getElementById('share-btn');
+            const originalText = btn.innerText; btn.innerText = "Bulunuyor..."; btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                try {
+                    const lat = position.coords.latitude; const lon = position.coords.longitude;
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                    const data = await res.json();
+                    let locName = data.address ? (data.address.city || data.address.town || data.address.province || data.address.state || data.address.country) : "Bilinmeyen Konum";
+                    
+                    if(isModal) {
+                        currentModalLocation = locName;
+                        document.getElementById('modal-loc-text-span').innerText = locName;
+                        document.getElementById('modal-location-preview-text').style.display = 'block';
+                    } else {
+                        currentPostLocation = locName;
+                        document.getElementById('loc-text-span').innerText = locName;
+                        document.getElementById('location-preview-text').style.display = 'block';
+                    }
+                    btn.classList.add('active');
+                } catch(e) { alert("Konum bilgisi alınamadı."); }
+                finally { btn.innerText = originalText; btn.disabled = false; }
+            }, () => { alert("Konum izni reddedildi."); btn.innerText = originalText; btn.disabled = false; });
+        };
+
+        window.removeLocation = function(isModal) {
+            if(isModal) { currentModalLocation = null; document.getElementById('modal-location-preview-text').style.display = 'none'; } 
+            else { currentPostLocation = null; document.getElementById('location-preview-text').style.display = 'none'; }
+        };
+
         window.closeMainPostModal = function() { 
             document.getElementById('main-post-modal').style.display = 'none'; document.getElementById('modal-post-text').value = '';
             document.getElementById('modal-char-count').innerText = MAX_CHARS; document.getElementById('modal-share-btn').classList.remove('active');
             document.getElementById('modal-image-input').value = ''; document.getElementById('modal-image-preview-text').style.display = 'none';
+            window.removeLocation(true);
         };
 
         document.getElementById('image-input').addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('image-preview-text').style.display = 'block'; document.getElementById('share-btn').classList.add('active'); }});
@@ -1540,7 +1578,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
         async function submitPost(textId, imageId, btnId, previewId, isModal) {
             const text = document.getElementById(textId).value.trim(); const file = document.getElementById(imageId).files[0];
-            if(!text && !file) return; 
+            let loc = isModal ? currentModalLocation : currentPostLocation;
+            if(!text && !file && !loc) return; 
+            
             const btn = document.getElementById(btnId); btn.disabled = true; btn.innerText = "..."; let url = null;
             if(file) { 
                 const fileName = `posts/${Date.now()}_${file.name}`;
@@ -1548,9 +1588,12 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 await uploadBytes(storageRef, file);
                 url = await getDownloadURL(storageRef);
             }
-            await addDoc(collection(db, "posts"), { content: text, imageUrl: url, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false });
+            
+            await addDoc(collection(db, "posts"), { content: text, imageUrl: url, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false });
             
             document.getElementById(textId).value = ''; document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; 
+            window.removeLocation(isModal);
+            
             btn.disabled = false; btn.innerText = "Yayınla"; btn.classList.remove('active');
             updateCharCount(textId, isModal ? 'modal-char-count' : 'inline-char-count', btnId);
             if (isModal) window.closeMainPostModal();
@@ -1653,6 +1696,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 if (typeof postData.createdAt.toMillis === 'function') { timeString = new Date(postData.createdAt.toMillis()).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}); } 
                 else if (postData.createdAt.seconds) { timeString = new Date(postData.createdAt.seconds * 1000).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
             }
+            
+            let locHtml = postData.location ? `<span style="font-size:14px; color:#3b82f6; margin-left:10px;">📍 ${postData.location}</span>` : '';
 
             let repostLabel = "";
             if(postData.isRepost) { repostLabel = `<div style=\"color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;\">🔁 @${postData.author} ağında paylaştı</div>`; }
@@ -1664,7 +1709,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                         <div style=\"width:48px; height:48px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;\">${avatarImg}</div>
                         <div style=\"flex:1;\">
                             <div style=\"font-weight:700; font-size:16px; color:#0f172a;\">${fullName} ${vHtml}</div>
-                            <div style=\"color:#64748b; font-size:14px;\">@${originalAuthor}</div>
+                            <div style=\"color:#64748b; font-size:14px;\">@${originalAuthor} ${locHtml}</div>
                         </div>
                     </div>
                     <div style=\"font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;\">
@@ -1798,6 +1843,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                         if(secs < 60) timeAgo = `${secs}s`; else if (secs < 3600) timeAgo = `${Math.floor(secs/60)}d`; else if (secs < 86400) timeAgo = `${Math.floor(secs/3600)}sa`; else timeAgo = `${Math.floor(secs/86400)}g`;
                     }
                 }
+                
+                let locationHtml = postData.location ? `<span style="font-size:13px; color:#3b82f6; margin-left:8px;">📍 ${postData.location}</span>` : '';
 
                 const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
@@ -1820,7 +1867,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                             <div class=\"post-right\">
                                 <div class=\"post-header-info\">
                                     <div class=\"author-group\" onclick=\"event.stopPropagation(); window.location.href='profile.html?user=${originalAuthor}'\">
-                                        <span class=\"author-name\">${fullName}</span>${vHtml} <span class=\"author-username\">@${originalAuthor}</span> <span class=\"post-time\">· ${timeAgo}</span>
+                                        <span class=\"author-name\">${fullName}</span>${vHtml} <span class=\"author-username\">@${originalAuthor}</span> <span class=\"post-time\">· ${timeAgo}</span> ${locationHtml}
                                         ${editedHtml}
                                     </div>
                                     <div style=\"position:relative;\">
