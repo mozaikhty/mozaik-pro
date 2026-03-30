@@ -262,7 +262,6 @@
     </style>
 </head>
 <body>
-<body>
     <script>if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');</script>
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
@@ -922,25 +921,32 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         document.getElementById('cancel-reply-btn')?.addEventListener('click', window.cancelReply);
 
         window.deleteMessage = async function(msgId) {
-            if(confirm("Silmek istediğinize emin misiniz?")) { await deleteDoc(doc(db, "chats", chatId, "messages", msgId)); }
+            if(confirm("Silmek istediğinize emin misiniz?")) { 
+                const colName = isGroupChat ? "groups" : "chats";
+                await deleteDoc(doc(db, colName, chatId, "messages", msgId)); 
+            }
         };
 
         window.editMessage = async function(msgId, oldText, timeMillis) {
             const now = Date.now();
             if (now - timeMillis > 900000) { alert("Sadece son 15 dakika içinde gönderilen mesajları düzenleyebilirsiniz!"); return; }
             const newText = prompt("Düzenleyin:", oldText);
-            if (newText !== null && newText.trim() !== "" && newText !== oldText) { await updateDoc(doc(db, "chats", chatId, "messages", msgId), { text: newText.trim(), isEdited: true }); }
+            if (newText !== null && newText.trim() !== "" && newText !== oldText) { 
+                const colName = isGroupChat ? "groups" : "chats";
+                await updateDoc(doc(db, colName, chatId, "messages", msgId), { text: newText.trim(), isEdited: true }); 
+            }
         };
 
         function loadMessages() {
-            const messagesRef = collection(db, "chats", chatId, "messages");
+            const collectionName = isGroupChat ? "groups" : "chats";
+            const messagesRef = collection(db, collectionName, chatId, "messages");
+            
             onSnapshot(query(messagesRef, orderBy("createdAt", "asc")), (snapshot) => {
                 const messagesContainer = document.getElementById('chat-messages');
                 messagesContainer.innerHTML = ''; 
 
                 snapshot.forEach((docSnap) => {
                     let data = docSnap.data(); 
-                    // Gelen mesajları zararlı kodlardan (XSS) arındırıyoruz
                     if(data.text) data.text = DOMPurify.sanitize(data.text);
                     if(data.replyTo && data.replyTo.text) data.replyTo.text = DOMPurify.sanitize(data.replyTo.text);
                     const isMe = data.sender === myUsername;
@@ -959,7 +965,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                         return; 
                     }
 
-                    if (!isMe && !data.isRead) { updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), { isRead: true }).catch(e=>{}); }
+                    if (!isMe && !data.isRead) { 
+                        updateDoc(doc(db, collectionName, chatId, "messages", docSnap.id), { isRead: true }).catch(e=>{}); 
+                    }
 
                     let senderNameHtml = ''; if (isGroupChat && !isMe) senderNameHtml = `<div class="msg-sender-name">@${data.sender}</div>`;
 
@@ -1049,8 +1057,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         }
 
         async function sendActualMessage(text, imgUrl) {
-            const chatRef = doc(db, isGroupChat ? "groups" : "chats", chatId);
-            const messagesRef = collection(db, "chats", chatId, "messages");
+            const collectionName = isGroupChat ? "groups" : "chats";
+            const chatRef = doc(db, collectionName, chatId);
+            const messagesRef = collection(db, collectionName, chatId, "messages");
             
             let finalTxt = text; if(!text && imgUrl) finalTxt = "📷 Fotoğraf";
             
@@ -1060,9 +1069,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 isEdited: false, isRead: false, type: 'regular'
             };
 
-            await addDoc(messagesRef, msgData);
-            await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
-            
             let summary = text; if(imgUrl) summary = "📷 Fotoğraf";
             
             let unreadList = [];
@@ -1075,10 +1081,22 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
             const updateData = { lastMessage: summary, lastSender: myUsername, unreadBy: unreadList, updatedAt: serverTimestamp() };
 
-            if (!isGroupChat) {
-                await setDoc(chatRef, { participants: [myUsername, targetUsername], ...updateData }, { merge: true });
-            } else {
-                await updateDoc(chatRef, updateData);
+            try {
+                // ÖNCE ana sohbet belgesini güncelle (Güvenlik kuralları için)
+                if (!isGroupChat) {
+                    await setDoc(chatRef, { participants: [myUsername, targetUsername], ...updateData }, { merge: true });
+                } else {
+                    await updateDoc(chatRef, updateData);
+                }
+
+                // SONRA mesajı alt koleksiyona kaydet
+                await addDoc(messagesRef, msgData);
+                
+                // Yazıyor statüsünü kapat
+                await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
+            } catch (error) {
+                console.error("Mesaj gönderilirken hata oluştu:", error);
+                throw error;
             }
         }
 
