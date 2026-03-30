@@ -240,12 +240,26 @@
                       <span class="slider round"></span>
                     </label>
                 </div>
-                <div style="font-size: 16px; font-weight: 600; color: #334155; cursor: pointer;" class="settings-text" onclick="alert('Destek merkezi çok yakında!')">❓ Yardım ve İletişim</div>
+                <div style="font-size: 16px; font-weight: 600; color: #334155; cursor: pointer;" class="settings-text" onclick="window.openSupportModal()">❓ Yardım ve İletişim</div>
+           </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="support-modal" style="z-index: 5000;">
+        <div class="modal-content" style="padding:0;">
+            <div class="modal-header" style="padding: 20px; margin:0;">
+                <h3 style="margin:0; font-size:16px;">Destek ve Şikayet</h3>
+                <button class="close-btn" onclick="document.getElementById('support-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <p style="font-size: 14px; color: #64748b; margin-bottom: 15px;">Karşılaştığınız sorunu veya önerinizi detaylıca yazın. Ekibimiz en kısa sürede inceleyecektir.</p>
+                <textarea id="support-message-input" class="modal-input" style="height:120px; resize:none;" placeholder="Mesajınız..."></textarea>
+                <button id="send-support-btn" class="desktop-post-btn" style="width:100%; margin-top:10px;" onclick="window.sendSupportMessage()">Gönder</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
+    <div class="bottom-nav">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, query, where, orderBy, doc, getDoc, updateDoc, arrayRemove, arrayUnion, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
@@ -264,6 +278,38 @@
         window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
         window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
 
+        window.openSupportModal = function() {
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('support-message-input').value = '';
+            document.getElementById('support-modal').style.display = 'flex';
+        };
+
+        window.sendSupportMessage = async function() {
+            const btn = document.getElementById('send-support-btn');
+            const message = document.getElementById('support-message-input').value.trim();
+            
+            if (!message) { alert("Lütfen bir mesaj yazın."); return; }
+
+            btn.disabled = true;
+            btn.innerText = "Gönderiliyor...";
+
+            try {
+                await addDoc(collection(db, "support_tickets"), {
+                    sender: myUsername || "Bilinmeyen Kullanıcı",
+                    message: message,
+                    createdAt: serverTimestamp(),
+                    status: "Yeni"
+                });
+                alert("Mesajınız başarıyla iletildi. Teşekkür ederiz!");
+                document.getElementById('support-modal').style.display = 'none';
+            } catch (error) {
+                console.error("Hata:", error);
+                alert("Mesaj gönderilirken bir hata oluştu.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Gönder";
+            }
+        };
         window.showMyFollowing = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); } };
         window.showMyFollowers = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); } };
         
