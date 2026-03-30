@@ -550,6 +550,9 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // YENİ EKLENEN KISIM: Yeni kaydolanların yetki hatası almasını engellemek için token yenileme
+                try { await user.getIdToken(true); } catch(e) {}
+                
                 currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                 if (!targetUsername) { targetUsername = myUsername; }
                 
@@ -983,7 +986,10 @@
                     else { await setDoc(myRef, { following: arrayUnion(targetUsername) }, { merge: true }); await setDoc(targetRef, { followers: arrayUnion(myUsername) }, { merge: true }); isFollowing = true; await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUsername, createdAt: serverTimestamp() }); }
                 }
                 updateFollowButtonUI();
-            } catch (error) {}
+            } catch (error) {
+                console.error("Takip hatası:", error);
+                alert("Takip işlemi başarısız oldu. (Hata: " + error.code + ")");
+            }
             btn.disabled = false;
         };
 
