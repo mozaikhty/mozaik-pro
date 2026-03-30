@@ -443,10 +443,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
         import { getAuth, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, setDoc, getDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, setDoc, getDoc, getDocs, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
-         
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
         const app = initializeApp(firebaseConfig); 
         
@@ -497,8 +496,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "http
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
         window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
         window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
-        window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
-
+        
         window.openSupportModal = function() {
             document.getElementById('settings-modal').style.display = 'none';
             document.getElementById('support-message-input').value = '';
@@ -1305,6 +1303,67 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "http
                 }
             });
         }
+
+        window.logoutUser = async function() { await signOut(auth); window.location.href = 'index.html'; };
+
+        // ==========================================
+        // HESAP VE TÜM VERİLERİ KALICI OLARAK SİLME 
+        // ==========================================
+        window.deleteMyAccount = async function() {
+            if(!confirm("DİKKAT! Hesabınız, tüm gönderileriniz ve fotoğraflarınız KALICI olarak silinecek. Bu işlem geri alınamaz! Onaylıyor musunuz?")) return;
+            
+            const btn = document.getElementById('trigger-delete-account-btn'); 
+            if(btn) { btn.disabled = true; btn.innerText = "Hesap Siliniyor..."; }
+
+            try {
+                // 1. Kullanıcının tüm gönderilerini bul
+                const postsQuery = query(collection(db, "posts"), where("author", "==", myUsername));
+                const postsSnap = await getDocs(postsQuery);
+                
+                // 2. Döngüye gir: Önce gönderi resmini Storage'dan sil, sonra yazıyı Firestore'dan sil
+                for (const postDoc of postsSnap.docs) {
+                    const postData = postDoc.data();
+                    if (postData.imageUrl) {
+                        try { await deleteObject(ref(storage, postData.imageUrl)); } catch(e) { console.warn("Gönderi resmi zaten silinmiş."); }
+                    }
+                    await deleteDoc(doc(db, "posts", postDoc.id));
+                }
+
+                // 3. Kullanıcının profil (Avatar) ve kapak (Banner) fotoğraflarını Storage'dan sil
+                const userDocSnap = await getDoc(doc(db, "users", myUsername));
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    if (userData.avatarUrl) {
+                        try { await deleteObject(ref(storage, userData.avatarUrl)); } catch(e) {}
+                    }
+                    if (userData.bannerUrl) {
+                        try { await deleteObject(ref(storage, userData.bannerUrl)); } catch(e) {}
+                    }
+                }
+
+                // 4. Kullanıcının Firestore'daki profil belgesini sil
+                await deleteDoc(doc(db, "users", myUsername));
+
+                // 5. Son olarak Firebase Authentication'dan e-posta/şifre girişini tamamen yok et
+                const user = auth.currentUser;
+                if(user) {
+                    await deleteUser(user);
+                }
+
+                alert("Hesabınız ve sistemdeki tüm verileriniz başarıyla silindi. Hoşça kalın!");
+                window.location.href = "index.html"; 
+
+            } catch (error) {
+                console.error("Hesap silinirken hata:", error);
+                if(error.code === 'auth/requires-recent-login') {
+                    alert("Güvenlik nedeniyle hesabınızı silebilmemiz için yeniden giriş yapmalısınız. Lütfen çıkış yapıp tekrar giriş yapın ve tekrar deneyin.");
+                } else {
+                    alert("Hesap silinirken bir hata oluştu: " + error.message);
+                }
+                if(btn) { btn.disabled = false; btn.innerText = "Hesabımı Kalıcı Olarak Sil"; }
+            }
+        };
+
     </script>
     <script>
         if(localStorage.getItem('theme') === 'dark' && document.getElementById('dark-mode-toggle')) { document.getElementById('dark-mode-toggle').checked = true; }
