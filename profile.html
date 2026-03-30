@@ -444,7 +444,7 @@
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
         import { getAuth, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, setDoc, getDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
          
         const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
@@ -722,7 +722,24 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } } 
         };
 
-        window.deletePost = async function(postId) { if(confirm("Kalıcı olarak silinsin mi?")) await deleteDoc(doc(db, "posts", postId)); };
+        window.deletePost = async function(postId) { 
+            if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?")) {
+                try {
+                    // 1. Önce gönderinin verilerini bul
+                    const postObj = globalPosts.find(p => p.id === postId);
+                    if(postObj && postObj.data.imageUrl) {
+                        // 2. Eğer gönderide fotoğraf varsa, Storage'dan (Depodan) fotoğrafı sil
+                        const imageRef = ref(storage, postObj.data.imageUrl);
+                        try { await deleteObject(imageRef); } catch(imgErr) { console.warn("Resim zaten silinmiş veya bulunamadı."); }
+                    }
+                    // 3. En son veritabanından gönderiyi sil
+                    await deleteDoc(doc(db, "posts", postId)); 
+                } catch(e) {
+                    console.error("Silme hatası:", e);
+                    alert("Gönderi silinirken bir hata oluştu.");
+                }
+            } 
+        };
         
         window.repostPost = async function(postId, originalAuthor, event) {
             event.stopPropagation();
