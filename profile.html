@@ -442,7 +442,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
-        import { getAuth, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, setDoc, getDoc, getDocs, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
@@ -550,10 +550,19 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // YENİ EKLENEN KISIM: Yeni kaydolanların yetki hatası almasını engellemek için token yenileme
-                try { await user.getIdToken(true); } catch(e) {}
+                // EĞER KULLANICININ DISPLAY NAME'İ (TOKEN.NAME) YOKSA, KAYIT ESNASINDA EKLENMEMİŞTİR.
+                // BUNU DÜZELTMEZSEK GÜVENLİK KURALLARI (request.auth.token.name) ÇÖKER!
+                if (!user.displayName) {
+                    try {
+                        await updateProfile(user, { displayName: user.email.split('@')[0] });
+                        await user.getIdToken(true); // Token'ı zorla yenile
+                    } catch(e) {}
+                } else {
+                    try { await user.getIdToken(true); } catch(e) {}
+                }
                 
-                currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                currentUser = auth.currentUser || user; 
+                myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                 if (!targetUsername) { targetUsername = myUsername; }
                 
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
@@ -973,22 +982,36 @@
         };
 
         window.toggleFollow = async function() {
-            // Eğer butona yeni basıldıysa (kilitliyse) işlemi durdur!
             if (window.isActionLocked('follow_' + targetUsername)) return; 
 
             const btn = document.getElementById('main-follow-btn'); btn.disabled = true;
             const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", targetUsername);
             try {
-                if(isFollowing) { await setDoc(myRef, { following: arrayRemove(targetUsername) }, { merge: true }); await setDoc(targetRef, { followers: arrayRemove(myUsername) }, { merge: true }); isFollowing = false; } 
-                else if (isRequested) { await setDoc(targetRef, { followRequests: arrayRemove(myUsername) }, { merge: true }); isRequested = false; } 
+                if(isFollowing) { 
+                    await updateDoc(myRef, { following: arrayRemove(targetUsername) }); 
+                    await updateDoc(targetRef, { followers: arrayRemove(myUsername) }); 
+                    isFollowing = false; 
+                } 
+                else if (isRequested) { 
+                    await updateDoc(targetRef, { followRequests: arrayRemove(myUsername) }); 
+                    isRequested = false; 
+                } 
                 else {
-                    if(isTargetPrivate) { await setDoc(targetRef, { followRequests: arrayUnion(myUsername) }, { merge: true }); isRequested = true; } 
-                    else { await setDoc(myRef, { following: arrayUnion(targetUsername) }, { merge: true }); await setDoc(targetRef, { followers: arrayUnion(myUsername) }, { merge: true }); isFollowing = true; await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUsername, createdAt: serverTimestamp() }); }
+                    if(isTargetPrivate) { 
+                        await updateDoc(targetRef, { followRequests: arrayUnion(myUsername) }); 
+                        isRequested = true; 
+                    } 
+                    else { 
+                        await updateDoc(myRef, { following: arrayUnion(targetUsername) }); 
+                        await updateDoc(targetRef, { followers: arrayUnion(myUsername) }); 
+                        isFollowing = true; 
+                        await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUsername, createdAt: serverTimestamp() }); 
+                    }
                 }
                 updateFollowButtonUI();
             } catch (error) {
                 console.error("Takip hatası:", error);
-                alert("Takip işlemi başarısız oldu. (Hata: " + error.code + ")");
+                alert("Takip işlemi başarısız oldu. Lütfen sayfayı yenileyip tekrar deneyin. (Hata: " + error.code + ")");
             }
             btn.disabled = false;
         };
