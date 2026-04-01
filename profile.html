@@ -735,40 +735,31 @@
         window.deletePost = async function(postId) { 
             if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?")) {
                 try {
-                    // 1. Gönderiyi hafızada bulmaya çalış
+                    // 1. Gönderiyi hafızada bul
                     let postObj = globalPosts.find(p => p.id === postId);
-                    let postData = null;
 
-                    // Eğer hafızada varsa verisini al, YOKSA direkt veritabanından (Firebase'den) canlı çek
-                    if (postObj && postObj.data) {
-                        postData = postObj.data;
-                    } else {
-                        const postSnap = await getDoc(doc(db, "posts", postId));
-                        if (postSnap.exists()) {
-                            postData = postSnap.data();
-                        }
-                    }
-
-                    // 2. Gönderi bulunduysa, orijinalse (repost değilse) ve fotoğrafı varsa Storage'dan sil
-                    if (postData && postData.imageUrl && !postData.isRepost) {
+                    // 2. Eğer fotoğrafı varsa ve repost değilse Storage'dan temizle
+                    if (postObj && postObj.data && postObj.data.imageUrl && !postObj.data.isRepost) {
                         try {
-                            const imageRef = ref(storage, postData.imageUrl);
+                            const imageRef = ref(storage, postObj.data.imageUrl);
                             await deleteObject(imageRef); 
                         } catch(imgErr) { 
-                            console.warn("Resim zaten silinmiş veya bulunamadı."); 
+                            console.warn("Resim bulunamadı, silinme atlandı."); 
                         }
                     }
                     
-                    // 3. En son veritabanından (Firestore) gönderiyi sil
+                    // 3. Veritabanından gönderiyi sil
                     await deleteDoc(doc(db, "posts", postId)); 
 
-                    // 4. (Ekstra Koruma) Eğer kullanıcı o an gönderi detayındaysa ve oradan sildiyse, açık olan pencereyi kapat
-                    if (typeof window.closePostDetail === 'function' && window.currentOpenPostId === postId) {
-                        window.closePostDetail();
+                    // 4. (Hata verdiren kısım düzeltildi) Pencere açıksa doğrudan ID ile gizle
+                    const detailModal = document.getElementById('post-detail-modal');
+                    if (detailModal) {
+                        detailModal.style.display = 'none';
                     }
+                    window.currentOpenPostId = null;
 
                 } catch(e) {
-                    console.error("Silme Hatası Detayı:", e);
+                    console.error("Silme Hatası:", e);
                     alert("Gönderi silinirken bir hata oluştu.");
                 }
             } 
