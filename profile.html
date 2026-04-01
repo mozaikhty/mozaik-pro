@@ -90,7 +90,7 @@
         .post-left { flex-shrink: 0; }
         .post-avatar-img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid #cbd5e1; background: #e2e8f0; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         .post-avatar-img img { width: 100%; height: 100%; object-fit: cover; }
-        .post-right { flex: 1; overflow: hidden; }
+        .post-right { flex: 1; min-width: 0; }
         
         .repost-indicator { font-size: 12px; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 5px; margin-bottom: 8px; user-select: none; }
         
@@ -737,11 +737,17 @@
                 try {
                     // 1. Önce gönderinin verilerini bul
                     const postObj = globalPosts.find(p => p.id === postId);
-                    if(postObj && postObj.data.imageUrl) {
-                        // 2. Eğer gönderide fotoğraf varsa, Storage'dan (Depodan) fotoğrafı sil
-                        const imageRef = ref(storage, postObj.data.imageUrl);
-                        try { await deleteObject(imageRef); } catch(imgErr) { console.warn("Resim zaten silinmiş veya bulunamadı."); }
+                    
+                    // 2. SADECE orijinal bir gönderiyse ve fotoğrafı varsa Storage'dan resmi sil
+                    if(postObj && postObj.data.imageUrl && !postObj.data.isRepost) {
+                        try {
+                            const imageRef = ref(storage, postObj.data.imageUrl);
+                            await deleteObject(imageRef); 
+                        } catch(imgErr) { 
+                            console.warn("Resim Storage'da bulunamadı veya zaten silinmiş."); 
+                        }
                     }
+                    
                     // 3. En son veritabanından gönderiyi sil
                     await deleteDoc(doc(db, "posts", postId)); 
                 } catch(e) {
