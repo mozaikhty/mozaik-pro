@@ -1366,7 +1366,8 @@
                 // 2. Döngüye gir: Önce gönderi resmini Storage'dan sil, sonra yazıyı Firestore'dan sil
                 for (const postDoc of postsSnap.docs) {
                     const postData = postDoc.data();
-                    if (postData.imageUrl) {
+                    // DÜZELTME: Sadece kendi orijinal gönderisiyse fotoğrafı sil! (Başkasının alıntısı güvende kalsın)
+                    if (postData.imageUrl && !postData.isRepost) {
                         try { await deleteObject(ref(storage, postData.imageUrl)); } catch(e) { console.warn("Gönderi resmi zaten silinmiş."); }
                     }
                     await deleteDoc(doc(db, "posts", postDoc.id));
