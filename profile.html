@@ -735,23 +735,20 @@
         window.deletePost = async function(postId) { 
             if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?")) {
                 try {
-                    // 1. Gönderiyi hafızada bul
                     let postObj = globalPosts.find(p => p.id === postId);
 
-                    // 2. Eğer fotoğrafı varsa ve repost değilse Storage'dan temizle
                     if (postObj && postObj.data && postObj.data.imageUrl && !postObj.data.isRepost) {
                         try {
                             const imageRef = ref(storage, postObj.data.imageUrl);
                             await deleteObject(imageRef); 
                         } catch(imgErr) { 
-                            console.warn("Resim bulunamadı, silinme atlandı."); 
+                            console.warn("Resim bulunamadı, silindi varsayılıyor."); 
                         }
                     }
                     
-                    // 3. Veritabanından gönderiyi sil
+                    // İşlemin koptuğu yer büyük ihtimalle burası (Firebase onayı)
                     await deleteDoc(doc(db, "posts", postId)); 
 
-                    // 4. (Hata verdiren kısım düzeltildi) Pencere açıksa doğrudan ID ile gizle
                     const detailModal = document.getElementById('post-detail-modal');
                     if (detailModal) {
                         detailModal.style.display = 'none';
@@ -759,8 +756,9 @@
                     window.currentOpenPostId = null;
 
                 } catch(e) {
-                    console.error("Silme Hatası:", e);
-                    alert("Gönderi silinirken bir hata oluştu.");
+                    console.error("Firebase Silme Hatası:", e);
+                    // DİKKAT: Artık ekrana gerçek hata mesajını basacak!
+                    alert("SİSTEM HATASI: " + e.message); 
                 }
             } 
         };
