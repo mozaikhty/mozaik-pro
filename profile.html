@@ -702,32 +702,32 @@
         };
 
         window.deletePost = async function(postId) { 
-            if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?")) {
+            if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz? Fotoğrafınız da sunucudan (Storage) temizlenecektir.")) {
                 try {
                     let postObj = globalPosts.find(p => p.id === postId);
 
+                    // 1. Varsa gönderi fotoğrafını Storage'dan sil (Eğer repost değilse)
                     if (postObj && postObj.data && postObj.data.imageUrl && !postObj.data.isRepost) {
                         try {
                             const imageRef = ref(storage, postObj.data.imageUrl);
                             await deleteObject(imageRef); 
                         } catch(imgErr) { 
-                            console.warn("Resim bulunamadı, silindi varsayılıyor."); 
+                            console.warn("Resim bulunamadı veya zaten silinmiş."); 
                         }
                     }
                     
-                    // İşlemin koptuğu yer büyük ihtimalle burası (Firebase onayı)
+                    // 2. Gönderiyi veritabanından sil
                     await deleteDoc(doc(db, "posts", postId)); 
 
                     const detailModal = document.getElementById('post-detail-modal');
-                    if (detailModal) {
-                        detailModal.style.display = 'none';
-                    }
+                    if (detailModal) detailModal.style.display = 'none';
                     window.currentOpenPostId = null;
+                    
+                    if(window.showToast) window.showToast("Gönderi ve fotoğraf başarıyla silindi!", "success");
 
                 } catch(e) {
-                    console.error("Firebase Silme Hatası:", e);
-                    // DİKKAT: Artık ekrana gerçek hata mesajını basacak!
-                    alert("SİSTEM HATASI: " + e.message); 
+                    console.error("Gönderi Silme Hatası:", e);
+                    if(window.showToast) window.showToast("Silme işlemi başarısız: " + e.message, "error");
                 }
             } 
         };
@@ -948,8 +948,56 @@
         });
 
         document.getElementById('trigger-delete-account-btn').addEventListener('click', async () => {
-            if(confirm("DİKKAT: Hesabınızı kalıcı olarak silmek istediğinize emin misiniz?")) {
-                try { await deleteDoc(doc(db, "users", myUsername)); await deleteUser(currentUser); window.location.href = "index.html"; } catch (error) { alert("Hata oluştu."); }
+            if(!confirm("DİKKAT! Hesabınız, tüm gönderileriniz, profil ve kapak fotoğraflarınız KALICI olarak silinecek. Bu işlem geri alınamaz! Onaylıyor musunuz?")) return;
+            
+            const btn = document.getElementById('trigger-delete-account-btn'); 
+            btn.disabled = true; btn.innerText = "Hesap ve Fotoğraflar Siliniyor...";
+
+            try {
+                // 1. Kullanıcının tüm gönderilerini bul
+                const postsQuery = query(collection(db, "posts"), where("author", "==", myUsername));
+                const postsSnap = await getDocs(postsQuery);
+                
+                // 2. Döngüye gir: Önce gönderi resmini Storage'dan sil, sonra yazıyı Firestore'dan sil
+                for (const postDoc of postsSnap.docs) {
+                    const postData = postDoc.data();
+                    if (postData.imageUrl && !postData.isRepost) {
+                        try { await deleteObject(ref(storage, postData.imageUrl)); } catch(e) {}
+                    }
+                    await deleteDoc(doc(db, "posts", postDoc.id));
+                }
+
+                // 3. Kullanıcının profil (Avatar) ve kapak (Banner) fotoğraflarını Storage'dan sil
+                const userDocSnap = await getDoc(doc(db, "users", myUsername));
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    if (userData.avatarUrl) {
+                        try { await deleteObject(ref(storage, userData.avatarUrl)); } catch(e) {}
+                    }
+                    if (userData.bannerUrl) {
+                        try { await deleteObject(ref(storage, userData.bannerUrl)); } catch(e) {}
+                    }
+                }
+
+                // 4. Kullanıcının Firestore'daki profil belgesini sil
+                await deleteDoc(doc(db, "users", myUsername));
+
+                // 5. Firebase Authentication'dan e-posta/şifre girişini sil
+                const user = auth.currentUser;
+                if(user) await deleteUser(user);
+
+                if(window.showToast) window.showToast("Tüm verileriniz başarıyla silindi. Hoşça kalın!", "success");
+                
+                setTimeout(() => { window.location.href = "index.html"; }, 1500);
+
+            } catch (error) {
+                console.error("Hesap silinirken hata:", error);
+                if(error.code === 'auth/requires-recent-login') {
+                    if(window.showToast) window.showToast("Güvenlik nedeniyle çıkış yapıp tekrar giriş yapmalısınız.", "error");
+                } else {
+                    if(window.showToast) window.showToast("Silme hatası: " + error.message, "error");
+                }
+                btn.disabled = false; btn.innerText = "Hesabımı Kalıcı Olarak Sil";
             }
         });
 
@@ -1316,64 +1364,7 @@
 
         window.logoutUser = async function() { await signOut(auth); window.location.href = 'index.html'; };
 
-        // ==========================================
-        // HESAP VE TÜM VERİLERİ KALICI OLARAK SİLME 
-        // ==========================================
-        window.deleteMyAccount = async function() {
-            if(!confirm("DİKKAT! Hesabınız, tüm gönderileriniz ve fotoğraflarınız KALICI olarak silinecek. Bu işlem geri alınamaz! Onaylıyor musunuz?")) return;
-            
-            const btn = document.getElementById('trigger-delete-account-btn'); 
-            if(btn) { btn.disabled = true; btn.innerText = "Hesap Siliniyor..."; }
-
-            try {
-                // 1. Kullanıcının tüm gönderilerini bul
-                const postsQuery = query(collection(db, "posts"), where("author", "==", myUsername));
-                const postsSnap = await getDocs(postsQuery);
-                
-                // 2. Döngüye gir: Önce gönderi resmini Storage'dan sil, sonra yazıyı Firestore'dan sil
-                for (const postDoc of postsSnap.docs) {
-                    const postData = postDoc.data();
-                    // DÜZELTME: Sadece kendi orijinal gönderisiyse fotoğrafı sil! (Başkasının alıntısı güvende kalsın)
-                    if (postData.imageUrl && !postData.isRepost) {
-                        try { await deleteObject(ref(storage, postData.imageUrl)); } catch(e) { console.warn("Gönderi resmi zaten silinmiş."); }
-                    }
-                    await deleteDoc(doc(db, "posts", postDoc.id));
-                }
-
-                // 3. Kullanıcının profil (Avatar) ve kapak (Banner) fotoğraflarını Storage'dan sil
-                const userDocSnap = await getDoc(doc(db, "users", myUsername));
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    if (userData.avatarUrl) {
-                        try { await deleteObject(ref(storage, userData.avatarUrl)); } catch(e) {}
-                    }
-                    if (userData.bannerUrl) {
-                        try { await deleteObject(ref(storage, userData.bannerUrl)); } catch(e) {}
-                    }
-                }
-
-                // 4. Kullanıcının Firestore'daki profil belgesini sil
-                await deleteDoc(doc(db, "users", myUsername));
-
-                // 5. Son olarak Firebase Authentication'dan e-posta/şifre girişini tamamen yok et
-                const user = auth.currentUser;
-                if(user) {
-                    await deleteUser(user);
-                }
-
-                alert("Hesabınız ve sistemdeki tüm verileriniz başarıyla silindi. Hoşça kalın!");
-                window.location.href = "index.html"; 
-
-            } catch (error) {
-                console.error("Hesap silinirken hata:", error);
-                if(error.code === 'auth/requires-recent-login') {
-                    alert("Güvenlik nedeniyle hesabınızı silebilmemiz için yeniden giriş yapmalısınız. Lütfen çıkış yapıp tekrar giriş yapın ve tekrar deneyin.");
-                } else {
-                    alert("Hesap silinirken bir hata oluştu: " + error.message);
-                }
-                if(btn) { btn.disabled = false; btn.innerText = "Hesabımı Kalıcı Olarak Sil"; }
-            }
-        };
+        
 
     </script>
     <script src="ui.js"></script>
