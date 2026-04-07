@@ -1270,12 +1270,12 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                     createdAt: serverTimestamp()
                 });
 
-                alert("Kişi başarıyla eklendi!");
+                window.showToast("Kişi başarıyla eklendi!", "success");
                 document.getElementById('add-member-modal').style.display = 'none';
                 
             } catch (error) {
                 console.error("Gruba kişi ekleme hatası:", error);
-                alert("Kişi eklenirken bir hata oluştu.");
+                window.showToast("Kişi eklenirken bir hata oluştu.", "error");
             }
         };
     </script>

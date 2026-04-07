@@ -1,12 +1,10 @@
 // ui.js
 
-// 1. Ortak Bileşenleri Yükleyen Ana Fonksiyon
 function loadUIComponents() {
-    // Mevcut sayfanın adını alıyoruz (Örn: "feed.html", "chat.html")
     const path = window.location.pathname;
     const page = path.split('/').pop() || 'feed.html';
 
-    // === SOL MENÜ (Masaüstü Görünüm - Görselle Birebir Uyumlu) ===
+    // === SOL MENÜ ===
     const sidebarHTML = `
         <div class="sidebar-left">
             <a href="feed.html" class="logo-desktop" style="text-decoration:none;">Mozaik.</a>
@@ -45,7 +43,7 @@ function loadUIComponents() {
         </div>
     `;
 
-    // === ALT MENÜ (Mobil Cihazlar İçin) ===
+    // === ALT MENÜ ===
     const bottomNavHTML = `
         <div class="bottom-nav">
             <a href="feed.html" class="nav-item ${page === 'feed.html' ? 'active' : ''}">🏠</a>
@@ -55,7 +53,7 @@ function loadUIComponents() {
         </div>
     `;
 
-    // === AYARLAR & KARANLIK MOD MODALI ===
+    // === AYARLAR MODALI ===
     const settingsModalHTML = `
         <div class="modal-overlay" id="settings-modal" style="z-index: 5000; display:none;">
             <div class="modal-content" style="padding:0;">
@@ -72,27 +70,107 @@ function loadUIComponents() {
                         </label>
                     </div>
                     <div style="font-size: 16px; font-weight: 600; color: #334155; cursor: pointer;" class="settings-text" onclick="window.openSupportModal()">❓ Yardım ve İletişim</div>
-                    
                     <div style="font-size: 16px; font-weight: 600; color: #ef4444; cursor: pointer; padding-top: 15px; border-top: 1px solid #f1f5f9;" class="settings-text" onclick="window.logoutUser()">🚪 Çıkış Yap</div>
                 </div>
             </div>
         </div>
     `;
 
-    // 2. HTML'leri Sayfaya Yerleştirme İşlemi
+    // === TOAST (BİLDİRİM) TASARIMI VE KONTEYNERİ ===
+    const toastHTML = `
+        <style>
+            #toast-container {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                pointer-events: none;
+            }
+            .toast-msg {
+                min-width: 250px;
+                max-width: 350px;
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 14px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                transform: translateX(120%);
+                opacity: 0;
+                transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            }
+            .toast-msg.show {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            .toast-success { background-color: #10b981; } /* Yeşil */
+            .toast-error { background-color: #ef4444; }   /* Kırmızı */
+            .toast-info { background-color: #3b82f6; }    /* Mavi */
+            
+            /* Mobilde Toast yerleşimi */
+            @media (max-width: 1000px) {
+                #toast-container {
+                    bottom: 80px; /* Alt menünün üstünde çıksın */
+                    right: 20px;
+                    left: 20px;
+                    align-items: center;
+                }
+            }
+        </style>
+        <div id="toast-container"></div>
+    `;
+
+    // HTML'leri Ekrana Bas
     const sidebarContainer = document.getElementById('sidebar-container');
     if (sidebarContainer) sidebarContainer.innerHTML = sidebarHTML;
 
     const bottomNavContainer = document.getElementById('bottom-nav-container');
     if (bottomNavContainer) bottomNavContainer.innerHTML = bottomNavHTML;
 
-    // Ayarlar modalı sadece bir kere eklensin diye kontrol ediyoruz
     if (!document.getElementById('settings-modal')) {
         document.body.insertAdjacentHTML('beforeend', settingsModalHTML);
     }
+    
+    // Toast Konteynerini Ekrana Bas
+    if (!document.getElementById('toast-container')) {
+        document.body.insertAdjacentHTML('beforeend', toastHTML);
+    }
 }
 
-// === GLOBAL FONKSİYONLAR (Tüm sayfalardan erişilecek) ===
+// === GLOBAL TOAST FONKSİYONU ===
+// type = 'success' (başarılı), 'error' (hata), 'info' (bilgi)
+window.showToast = function(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if(!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-msg toast-${type}`;
+    
+    let icon = '✅';
+    if(type === 'error') icon = '❌';
+    if(type === 'info') icon = 'ℹ️';
+
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+
+    // Animasyonla ekrana sok
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // 3 saniye sonra animasyonla sil
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400); // Kaybolma animasyonu bitince DOM'dan tamamen sil
+    }, 3000);
+};
+
+// === DİĞER FONKSİYONLAR ===
 window.openSettingsModal = function() {
     document.getElementById('settings-modal').style.display = 'flex';
     const toggle = document.getElementById('dark-mode-toggle');
@@ -110,12 +188,8 @@ window.toggleDarkMode = function() {
     }
 };
 
-// Sayfa yüklendiğinde UI bileşenlerini bas ve temayı uygula
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Bileşenleri yükle
     loadUIComponents();
-    
-    // 2. Temayı (Gece Modu) kontrol et
     if(localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark-mode');
         const toggle = document.getElementById('dark-mode-toggle');

@@ -265,7 +265,7 @@
             const btn = document.getElementById('send-support-btn');
             const message = document.getElementById('support-message-input').value.trim();
             
-            if (!message) { alert("Lütfen bir mesaj yazın."); return; }
+            if (!message) { window.showToast("Lütfen bir mesaj yazın.", "error"); return; }
 
             btn.disabled = true;
             btn.innerText = "Gönderiliyor...";
@@ -277,7 +277,7 @@
                     createdAt: serverTimestamp(),
                     status: "Yeni"
                 });
-                alert("Mesajınız başarıyla iletildi. Teşekkür ederiz!");
+                window.showToast("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success");
                 document.getElementById('support-modal').style.display = 'none';
             } catch (error) {
                 console.error("Hata:", error);
