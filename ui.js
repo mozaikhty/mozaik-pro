@@ -1,4 +1,4 @@
-// ui.js - TÜM KOD (Eskisini silip bunu yapıştırın)
+// ui.js - GÜNCELLENMİŞ SÜRÜM
 
 function loadUIComponents() {
     const path = window.location.pathname;
@@ -25,20 +25,17 @@ function loadUIComponents() {
                 <a href="feed.html?tab=bookmarks" class="desktop-nav-item ${window.location.search.includes('bookmarks') ? 'active' : ''}">
                     <span style="width:24px;">🔖</span> Koleksiyonum
                 </a>
-                <a href="#" onclick="window.goToMyProfile(); return false;" class="desktop-nav-item ${page === 'profile.html' ? 'active' : ''}">
-                    <span style="width:24px;">👤</span> Profil
-                </a>
-            </div>
+                </div>
             
             <button class="desktop-post-btn" onclick="window.openMainPostModal()">Gönderi Yayınla</button>
 
-            <div class="sidebar-user-menu" onclick="window.openSettingsModal()">
+            <div class="sidebar-user-menu ${page === 'profile.html' ? 'active' : ''}" onclick="window.goToMyProfile()">
                 <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
                 <div class="sidebar-user-info">
                     <div class="sidebar-user-name" id="desktop-sidebar-name">Yükleniyor...</div>
                     <div class="sidebar-user-handle" id="desktop-sidebar-handle">@bekleniyor</div>
                 </div>
-                <div style="font-size: 20px; color: #64748b; margin-left: auto;">⚙️</div>
+                <div style="font-size: 20px; color: #64748b; margin-left: auto; padding: 5px; cursor: pointer;" onclick="event.stopPropagation(); window.openSettingsModal()">⚙️</div>
             </div>
         </div>
     `;
@@ -76,7 +73,7 @@ function loadUIComponents() {
         </div>
     `;
 
-    // === TOAST (BİLDİRİM) TASARIMI VE KONTEYNERİ ===
+    // === TOAST (BİLDİRİM) TASARIMI ===
     const toastHTML = `
         <style>
             #toast-container {
@@ -111,14 +108,13 @@ function loadUIComponents() {
                 transform: translateX(0);
                 opacity: 1;
             }
-            .toast-success { background-color: #10b981; } /* Yeşil */
-            .toast-error { background-color: #ef4444; }   /* Kırmızı */
-            .toast-info { background-color: #3b82f6; }    /* Mavi */
+            .toast-success { background-color: #10b981; }
+            .toast-error { background-color: #ef4444; }
+            .toast-info { background-color: #3b82f6; }
             
-            /* Mobilde Toast yerleşimi */
             @media (max-width: 1000px) {
                 #toast-container {
-                    bottom: 80px; /* Alt menünün üstünde çıksın */
+                    bottom: 80px; 
                     right: 20px;
                     left: 20px;
                     align-items: center;
@@ -139,13 +135,12 @@ function loadUIComponents() {
         document.body.insertAdjacentHTML('beforeend', settingsModalHTML);
     }
     
-    // Toast Konteynerini Ekrana Bas
     if (!document.getElementById('toast-container')) {
         document.body.insertAdjacentHTML('beforeend', toastHTML);
     }
 }
 
-// === GLOBAL TOAST (BİLDİRİM) FONKSİYONU ===
+// === GLOBAL TOAST FONKSİYONU ===
 window.showToast = function(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if(!container) return;
@@ -160,10 +155,7 @@ window.showToast = function(message, type = 'success') {
     toast.innerHTML = '<span>' + icon + '</span> <span>' + message + '</span>';
     container.appendChild(toast);
 
-    // Animasyonla ekrana sok
     setTimeout(() => toast.classList.add('show'), 10);
-
-    // 3 saniye sonra animasyonla sil
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 400); 
