@@ -1,4 +1,4 @@
-// ui.js
+// ui.js - TÜM KOD (Eskisini silip bunu yapıştırın)
 
 function loadUIComponents() {
     const path = window.location.pathname;
@@ -105,6 +105,7 @@ function loadUIComponents() {
                 transform: translateX(120%);
                 opacity: 0;
                 transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                pointer-events: auto;
             }
             .toast-msg.show {
                 transform: translateX(0);
@@ -144,20 +145,19 @@ function loadUIComponents() {
     }
 }
 
-// === GLOBAL TOAST FONKSİYONU ===
-// type = 'success' (başarılı), 'error' (hata), 'info' (bilgi)
+// === GLOBAL TOAST (BİLDİRİM) FONKSİYONU ===
 window.showToast = function(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if(!container) return;
 
     const toast = document.createElement('div');
-    toast.className = `toast-msg toast-${type}`;
+    toast.className = 'toast-msg toast-' + type;
     
     let icon = '✅';
     if(type === 'error') icon = '❌';
     if(type === 'info') icon = 'ℹ️';
 
-    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    toast.innerHTML = '<span>' + icon + '</span> <span>' + message + '</span>';
     container.appendChild(toast);
 
     // Animasyonla ekrana sok
@@ -166,7 +166,7 @@ window.showToast = function(message, type = 'success') {
     // 3 saniye sonra animasyonla sil
     setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 400); // Kaybolma animasyonu bitince DOM'dan tamamen sil
+        setTimeout(() => toast.remove(), 400); 
     }, 3000);
 };
 
