@@ -360,12 +360,7 @@
 
     <button class="fab-button" onclick="window.openMainPostModal()">+</button>
     
-    <div class="bottom-nav">
-        <a href="feed.html" class="nav-item active">🏠</a>
-        <a href="search.html" class="nav-item">🔍</a>
-        <a href="chat.html" class="nav-item">✉️</a>
-        <a href="notifications.html" class="nav-item">🔔</a>
-    </div>
+    <div id="bottom-nav-container"></div>
 
     <div class="story-viewer-overlay" id="story-viewer-overlay">
         <div class="story-progress-container" id="story-progress-container"></div>
@@ -548,24 +543,7 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="settings-modal" style="z-index: 5000;">
-        <div class="modal-content" style="padding:0;">
-            <div class="modal-header" style="padding: 20px; margin:0;">
-                <h3 style="margin:0; font-size:16px;">Platform Ayarları</h3>
-                <button class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">&times;</button>
-            </div>
-            <div style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9;" class="settings-row">
-                    <div style="font-size: 16px; font-weight: 600; color: #334155;" class="settings-text">🌙 Gece Modu (Dark Mode)</div>
-                    <label class="switch">
-                      <input type="checkbox" id="dark-mode-toggle" onchange="window.toggleDarkMode()">
-                      <span class="slider round"></span>
-                    </label>
-                </div>
-                <div style="font-size: 16px; font-weight: 600; color: #334155; cursor: pointer;" class="settings-text" onclick="window.openSupportModal()">❓ Yardım ve İletişim</div>
-            </div>
-        </div>
-    </div>
+    
 
     <div class="modal-overlay" id="support-modal" style="z-index: 5000;">
         <div class="modal-content" style="padding:0;">
@@ -589,16 +567,7 @@
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
          
-        const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
-        const app = initializeApp(firebaseConfig); 
-        
-        // GÖRÜNMEZ SPAM VE BOT KORUMASI (APP CHECK)
-        const appCheck = initializeAppCheck(app, {
-            provider: new ReCaptchaV3Provider('6LcwbZ4sAAAAAPJm8ty9Edqyjn_-6COG2rj_axCA'),
-            isTokenAutoRefreshEnabled: true
-        });
-        
-        const auth = getAuth(app); const db = getFirestore(app); const storage = getStorage(app);
+        import { auth, db, storage } from './firebase-config.js';
 
         let currentUser = null; let myUsername = null; let allUsersData = {}; 
         let currentFeedTab = 'discover'; let myFollowingList = []; let myBookmarks = []; let globalPosts = []; 
@@ -1972,17 +1941,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "http
             }
         }
     </script>
-    <script>
-        if(localStorage.getItem('theme') === 'dark' && document.getElementById('dark-mode-toggle')) { document.getElementById('dark-mode-toggle').checked = true; }
-        window.openSettingsModal = function() {
-            document.getElementById('settings-modal').style.display = 'flex';
-            document.getElementById('dark-mode-toggle').checked = document.body.classList.contains('dark-mode');
-        };
-        window.toggleDarkMode = function() {
-            if(document.getElementById('dark-mode-toggle').checked) { document.body.classList.add('dark-mode'); localStorage.setItem('theme', 'dark'); } 
-            else { document.body.classList.remove('dark-mode'); localStorage.setItem('theme', 'light'); }
-        };
-    </script>
-<script src="sidebar.js"></script>
+    <script src="ui.js"></script>
 </body>
 </html>

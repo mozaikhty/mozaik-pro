@@ -144,8 +144,7 @@
         // GÜVENLİK İÇİN getDoc EKLENDİ
         import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
-        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+        import { auth, db, storage } from './firebase-config.js';
 
         const ADMIN_USERNAME = "mozaik"; 
         let allUsers = []; 
