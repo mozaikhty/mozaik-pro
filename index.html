@@ -123,6 +123,8 @@
         import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
+        window.kayitIslemiDevamEdiyor = false; 
+
         onAuthStateChanged(auth, (user) => { 
             if (user && !window.kayitIslemiDevamEdiyor) window.location.href = "feed.html"; 
         });
@@ -169,9 +171,7 @@
             }
         });
 
-        // YENİ VE HATASIZ KAYIT OLMA FONKSİYONU (SORUNUN ÇÖZÜMÜ BURADA)
-        window.kayitIslemiDevamEdiyor = false;
-
+        // YENİ VE HATASIZ KAYIT OLMA FONKSİYONU
         document.getElementById('register-btn').onclick = async function(e) {
             e.preventDefault(); 
             
@@ -192,7 +192,7 @@
             if(username.includes(' ')) return showError("Kullanıcı adında boşluk olamaz.");
             if(pass.length < 6) return showError("Şifre en az 6 karakter olmalıdır.");
             if(pass !== passConfirm) return showError("Şifreler birbiriyle eşleşmiyor!");
-            if(!/\\d/.test(pass) || !/[a-zA-Z]/.test(pass)) return showError("Şifreniz en az bir harf ve bir rakam içermelidir.");
+            if(!/\d/.test(pass) || !/[a-zA-Z]/.test(pass)) return showError("Şifreniz en az bir harf ve bir rakam içermelidir.");
 
             window.kayitIslemiDevamEdiyor = true; 
             const btn = document.getElementById('register-btn'); 
@@ -200,6 +200,7 @@
             btn.innerText = "Kaydediliyor...";
             
             try {
+                // Kullanıcı adı kontrolü
                 const userRef = doc(db, "users", username); 
                 const docSnap = await getDoc(userRef);
                 if (docSnap.exists()) { 
@@ -208,15 +209,13 @@
                     return showError("Bu kullanıcı adı zaten alınmış!"); 
                 }
 
+                // Auth Kaydı
                 let user;
                 try {
                     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                     user = userCredential.user;
                     await updateProfile(user, { displayName: username });
-                    
-                    // GÜVENLİK KURALLARI İÇİN KİMLİĞİ YENİLE
                     await user.getIdToken(true); 
-                    
                 } catch (authError) {
                     console.error("Auth Kayıt Hatası:", authError);
                     window.kayitIslemiDevamEdiyor = false;
@@ -225,6 +224,7 @@
                     return showError("Hata: " + authError.message);
                 }
 
+                // Veritabanı Kaydı
                 try {
                     await setDoc(doc(db, "users", username), {
                         email: email, fullName: fullName, birthDate: birthDate, gender: gender, location: location,
@@ -232,7 +232,7 @@
                         isPrivate: false, isVerified: false, isBanned: false, createdAt: serverTimestamp()
                     });
                     
-                    // ✨ SİHİRLİ DOKUNUŞ: Kullanıcı adını tarayıcıya mühürle! ✨
+                    // Tarayıcıya mühürle (profilin anında yüklenmesi için)
                     localStorage.setItem('mozaik_username', username);
                     
                 } catch (firestoreError) {
@@ -242,6 +242,7 @@
                     return showError("Veritabanına yazılamadı! Lütfen konsolu kontrol edin.");
                 }
                 
+                // Başarılı giriş
                 window.location.href = "feed.html"; 
                 
             } catch (error) { 
