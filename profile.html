@@ -236,7 +236,11 @@
     </style>
 </head>
 <body>
-    <script>if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');</script>
+    <script>
+        try {
+            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+        } catch(e) { console.warn("Gizli mod veya erişim engeli nedeniyle tema okunamadı."); }
+    </script>
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
@@ -418,13 +422,12 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
-        import { getAuth, onAuthStateChanged, signOut, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, setDoc, getDoc, getDocs, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
-
+        // 1. DÜZELTME: Firebase Başlatma Temizliği (Gereksiz initializeApp silindi)
+        import { onAuthStateChanged, signOut, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, setDoc, getDoc, getDocs, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
         import { auth, db, storage } from './firebase-config.js';
+
         let currentUser = null; let myUsername = null; let isFollowing = false; let isRequested = false; let isTargetPrivate = false; let isTargetVerified = false; 
         let allUsersData = {}; let currentProfileFollowers = []; let currentProfileFollowing = []; let unsubscribePosts = null; let currentlyEditingPostId = null; 
         let postToShare = null; let activeReplyParentId = null; let globalPosts = [];
@@ -441,7 +444,7 @@
             currentProfileTab = tabName;
             document.querySelectorAll('.feed-tabs .feed-tab').forEach(t => t.classList.remove('active'));
             const activeTab = document.getElementById(tabName === 'posts' ? 'tab-profile-posts' : 'tab-profile-replies');
-            activeTab.classList.add('active');
+            if(activeTab) activeTab.classList.add('active');
             loadUserPosts(); 
         };
 
@@ -463,11 +466,24 @@
         let targetUsername = urlParams.get('user');
 
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
-        window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
-        window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
+        
+        // 2. DÜZELTME: DOM Güvenliği eklendi (Optional Chaining)
+        window.openMobileSidebar = function() { 
+            const overlay = document.getElementById('mobile-sidebar-overlay');
+            if(overlay) overlay.style.display = 'block'; 
+            setTimeout(() => { document.getElementById('mobile-sidebar')?.classList.add('open'); }, 10); 
+        };
+        window.closeMobileSidebar = function() { 
+            document.getElementById('mobile-sidebar')?.classList.remove('open'); 
+            setTimeout(() => { 
+                const overlay = document.getElementById('mobile-sidebar-overlay');
+                if(overlay) overlay.style.display = 'none'; 
+            }, 300); 
+        };
         
         window.openSupportModal = function() {
-            document.getElementById('settings-modal').style.display = 'none';
+            const settingsModal = document.getElementById('settings-modal');
+            if(settingsModal) settingsModal.style.display = 'none';
             document.getElementById('support-message-input').value = '';
             document.getElementById('support-modal').style.display = 'flex';
         };
@@ -519,12 +535,10 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // EĞER KULLANICININ DISPLAY NAME'İ (TOKEN.NAME) YOKSA, KAYIT ESNASINDA EKLENMEMİŞTİR.
-                // BUNU DÜZELTMEZSEK GÜVENLİK KURALLARI (request.auth.token.name) ÇÖKER!
                 if (!user.displayName) {
                     try {
                         await updateProfile(user, { displayName: user.email.split('@')[0] });
-                        await user.getIdToken(true); // Token'ı zorla yenile
+                        await user.getIdToken(true); 
                     } catch(e) {}
                 } else {
                     try { await user.getIdToken(true); } catch(e) {}
@@ -537,16 +551,16 @@
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
                 if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
                 
-                // 1. GÜNCELLEME: SADECE KENDİ PROFİLİMİZİ DİNLİYORUZ (Fatura Tasarrufu)
                 onSnapshot(doc(db, "users", myUsername), (docSnap) => { 
                     if(docSnap.exists()) {
                         const u = docSnap.data();
-                        allUsersData[myUsername] = u; // Kendi verimizi önbelleğe al
+                        allUsersData[myUsername] = u; 
                         
-                        document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
-                        document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
-                        document.getElementById('sidebar-following-count').innerText = (u.following || []).length;
-                        document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
+                        const nameMob = document.getElementById('sidebar-name-mobile'); if(nameMob) nameMob.innerText = u.fullName || myUsername;
+                        const handleMob = document.getElementById('sidebar-handle-mobile'); if(handleMob) handleMob.innerText = '@' + myUsername;
+                        const folCount = document.getElementById('sidebar-following-count'); if(folCount) folCount.innerText = (u.following || []).length;
+                        const folersCount = document.getElementById('sidebar-followers-count'); if(folersCount) folersCount.innerText = (u.followers || []).length;
+                        
                         if(u.avatarUrl) {
                             const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
                             const sideAv = document.getElementById('sidebar-avatar-mobile'); if(sideAv) sideAv.innerHTML = imgTag;
@@ -557,13 +571,10 @@
                     }
                 });
 
-                // YENİ: EKSİK KULLANICILARI İHTİYAÇ DUYULDUKÇA ÇEKEN AKILLI FONKSİYON
                 window.fetchMissingUsers = async function(usernamesArray) {
-                    // Sadece elimizde (allUsersData içinde) OLMAYAN kullanıcıları filtrele
                     const missing = usernamesArray.filter(u => u && !allUsersData[u]);
-                    if (missing.length === 0) return; // Eksik yoksa Firebase'i hiç yorma
+                    if (missing.length === 0) return; 
                     
-                    // Eksik olanları tek seferde getir ve kaydet
                     await Promise.all(missing.map(async (uname) => {
                         try {
                             const uSnap = await getDoc(doc(db, "users", uname));
@@ -572,7 +583,6 @@
                     }));
                 };
 
-                // GELİŞMİŞ ÇAĞRI DİNLEYİCİSİ (Global)
                 onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'group'); 
                     snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
@@ -693,7 +703,6 @@
         window.toggleLike = async function(postId, isLiked, postAuthor, event) { 
             event.stopPropagation();
             
-            // Eğer butona yeni basıldıysa (kilitliyse) işlemi durdur!
             if (window.isActionLocked && window.isActionLocked('like_' + postId)) return; 
 
             const postRef = doc(db, "posts", postId); 
@@ -706,7 +715,6 @@
                 try {
                     let postObj = globalPosts.find(p => p.id === postId);
 
-                    // 1. Varsa gönderi fotoğrafını Storage'dan sil (Eğer repost değilse)
                     if (postObj && postObj.data && postObj.data.imageUrl && !postObj.data.isRepost) {
                         try {
                             const imageRef = ref(storage, postObj.data.imageUrl);
@@ -716,7 +724,6 @@
                         }
                     }
                     
-                    // 2. Gönderiyi veritabanından sil
                     await deleteDoc(doc(db, "posts", postId)); 
 
                     const detailModal = document.getElementById('post-detail-modal');
@@ -762,7 +769,7 @@
             event.stopPropagation();
             document.querySelectorAll('.dropdown-menu').forEach(menu => { if(menu.id !== `dropdown-${postId}`) menu.style.display = 'none'; });
             const menu = document.getElementById(`dropdown-${postId}`);
-            menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+            if(menu) menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
         };
 
         window.pinPost = async function(postId) {
@@ -773,7 +780,7 @@
         };
 
         window.openEditModal = function(postId, currentContent) { currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex'; };
-        document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
+        document.getElementById('save-edited-post-btn')?.addEventListener('click', async () => {
             if(!currentlyEditingPostId) return; const newContent = document.getElementById('edit-post-input').value.trim(); if(!newContent) return;
             try { await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true }); document.getElementById('edit-post-modal').style.display = 'none'; } catch(e) {}
         });
@@ -781,11 +788,11 @@
         window.openShareModal = function(postId, event) {
             event.stopPropagation(); postToShare = postId;
             const container = document.getElementById('share-users-list'); container.innerHTML = '';
-            if(currentProfileFollowing.length === 0) { container.innerHTML = '<div style=\"padding:20px; text-align:center; color:#64748b;\">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; }
+            if(currentProfileFollowing.length === 0) { container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; }
             else {
                 currentProfileFollowing.forEach(uname => {
-                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${uData.avatarUrl}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
-                    container.innerHTML += `<div class=\"user-row\" onclick=\"window.sendPostAsMessage('${uname}')\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${uData.fullName || uname} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${uname}</div></div><button style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
+                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
+                    container.innerHTML += `<div class="user-row" onclick="window.sendPostAsMessage('${uname}')"><div class="row-avatar">${avatarHtml}</div><div style="flex:1;"><div style="font-weight:700;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div><button style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;">Gönder</button></div>`;
                 });
             }
             document.getElementById('share-dm-modal').style.display = 'flex';
@@ -818,9 +825,9 @@
                     const isMe = (targetUsername === myUsername);
                     const isInfoHidden = data.hideInfo || false;
 
-                    document.getElementById('header-name').innerText = data.fullName || targetUsername;
-                    document.getElementById('display-fullname').innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span class="verified-badge">☑️</span>' : ''}`;
-                    document.getElementById('display-username').innerText = `@${targetUsername}`;
+                    const hName = document.getElementById('header-name'); if(hName) hName.innerText = data.fullName || targetUsername;
+                    const dFullName = document.getElementById('display-fullname'); if(dFullName) dFullName.innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span class="verified-badge">☑️</span>' : ''}`;
+                    const dUsername = document.getElementById('display-username'); if(dUsername) dUsername.innerText = `@${targetUsername}`;
                     
                     let detailsHtml = '';
                     if (!isInfoHidden || isMe) {
@@ -828,8 +835,10 @@
                         if(data.birthDate) detailsHtml += `<span>🎈 Doğum tarihi: ${new Date(data.birthDate).toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'})}</span>`;
                         if(data.createdAt) detailsHtml += `<span>🗓️ ${data.createdAt.toDate().toLocaleDateString('tr-TR', {month:'long',year:'numeric'})} tarihinde katıldı</span>`;
                     }
-                    document.getElementById('display-details').innerHTML = detailsHtml;
-                    if (data.bio) document.getElementById('display-bio').innerText = data.bio;
+                    const dDetails = document.getElementById('display-details'); if(dDetails) dDetails.innerHTML = detailsHtml;
+                    if (data.bio) {
+                        const dBio = document.getElementById('display-bio'); if(dBio) dBio.innerText = data.bio;
+                    }
                     
                     if (data.avatarUrl) { document.getElementById('profile-avatar').innerHTML = `<img src="${data.avatarUrl}">`; }
                     else { document.getElementById('profile-avatar').innerHTML = `👤`; }
@@ -839,17 +848,20 @@
                     else { bannerDiv.innerHTML = ``; }
                     
                     currentProfileFollowers = data.followers || []; currentProfileFollowing = data.following || [];
-                    document.getElementById('followers-count').innerText = currentProfileFollowers.length; document.getElementById('following-count').innerText = currentProfileFollowing.length;
+                    const folCount = document.getElementById('followers-count'); if(folCount) folCount.innerText = currentProfileFollowers.length; 
+                    const fIngCount = document.getElementById('following-count'); if(fIngCount) fIngCount.innerText = currentProfileFollowing.length;
+                    
                     isTargetPrivate = data.isPrivate || false; isTargetVerified = data.isVerified || false; 
                     
-                    if(isTargetPrivate) document.getElementById('private-badge-container').innerHTML = `<div class="private-badge">🔒 Bu hesap gizli</div>`; 
-                    else document.getElementById('private-badge-container').innerHTML = '';
+                    const pBadge = document.getElementById('private-badge-container');
+                    if(isTargetPrivate) { if(pBadge) pBadge.innerHTML = `<div class="private-badge">🔒 Bu hesap gizli</div>`; }
+                    else { if(pBadge) pBadge.innerHTML = ''; }
                     
                     const amIFollowing = currentProfileFollowers.includes(myUsername);
 
                     const actionContainer = document.getElementById('action-buttons-container');
                     if (isMe) {
-                        actionContainer.innerHTML = `
+                        if(actionContainer) actionContainer.innerHTML = `
                             <button class="edit-profile-btn" onclick="window.openProfileEdit()">Profili düzenle</button>
                         `;
                     } else {
@@ -857,23 +869,26 @@
                         if(mySnap.exists() && mySnap.data().following) isFollowing = mySnap.data().following.includes(targetUsername); 
                         isRequested = (data.followRequests || []).includes(myUsername);
                         
-                        actionContainer.innerHTML = `
+                        if(actionContainer) actionContainer.innerHTML = `
                             <button class="icon-action-btn" onclick="window.location.href='chat.html?user=${targetUsername}'" title="Mesaj Gönder">✉️</button>
                             <button id="main-follow-btn" class="follow-btn" onclick="window.toggleFollow()">Takip Et</button>
                         `;
                         updateFollowButtonUI();
                     }
 
-                    document.getElementById('followers-box').onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; window.showUserList("Takipçiler", currentProfileFollowers); };
-                    document.getElementById('following-box').onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; window.showUserList("Ağım", currentProfileFollowing); };
+                    const fBox = document.getElementById('followers-box');
+                    if(fBox) fBox.onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; window.showUserList("Takipçiler", currentProfileFollowers); };
+                    const fIngBox = document.getElementById('following-box');
+                    if(fIngBox) fIngBox.onclick = () => { if(isTargetPrivate && !isMe && !amIFollowing) return; window.showUserList("Ağım", currentProfileFollowing); };
 
                     const feedContainer = document.getElementById('profile-feed-container');
                     if (isTargetPrivate && !isMe && !amIFollowing) {
-                        feedContainer.innerHTML = `<div style="padding:50px 20px; text-align:center;"><div style="font-size:28px; font-weight:800; margin-bottom:10px; color:#0f172a;">Bu hesap gizli</div><div style="color:#64748b; font-size:15px;">İçeriklerini görmek için takip edin.</div></div>`;
+                        if(feedContainer) feedContainer.innerHTML = `<div style="padding:50px 20px; text-align:center;"><div style="font-size:28px; font-weight:800; margin-bottom:10px; color:#0f172a;">Bu hesap gizli</div><div style="color:#64748b; font-size:15px;">İçeriklerini görmek için takip edin.</div></div>`;
                         if(unsubscribePosts) { unsubscribePosts(); unsubscribePosts = null; }
                     } else { if(!unsubscribePosts) loadUserPosts(); }
                 } else {
-                    document.getElementById('profile-feed-container').innerHTML = `<div style="padding:40px; text-align:center; color:#64748b;">Bu hesap mevcut değil.</div>`;
+                    const fCont = document.getElementById('profile-feed-container');
+                    if(fCont) fCont.innerHTML = `<div style="padding:40px; text-align:center; color:#64748b;">Bu hesap mevcut değil.</div>`;
                 }
             });
         }
@@ -892,9 +907,9 @@
                 document.getElementById('edit-hideinfo-input').checked = d.hideInfo || false;
             }
         };
-        document.getElementById('cancel-edit-btn').addEventListener('click', () => { document.getElementById('edit-modal').style.display = 'none'; });
+        document.getElementById('cancel-edit-btn')?.addEventListener('click', () => { document.getElementById('edit-modal').style.display = 'none'; });
         
-        document.getElementById('save-edit-btn').addEventListener('click', async () => {
+        document.getElementById('save-edit-btn')?.addEventListener('click', async () => {
             const saveBtn = document.getElementById('save-edit-btn'); 
             const newFullName = document.getElementById('edit-fullname-input').value.trim();
             const newBirthDate = document.getElementById('edit-birthdate-input').value;
@@ -909,7 +924,6 @@
 
             if(!newFullName) { alert("İsim zorunludur!"); return; }
 
-            // 5 MB GÜVENLİK KONTROLÜ (AVATAR VE BANNER)
             if (avatarFile && avatarFile.size > 5 * 1024 * 1024) {
                 alert("Profil fotoğrafı 5 MB'dan büyük olamaz!");
                 return;
@@ -947,18 +961,16 @@
             finally { saveBtn.innerText = "Güncelle"; saveBtn.disabled = false; }
         });
 
-        document.getElementById('trigger-delete-account-btn').addEventListener('click', async () => {
+        document.getElementById('trigger-delete-account-btn')?.addEventListener('click', async () => {
             if(!confirm("DİKKAT! Hesabınız, tüm gönderileriniz, profil ve kapak fotoğraflarınız KALICI olarak silinecek. Bu işlem geri alınamaz! Onaylıyor musunuz?")) return;
             
             const btn = document.getElementById('trigger-delete-account-btn'); 
             btn.disabled = true; btn.innerText = "Hesap ve Fotoğraflar Siliniyor...";
 
             try {
-                // 1. Kullanıcının tüm gönderilerini bul
                 const postsQuery = query(collection(db, "posts"), where("author", "==", myUsername));
                 const postsSnap = await getDocs(postsQuery);
                 
-                // 2. Döngüye gir: Önce gönderi resmini Storage'dan sil, sonra yazıyı Firestore'dan sil
                 for (const postDoc of postsSnap.docs) {
                     const postData = postDoc.data();
                     if (postData.imageUrl && !postData.isRepost) {
@@ -967,7 +979,6 @@
                     await deleteDoc(doc(db, "posts", postDoc.id));
                 }
 
-                // 3. Kullanıcının profil (Avatar) ve kapak (Banner) fotoğraflarını Storage'dan sil
                 const userDocSnap = await getDoc(doc(db, "users", myUsername));
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
@@ -979,10 +990,8 @@
                     }
                 }
 
-                // 4. Kullanıcının Firestore'daki profil belgesini sil
                 await deleteDoc(doc(db, "users", myUsername));
 
-                // 5. Firebase Authentication'dan e-posta/şifre girişini sil
                 const user = auth.currentUser;
                 if(user) await deleteUser(user);
 
@@ -1217,44 +1226,38 @@
 
         function loadUserPosts() {
             if (unsubscribePosts) unsubscribePosts(); 
-            // YENİ: Fonksiyonu 'async' (asenkron) yaptık çünkü kullanıcıları bekleyeceğiz
             unsubscribePosts = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), async (snapshot) => {
                 globalPosts = []; 
                 const feedContainer = document.getElementById('profile-feed-container'); 
                 let userPostCount = 0;
                 
-                let neededUsers = new Set(); // Ekranda göstereceğimiz yazarların/yorumcuların listesi
+                let neededUsers = new Set(); 
                 
-                // Hedef profilin kullanıcısını da listeye ekle (banner/profil için lazım olabilir)
                 if(targetUsername) neededUsers.add(targetUsername); 
 
-                // 1. AŞAMA: Önce gelen veriyi tara ve kimlerin profiline ihtiyacımız olduğunu bul
                 snapshot.forEach((postDoc) => {
                     let postData = postDoc.data();
                     if(postData.content) postData.content = DOMPurify.sanitize(postData.content);
                     if(postData.comments) postData.comments.forEach(c => { 
                         if(c.text) c.text = DOMPurify.sanitize(c.text); 
-                        if(c.author) neededUsers.add(c.author); // Yorum sahibini de ekle
+                        if(c.author) neededUsers.add(c.author); 
                     });
                     
-                    neededUsers.add(postData.author); // Post sahibini ekle
+                    neededUsers.add(postData.author); 
                     if(postData.isRepost && postData.originalPostAuthor) neededUsers.add(postData.originalPostAuthor);
 
                     globalPosts.push({ id: postDoc.id, data: postData }); 
                 });
 
-                // 2. AŞAMA: Ekrana basmadan ÖNCE eksik kullanıcıları Firebase'den çek
                 await window.fetchMissingUsers(Array.from(neededUsers));
 
-                // 3. AŞAMA: Artık herkesin verisi elimizde, ekrana güvenle basabiliriz
-                feedContainer.innerHTML = ''; // Temizle
+                if(feedContainer) feedContainer.innerHTML = ''; 
                 
                 let pinnedPostId = null;
                 if(allUsersData[targetUsername] && allUsersData[targetUsername].pinnedPostId) {
                     pinnedPostId = allUsersData[targetUsername].pinnedPostId;
                 }
                 
-                // (Orijinal snapshot.forEach döngünüzün UI kısımları aynen devam ediyor...)
                 globalPosts.forEach((postObj) => {
                     let postData = postObj.data;
                     const postId = postObj.id; 
@@ -1351,20 +1354,22 @@
                             return postDiv;
                         };
 
-                        if(postId === pinnedPostId) { feedContainer.prepend(renderSinglePost(true)); } 
-                        else { feedContainer.appendChild(renderSinglePost(false)); }
+                        if(feedContainer) {
+                            if(postId === pinnedPostId) { feedContainer.prepend(renderSinglePost(true)); } 
+                            else { feedContainer.appendChild(renderSinglePost(false)); }
+                        }
                     }
                 });
-                document.getElementById('header-post-count').innerText = `${userPostCount} içerik`;
-                if(userPostCount === 0) {
+                const hCount = document.getElementById('header-post-count');
+                if(hCount) hCount.innerText = `${userPostCount} içerik`;
+                
+                if(userPostCount === 0 && feedContainer) {
                     feedContainer.innerHTML = `<div style="padding:40px; text-align:center;"><div style="font-size:28px; font-weight:800; margin-bottom:10px; color:#0f172a;">Henüz bir içerik yok</div><div style="color:#64748b; font-size:15px;">Burada paylaşılanlar listelenecek.</div></div>`;
                 }
             });
         }
 
         window.logoutUser = async function() { await signOut(auth); window.location.href = 'index.html'; };
-
-        
 
     </script>
     <script src="ui.js"></script>

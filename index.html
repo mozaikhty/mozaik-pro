@@ -119,21 +119,12 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyC07_DzrwOlwWwopQZhUkHL1sj2zPDIT7k", authDomain: "mozaiksosyalmedya.firebaseapp.com", projectId: "mozaiksosyalmedya", storageBucket: "mozaiksosyalmedya.firebasestorage.app", messagingSenderId: "492534131254", appId: "1:492534131254:web:6644008a553294be05c697" };
-        const app = initializeApp(firebaseConfig); 
+        // 1. DÜZELTME: Firebase'i burada tekrar başlatmak yerine, zaten başlatılmış olan auth ve db'yi firebase-config.js'den içe aktarıyoruz.
+        import { auth, db } from './firebase-config.js';
         
-        // GÖRÜNMEZ SPAM VE BOT KORUMASI (APP CHECK)
-        const appCheck = initializeAppCheck(app, {
-            provider: new ReCaptchaV3Provider('6LcwbZ4sAAAAAPJm8ty9Edqyjn_-6COG2rj_axCA'),
-            isTokenAutoRefreshEnabled: true
-        });
-
-        const auth = getAuth(app); const db = getFirestore(app);
+        // 2. Auth ve Firestore fonksiyonlarını CDN'den çekmeye devam ediyoruz.
+        import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         // YENİ: Kayıt işlemi sürerken erken yönlendirmeyi engellemek için değişken
         let isRegistering = false; 
@@ -203,7 +194,7 @@
             if(pass !== passConfirm) return showError("Şifreler birbiriyle eşleşmiyor!");
             if(!/\d/.test(pass) || !/[a-zA-Z]/.test(pass)) return showError("Şifreniz en az bir harf ve bir rakam içermelidir.");
 
-            // YENİ: Kayıt işleminin başladığını sisteme bildir
+            // Kayıt işleminin başladığını sisteme bildir
             isRegistering = true; 
             const btn = document.getElementById('register-btn'); btn.disabled = true; btn.innerText = "Kaydediliyor...";
             
@@ -231,7 +222,7 @@
                 window.location.href = "feed.html"; 
                 
             } catch (error) { 
-                console.error("Kayıt Hatası Detayı:", error); // YENİ: Konsolda hatanın tam sebebini gösterir
+                console.error("Kayıt Hatası Detayı:", error); 
                 isRegistering = false; // Hata verirse yeniden denemek için sıfırla
                 if(error.code === 'auth/email-already-in-use') showError("Bu e-posta adresi zaten kullanılıyor.");
                 else showError("Kayıt sırasında bir hata oluştu.");

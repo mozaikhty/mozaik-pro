@@ -262,7 +262,11 @@
     </style>
 </head>
 <body>
-    <script>if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');</script>
+    <script>
+        try {
+            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+        } catch(e) { console.warn("Gizli mod nedeniyle tema okunamadı."); }
+    </script>
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
@@ -447,8 +451,6 @@
         </div>
     </div>
 
-    
-
     <div class="modal-overlay" id="support-modal" style="z-index: 5000;">
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
@@ -482,14 +484,10 @@
     <div id="bottom-nav-container"></div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
+        // 1. DÜZELTME: Firebase başlatma temizliği
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
-
-        // IMGBB ÜCRETSİZ SİSTEMİ GERİ GETİRİLDİ
-        
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
         import { auth, db, storage } from './firebase-config.js';
 
         let currentUser = null; let myUsername = null; let chatId = null; let isGroupChat = false;
@@ -521,24 +519,39 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         };
 
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
-        window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
-        window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
+        
+        // 2. DÜZELTME: DOM Güvenliği (Optional Chaining)
+        window.openMobileSidebar = function() { 
+            const overlay = document.getElementById('mobile-sidebar-overlay');
+            if(overlay) overlay.style.display = 'block'; 
+            setTimeout(() => { document.getElementById('mobile-sidebar')?.classList.add('open'); }, 10); 
+        };
+        window.closeMobileSidebar = function() { 
+            document.getElementById('mobile-sidebar')?.classList.remove('open'); 
+            setTimeout(() => { 
+                const overlay = document.getElementById('mobile-sidebar-overlay');
+                if(overlay) overlay.style.display = 'none'; 
+            }, 300); 
+        };
         window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
 
         window.openSupportModal = function() {
-            document.getElementById('settings-modal').style.display = 'none';
-            document.getElementById('support-message-input').value = '';
-            document.getElementById('support-modal').style.display = 'flex';
+            const settingsModal = document.getElementById('settings-modal');
+            if(settingsModal) settingsModal.style.display = 'none';
+            const sInput = document.getElementById('support-message-input');
+            if(sInput) sInput.value = '';
+            const sModal = document.getElementById('support-modal');
+            if(sModal) sModal.style.display = 'flex';
         };
 
         window.sendSupportMessage = async function() {
             const btn = document.getElementById('send-support-btn');
-            const message = document.getElementById('support-message-input').value.trim();
+            const input = document.getElementById('support-message-input');
+            const message = input ? input.value.trim() : '';
             
-            if (!message) { alert("Lütfen bir mesaj yazın."); return; }
+            if (!message) { window.showToast?.("Lütfen bir mesaj yazın.", "error") || alert("Lütfen bir mesaj yazın."); return; }
 
-            btn.disabled = true;
-            btn.innerText = "Gönderiliyor...";
+            if(btn) { btn.disabled = true; btn.innerText = "Gönderiliyor..."; }
 
             try {
                 await addDoc(collection(db, "tickets"), {
@@ -547,16 +560,17 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                     createdAt: serverTimestamp(),
                     status: "Yeni"
                 });
-                alert("Mesajınız başarıyla iletildi. Teşekkür ederiz!");
-                document.getElementById('support-modal').style.display = 'none';
+                window.showToast?.("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success") || alert("Gönderildi.");
+                const modal = document.getElementById('support-modal');
+                if(modal) modal.style.display = 'none';
             } catch (error) {
                 console.error("Hata:", error);
                 alert("Mesaj gönderilirken bir hata oluştu.");
             } finally {
-                btn.disabled = false;
-                btn.innerText = "Gönder";
+                if(btn) { btn.disabled = false; btn.innerText = "Gönder"; }
             }
         };
+
         window.showMyFollowing = function() {
             window.closeMobileSidebar();
             if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); }
@@ -565,6 +579,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             window.closeMobileSidebar();
             if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); }
         };
+        
         window.showUserList = function(title, userArray) {
             const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
             const container = document.getElementById('users-list-container'); if(!container) return;
@@ -581,14 +596,14 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
 
         window.showNewChatScreen = function() {
-            document.getElementById('chat-empty-state').style.display = 'none';
-            document.getElementById('chat-view').style.display = 'none';
-            document.getElementById('new-chat-state').style.display = 'flex';
+            const emptyState = document.getElementById('chat-empty-state'); if(emptyState) emptyState.style.display = 'none';
+            const chatView = document.getElementById('chat-view'); if(chatView) chatView.style.display = 'none';
+            const newChatState = document.getElementById('new-chat-state'); if(newChatState) newChatState.style.display = 'flex';
             document.body.classList.add('chat-active');
         };
         window.closeNewChatScreen = function() {
-            document.getElementById('new-chat-state').style.display = 'none';
-            document.getElementById('chat-empty-state').style.display = 'flex';
+            const newChatState = document.getElementById('new-chat-state'); if(newChatState) newChatState.style.display = 'none';
+            const emptyState = document.getElementById('chat-empty-state'); if(emptyState) emptyState.style.display = 'flex';
             document.body.classList.remove('chat-active');
         };
 
@@ -604,13 +619,14 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
         document.getElementById('open-emoji-btn')?.addEventListener('click', () => {
             const picker = document.getElementById('chat-emoji-picker');
-            picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+            if(picker) picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
         });
         document.querySelectorAll('#chat-emoji-picker .emoji-item').forEach(el => {
             el.addEventListener('click', (e) => {
                 const input = document.getElementById('msg-input');
-                input.value += e.target.innerText;
-                document.getElementById('send-btn').disabled = false;
+                if(input) input.value += e.target.innerText;
+                const sBtn = document.getElementById('send-btn');
+                if(sBtn) sBtn.disabled = false;
             });
         });
         document.addEventListener('click', function(event) {
@@ -622,18 +638,25 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         });
 
         document.getElementById('chat-image-input')?.addEventListener('change', (e) => {
-            if(e.target.files.length > 0) { document.getElementById('send-btn').disabled = false; document.getElementById('img-upload-label').style.color = '#10b981'; }
+            if(e.target.files.length > 0) { 
+                const sBtn = document.getElementById('send-btn'); if(sBtn) sBtn.disabled = false; 
+                const uploadLabel = document.getElementById('img-upload-label'); if(uploadLabel) uploadLabel.style.color = '#10b981'; 
+            }
         });
         document.getElementById('msg-input')?.addEventListener('input', (e) => {
-            if(e.target.value.trim().length > 0) document.getElementById('send-btn').disabled = false;
-            else if (document.getElementById('chat-image-input').files.length === 0) document.getElementById('send-btn').disabled = true;
+            const sBtn = document.getElementById('send-btn');
+            const imgInp = document.getElementById('chat-image-input');
+            if(e.target.value.trim().length > 0) {
+                if(sBtn) sBtn.disabled = false;
+            } else if (imgInp && imgInp.files.length === 0) {
+                if(sBtn) sBtn.disabled = true;
+            }
         });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
                 
-                // YENİ: EKSİK KULLANICILARI ÇEKEN AKILLI FONKSİYON
                 window.fetchMissingUsers = async function(usernamesArray) {
                     const missing = usernamesArray.filter(u => u && !allUsersData[u]);
                     if (missing.length === 0) return;
@@ -645,20 +668,19 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                     }));
                 };
 
-                // 1. AŞAMA: SADECE KENDİ PROFİLİMİZİ DİNLİYORUZ (10.000 veri çekmek yerine 1 veri)
                 onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
                     if(docSnap.exists()) {
                         const u = docSnap.data();
                         allUsersData[myUsername] = u;
                         myFollowing = u.following || [];
                         
-                        // Kendi ağımızdaki kişileri de sessizce çekelim ki "Yeni Sohbet" aramalarında direkt çıksınlar
                         await window.fetchMissingUsers(myFollowing);
                         
-                        document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
-                        document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
-                        document.getElementById('sidebar-following-count').innerText = myFollowing.length;
-                        document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
+                        const mobName = document.getElementById('sidebar-name-mobile'); if(mobName) mobName.innerText = u.fullName || myUsername;
+                        const mobHandle = document.getElementById('sidebar-handle-mobile'); if(mobHandle) mobHandle.innerText = '@' + myUsername;
+                        const mobFolCount = document.getElementById('sidebar-following-count'); if(mobFolCount) mobFolCount.innerText = myFollowing.length;
+                        const mobFolersCount = document.getElementById('sidebar-followers-count'); if(mobFolersCount) mobFolersCount.innerText = (u.followers || []).length;
+                        
                         if(u.avatarUrl) {
                             const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
                             const mobAv = document.getElementById('mobile-avatar-header'); if(mobAv) mobAv.innerHTML = imgTag;
@@ -671,7 +693,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                     updateInboxDisplay(); 
                 });
                 
-                // 2. AŞAMA: SADECE SOHBETİMİZ OLAN KİŞİLERİ ÇEKİYORUZ
                 onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), async (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'group'); 
                     let neededUsers = new Set();
@@ -680,13 +701,11 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                         activeChats.push({ id: docSnap.id, ...data, type:'private' }); 
                         if(data.participants) data.participants.forEach(p => neededUsers.add(p));
                     }); 
-                    // Ekrana basmadan önce konuştuğumuz kişilerin profil verilerini getir
                     await window.fetchMissingUsers(Array.from(neededUsers));
                     updateInboxDisplay(); 
                     attachCallListeners(); 
                 });
 
-                // 3. AŞAMA: GRUPLARDAKİ KİŞİLERİ ÇEKİYORUZ
                 onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), async (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'private'); 
                     let neededUsers = new Set();
@@ -695,7 +714,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                         activeChats.push({ id: docSnap.id, ...data, type:'group' }); 
                         if(data.members) data.members.forEach(m => neededUsers.add(m));
                     }); 
-                    // Ekrana basmadan önce grup üyelerinin profil verilerini getir
                     await window.fetchMissingUsers(Array.from(neededUsers));
                     updateInboxDisplay(); 
                     attachCallListeners(); 
@@ -703,9 +721,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
                 if (targetUsername || targetGroupId) {
                     document.body.classList.add('chat-active');
-                    document.getElementById('chat-empty-state').style.display = 'none';
-                    document.getElementById('new-chat-state').style.display = 'none';
-                    document.getElementById('chat-view').style.display = 'flex';
+                    const emptyState = document.getElementById('chat-empty-state'); if(emptyState) emptyState.style.display = 'none';
+                    const newChatState = document.getElementById('new-chat-state'); if(newChatState) newChatState.style.display = 'none';
+                    const chatView = document.getElementById('chat-view'); if(chatView) chatView.style.display = 'flex';
                     setupActiveChat();
                 }
 
@@ -725,13 +743,13 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                                 currentCallChatId = chat.id;
                                 currentCallCollection = colName;
                                 isCallVideo = callData.type === 'video';
-                                document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
-                                document.getElementById('accept-call-btn').style.display = 'block';
-                                callOverlay.style.display = 'flex';
-                                document.getElementById('video-container').style.display = isCallVideo ? 'flex' : 'none';
+                                const callStatus = document.getElementById('call-status-text'); if(callStatus) callStatus.innerText = `@${callData.caller} Arıyor...`;
+                                const acceptBtn = document.getElementById('accept-call-btn'); if(acceptBtn) acceptBtn.style.display = 'block';
+                                if(callOverlay) callOverlay.style.display = 'flex';
+                                const vCont = document.getElementById('video-container'); if(vCont) vCont.style.display = isCallVideo ? 'flex' : 'none';
                             }
                             if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername && currentCallDocId === change.doc.id) {
-                                document.getElementById('call-status-text').innerText = "Bağlandı";
+                                const callStatus = document.getElementById('call-status-text'); if(callStatus) callStatus.innerText = "Bağlandı";
                                 const desc = new RTCSessionDescription(callData.answer);
                                 await peerConnection.setRemoteDescription(desc);
                             }
@@ -802,7 +820,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         }
 
         document.getElementById('new-chat-search')?.addEventListener('input', (e) => {
-            const text = e.target.value.toLowerCase().trim(); const container = document.getElementById('new-chat-results'); container.innerHTML = '';
+            const text = e.target.value.toLowerCase().trim(); const container = document.getElementById('new-chat-results'); if(!container) return;
+            container.innerHTML = '';
             if(!text) return;
             const searchResults = Object.keys(allUsersData).filter(uid => uid !== myUsername && uid.toLowerCase().includes(text));
             if (searchResults.length > 0) {
@@ -817,8 +836,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         const openGroupModalBtn = document.getElementById('open-group-modal');
         if (openGroupModalBtn) {
             openGroupModalBtn.addEventListener('click', () => {
-                document.getElementById('group-modal').style.display = 'flex';
-                const listDiv = document.getElementById('group-users-list'); listDiv.innerHTML = '';
+                const groupModal = document.getElementById('group-modal'); if(groupModal) groupModal.style.display = 'flex';
+                const listDiv = document.getElementById('group-users-list'); if(!listDiv) return;
+                listDiv.innerHTML = '';
                 if(myFollowing.length === 0) { listDiv.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">Önce ağınıza birilerini eklemelisiniz!</div>'; return; }
                 myFollowing.forEach(uid => {
                     const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
@@ -828,38 +848,42 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         }
 
         document.getElementById('create-group-btn')?.addEventListener('click', async () => {
-            const groupName = document.getElementById('group-name-input').value.trim(); const selectedCheckboxes = document.querySelectorAll('.group-member-checkbox:checked');
+            const groupNameInp = document.getElementById('group-name-input');
+            const groupName = groupNameInp ? groupNameInp.value.trim() : '';
+            const selectedCheckboxes = document.querySelectorAll('.group-member-checkbox:checked');
             if(!groupName || selectedCheckboxes.length === 0) return alert("İsim ve en az 1 kişi gerekli!");
             const members = [myUsername, ...Array.from(selectedCheckboxes).map(cb => cb.value)]; 
-            const btn = document.getElementById('create-group-btn'); btn.disabled = true; btn.innerText = "Oluşturuluyor...";
+            const btn = document.getElementById('create-group-btn'); if(btn) { btn.disabled = true; btn.innerText = "Oluşturuluyor..."; }
             try {
                 const newGroupRef = await addDoc(collection(db, "groups"), { name: groupName, members: members, createdBy: myUsername, lastMessage: 'Grup oluşturuldu', lastSender: myUsername, updatedAt: serverTimestamp() });
                 window.location.href = `chat.html?group=${newGroupRef.id}`;
-            } catch(e) { alert("Hata!"); btn.disabled = false; btn.innerText = "Grubu Oluştur"; }
+            } catch(e) { alert("Hata!"); if(btn) { btn.disabled = false; btn.innerText = "Grubu Oluştur"; } }
         });
 
         async function setupActiveChat() {
             if (targetUsername) {
                 isGroupChat = false; chatId = [myUsername, targetUsername].sort().join('_');
-                if (document.getElementById('add-member-btn')) document.getElementById('add-member-btn').style.display = 'none';
+                const addMemBtn = document.getElementById('add-member-btn'); if(addMemBtn) addMemBtn.style.display = 'none';
                 try { 
                     const uSnap = await getDoc(doc(db, "users", targetUsername)); 
                     if (uSnap.exists()) {
                         const data = uSnap.data();
-                        document.getElementById('chat-username-text').innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span style="color:#3b82f6; font-size:16px;">☑️</span>' : ''}`;
-                        document.getElementById('chat-subtitle').innerText = `@${targetUsername}`;
-                        if (data.avatarUrl) document.getElementById('chat-avatar').innerHTML = `<img src="${data.avatarUrl}">`; 
+                        const uText = document.getElementById('chat-username-text'); if(uText) uText.innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span style="color:#3b82f6; font-size:16px;">☑️</span>' : ''}`;
+                        const cSub = document.getElementById('chat-subtitle'); if(cSub) cSub.innerText = `@${targetUsername}`;
+                        const cAv = document.getElementById('chat-avatar'); if (data.avatarUrl && cAv) cAv.innerHTML = `<img src="${data.avatarUrl}">`; 
                     }
                 } catch(e) {}
             } else if (targetGroupId) {
-                isGroupChat = true; chatId = targetGroupId; document.getElementById('chat-avatar').innerHTML = `👥`;
-                if (document.getElementById('add-member-btn')) document.getElementById('add-member-btn').style.display = 'flex';
+                isGroupChat = true; chatId = targetGroupId;
+                const cAv = document.getElementById('chat-avatar'); if(cAv) cAv.innerHTML = `👥`;
+                const addMemBtn = document.getElementById('add-member-btn'); if(addMemBtn) addMemBtn.style.display = 'flex';
                 try {
                     const gSnap = await getDoc(doc(db, "groups", targetGroupId));
                     if (gSnap.exists()) {
-                        const gData = gSnap.data(); document.getElementById('chat-username-text').innerText = gData.name;
+                        const gData = gSnap.data(); 
+                        const uText = document.getElementById('chat-username-text'); if(uText) uText.innerText = gData.name;
                         const otherMembers = gData.members.filter(m => m !== myUsername).join(', ');
-                        document.getElementById('chat-subtitle').innerText = `Sen, ${otherMembers}`;
+                        const cSub = document.getElementById('chat-subtitle'); if(cSub) cSub.innerText = `Sen, ${otherMembers}`;
                     } else { alert("Grup bulunamadı!"); window.location.href = "chat.html"; }
                 } catch(e) {}
             }
@@ -876,11 +900,16 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                     for (let usr in typingObj) { if (usr !== myUsername && typingObj[usr] === true) typingUsers.push(usr); }
                     const indicator = document.getElementById('typing-indicator'); const subtitle = document.getElementById('chat-subtitle');
                     if (typingUsers.length > 0) { 
-                        subtitle.style.display = 'none'; 
-                        indicator.style.display = 'flex'; 
-                        indicator.innerHTML = `<span>${isGroupChat ? typingUsers.join(', ') + ' yazıyor...' : 'yazıyor...'}</span>`; 
+                        if(subtitle) subtitle.style.display = 'none'; 
+                        if(indicator) {
+                            indicator.style.display = 'flex'; 
+                            indicator.innerHTML = `<span>${isGroupChat ? typingUsers.join(', ') + ' yazıyor...' : 'yazıyor...'}</span>`;
+                        } 
                     } 
-                    else { indicator.style.display = 'none'; subtitle.style.display = 'block'; }
+                    else { 
+                        if(indicator) indicator.style.display = 'none'; 
+                        if(subtitle) subtitle.style.display = 'block'; 
+                    }
                 }
             });
 
@@ -896,14 +925,15 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         window.prepareReply = function(msgId, sender, text) {
             let summary = text; if (text.includes('i.ibb.co')) summary = '📷 Fotoğraf';
             currentReplyData = { id: msgId, sender: sender, text: summary };
-            document.getElementById('reply-preview-sender').innerText = sender;
-            document.getElementById('reply-preview-msg').innerText = summary.length > 50 ? summary.substring(0, 50) + "..." : summary;
-            document.getElementById('reply-preview-box').style.display = 'flex'; document.getElementById('msg-input').focus();
+            const rpSender = document.getElementById('reply-preview-sender'); if(rpSender) rpSender.innerText = sender;
+            const rpMsg = document.getElementById('reply-preview-msg'); if(rpMsg) rpMsg.innerText = summary.length > 50 ? summary.substring(0, 50) + "..." : summary;
+            const rpBox = document.getElementById('reply-preview-box'); if(rpBox) rpBox.style.display = 'flex';
+            const mInput = document.getElementById('msg-input'); if(mInput) mInput.focus();
         };
 
         window.cancelReply = function() { 
             currentReplyData = null; 
-            document.getElementById('reply-preview-box').style.display = 'none'; 
+            const rpBox = document.getElementById('reply-preview-box'); if(rpBox) rpBox.style.display = 'none'; 
         };
         
         document.getElementById('cancel-reply-btn')?.addEventListener('click', window.cancelReply);
@@ -931,6 +961,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             
             onSnapshot(query(messagesRef, orderBy("createdAt", "asc")), (snapshot) => {
                 const messagesContainer = document.getElementById('chat-messages');
+                if(!messagesContainer) return;
                 messagesContainer.innerHTML = ''; 
 
                 snapshot.forEach((docSnap) => {
@@ -1010,21 +1041,23 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
         });
 
         async function sendMessage() {
+            if(!msgInput) return;
             const text = msgInput.value.trim(); 
-            const file = imgInput.files[0];
+            const file = imgInput ? imgInput.files[0] : null;
             if (!text && !file) return;
 
-            // 5 MB GÜVENLİK KONTROLÜ
             if (file && file.size > 5 * 1024 * 1024) {
                 alert("Göndermek istediğiniz fotoğraf 5 MB'dan büyük olamaz!");
-                imgInput.value = ''; 
-                document.getElementById('img-upload-label').style.color = '#64748b'; 
-                if (text.length === 0) sendBtn.disabled = true;
+                if(imgInput) imgInput.value = ''; 
+                const upLabel = document.getElementById('img-upload-label'); if(upLabel) upLabel.style.color = '#64748b'; 
+                if (text.length === 0 && sendBtn) sendBtn.disabled = true;
                 return; 
             }
 
-            sendBtn.disabled = true; msgInput.value = ''; document.getElementById('chat-emoji-picker').style.display = 'none';
-            document.getElementById('img-upload-label').style.color = '#64748b';
+            if(sendBtn) sendBtn.disabled = true; 
+            msgInput.value = ''; 
+            const picker = document.getElementById('chat-emoji-picker'); if(picker) picker.style.display = 'none';
+            const uploadLabel = document.getElementById('img-upload-label'); if(uploadLabel) uploadLabel.style.color = '#64748b';
             
             try {
                 let imgUrl = null;
@@ -1041,7 +1074,10 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                 alert("Mesaj gönderilirken hata oluştu!");
             }
             
-            sendBtn.disabled = false; msgInput.focus(); imgInput.value = ''; window.cancelReply();
+            if(sendBtn) sendBtn.disabled = false; 
+            msgInput.focus(); 
+            if(imgInput) imgInput.value = ''; 
+            window.cancelReply();
         }
 
         async function sendActualMessage(text, imgUrl) {
@@ -1070,17 +1106,13 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             const updateData = { lastMessage: summary, lastSender: myUsername, unreadBy: unreadList, updatedAt: serverTimestamp() };
 
             try {
-                // ÖNCE ana sohbet belgesini güncelle (Güvenlik kuralları için)
                 if (!isGroupChat) {
                     await setDoc(chatRef, { participants: [myUsername, targetUsername], ...updateData }, { merge: true });
                 } else {
                     await updateDoc(chatRef, updateData);
                 }
 
-                // SONRA mesajı alt koleksiyona kaydet
                 await addDoc(messagesRef, msgData);
-                
-                // Yazıyor statüsünü kapat
                 await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
             } catch (error) {
                 console.error("Mesaj gönderilirken hata oluştu:", error);
@@ -1096,17 +1128,17 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
         async function startCall(isVideo) {
             isCallVideo = isVideo; 
-            document.getElementById('call-status-text').innerText = "Aranıyor..."; 
-            document.getElementById('accept-call-btn').style.display = 'none'; 
-            callOverlay.style.display = 'flex';
-            document.getElementById('video-container').style.display = isVideo ? 'flex' : 'none'; 
+            const callStatus = document.getElementById('call-status-text'); if(callStatus) callStatus.innerText = "Aranıyor..."; 
+            const acceptBtn = document.getElementById('accept-call-btn'); if(acceptBtn) acceptBtn.style.display = 'none'; 
+            if(callOverlay) callOverlay.style.display = 'flex';
+            const vCont = document.getElementById('video-container'); if(vCont) vCont.style.display = isVideo ? 'flex' : 'none'; 
             
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-                if(isVideo) localVideo.srcObject = localStream;
+                if(isVideo && localVideo) localVideo.srcObject = localStream;
                 peerConnection = new RTCPeerConnection(servers);
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
+                remoteStream = new MediaStream(); if(remoteVideo) remoteVideo.srcObject = remoteStream;
                 peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
                 
                 currentCallCollection = isGroupChat ? "groups" : "chats";
@@ -1138,15 +1170,15 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
         document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
             document.getElementById('accept-call-btn').style.display = 'none'; 
-            document.getElementById('call-status-text').innerText = "Bağlanıyor...";
+            const callStatus = document.getElementById('call-status-text'); if(callStatus) callStatus.innerText = "Bağlanıyor...";
             const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); 
             const callData = (await getDoc(callDocRef)).data();
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
-                if(isCallVideo) localVideo.srcObject = localStream;
+                if(isCallVideo && localVideo) localVideo.srcObject = localStream;
                 peerConnection = new RTCPeerConnection(servers);
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
+                remoteStream = new MediaStream(); if(remoteVideo) remoteVideo.srcObject = remoteStream;
                 peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
                 
                 peerConnection.onicecandidate = event => { 
@@ -1170,7 +1202,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                         } 
                     }); 
                 });
-                document.getElementById('call-status-text').innerText = "Bağlandı";
+                const cText = document.getElementById('call-status-text'); if(cText) cText.innerText = "Bağlandı";
             } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
         });
 
@@ -1199,21 +1231,20 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
             if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } 
             if(peerConnection) { peerConnection.close(); } 
             localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; currentCallChatId = null; currentCallCollection = null;
-           if (localVideo) localVideo.srcObject = null; 
+            if (localVideo) localVideo.srcObject = null; 
             if (remoteVideo) remoteVideo.srcObject = null; 
         }
 
-        // GRUBA KİŞİ EKLEME MANTIĞI
         document.getElementById('add-member-btn')?.addEventListener('click', () => {
-            document.getElementById('add-member-modal').style.display = 'flex';
-            document.getElementById('add-member-search').value = '';
-            document.getElementById('add-member-results').innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">İsim veya kullanıcı adı yazın...</div>';
-            document.getElementById('add-member-search').focus();
+            const modal = document.getElementById('add-member-modal'); if(modal) modal.style.display = 'flex';
+            const inp = document.getElementById('add-member-search'); if(inp) { inp.value = ''; inp.focus(); }
+            const res = document.getElementById('add-member-results'); if(res) res.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">İsim veya kullanıcı adı yazın...</div>';
         });
 
         document.getElementById('add-member-search')?.addEventListener('input', (e) => {
             const text = e.target.value.toLowerCase().trim();
             const container = document.getElementById('add-member-results');
+            if(!container) return;
             container.innerHTML = '';
             
             if(!text) {
@@ -1270,12 +1301,12 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
                     createdAt: serverTimestamp()
                 });
 
-                window.showToast("Kişi başarıyla eklendi!", "success");
-                document.getElementById('add-member-modal').style.display = 'none';
+                window.showToast?.("Kişi başarıyla eklendi!", "success") || alert("Eklendi");
+                const modal = document.getElementById('add-member-modal'); if(modal) modal.style.display = 'none';
                 
             } catch (error) {
                 console.error("Gruba kişi ekleme hatası:", error);
-                window.showToast("Kişi eklenirken bir hata oluştu.", "error");
+                window.showToast?.("Kişi eklenirken bir hata oluştu.", "error") || alert("Hata oluştu.");
             }
         };
     </script>

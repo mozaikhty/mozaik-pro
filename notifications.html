@@ -154,8 +154,12 @@
     </style>
 </head>
 <body>
-<body>
-    <script>if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');</script>
+    <script>
+        try {
+            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+        } catch(e) { console.warn("Gizli mod nedeniyle tema okunamadı."); }
+    </script>
+    
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
@@ -221,8 +225,6 @@
         </div>
     </div>
 
-    
-
     <div class="modal-overlay" id="support-modal" style="z-index: 5000;">
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
@@ -238,37 +240,63 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        // 1. DÜZELTME: Firebase başlatma temizliği
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, where, orderBy, doc, getDoc, updateDoc, arrayRemove, arrayUnion, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-
-        import { auth, db, storage } from './firebase-config.js';
+        import { getFirestore, collection, onSnapshot, query, where, orderBy, doc, getDoc, updateDoc, arrayRemove, arrayUnion, setDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { auth, db } from './firebase-config.js';
 
         let myUsername = null; let allUsersData = {}; let myRequests = []; let myNotifications = [];
         let currentTab = 'all';
 
-        document.getElementById('tab-all').addEventListener('click', () => { currentTab = 'all'; document.getElementById('tab-all').classList.add('active'); document.getElementById('tab-requests').classList.remove('active'); renderNotifications(); });
-        document.getElementById('tab-requests').addEventListener('click', () => { currentTab = 'requests'; document.getElementById('tab-requests').classList.add('active'); document.getElementById('tab-all').classList.remove('active'); renderNotifications(); });
+        document.getElementById('tab-all')?.addEventListener('click', () => { 
+            currentTab = 'all'; 
+            document.getElementById('tab-all').classList.add('active'); 
+            document.getElementById('tab-requests')?.classList.remove('active'); 
+            renderNotifications(); 
+        });
+        
+        document.getElementById('tab-requests')?.addEventListener('click', () => { 
+            currentTab = 'requests'; 
+            document.getElementById('tab-requests').classList.add('active'); 
+            document.getElementById('tab-all')?.classList.remove('active'); 
+            renderNotifications(); 
+        });
 
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
-        window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
-        window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
+        
+        // 2. DÜZELTME: DOM Güvenliği (Optional Chaining)
+        window.openMobileSidebar = function() { 
+            const overlay = document.getElementById('mobile-sidebar-overlay');
+            if(overlay) overlay.style.display = 'block'; 
+            setTimeout(() => { document.getElementById('mobile-sidebar')?.classList.add('open'); }, 10); 
+        };
+        window.closeMobileSidebar = function() { 
+            document.getElementById('mobile-sidebar')?.classList.remove('open'); 
+            setTimeout(() => { 
+                const overlay = document.getElementById('mobile-sidebar-overlay');
+                if(overlay) overlay.style.display = 'none'; 
+            }, 300); 
+        };
+        
         window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
 
         window.openSupportModal = function() {
-            document.getElementById('settings-modal').style.display = 'none';
-            document.getElementById('support-message-input').value = '';
-            document.getElementById('support-modal').style.display = 'flex';
+            const settingsModal = document.getElementById('settings-modal');
+            if(settingsModal) settingsModal.style.display = 'none';
+            const sInput = document.getElementById('support-message-input');
+            if(sInput) sInput.value = '';
+            const sModal = document.getElementById('support-modal');
+            if(sModal) sModal.style.display = 'flex';
         };
 
         window.sendSupportMessage = async function() {
             const btn = document.getElementById('send-support-btn');
-            const message = document.getElementById('support-message-input').value.trim();
+            const input = document.getElementById('support-message-input');
+            const message = input ? input.value.trim() : '';
             
-            if (!message) { window.showToast("Lütfen bir mesaj yazın.", "error"); return; }
+            if (!message) { window.showToast?.("Lütfen bir mesaj yazın.", "error") || alert("Lütfen bir mesaj yazın."); return; }
 
-            btn.disabled = true;
-            btn.innerText = "Gönderiliyor...";
+            if(btn) { btn.disabled = true; btn.innerText = "Gönderiliyor..."; }
 
             try {
                 await addDoc(collection(db, "tickets"), {
@@ -277,18 +305,25 @@
                     createdAt: serverTimestamp(),
                     status: "Yeni"
                 });
-                window.showToast("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success");
-                document.getElementById('support-modal').style.display = 'none';
+                window.showToast?.("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success") || alert("Gönderildi.");
+                const modal = document.getElementById('support-modal');
+                if(modal) modal.style.display = 'none';
             } catch (error) {
                 console.error("Hata:", error);
                 alert("Mesaj gönderilirken bir hata oluştu.");
             } finally {
-                btn.disabled = false;
-                btn.innerText = "Gönder";
+                if(btn) { btn.disabled = false; btn.innerText = "Gönder"; }
             }
         };
-        window.showMyFollowing = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); } };
-        window.showMyFollowers = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); } };
+
+        window.showMyFollowing = function() { 
+            window.closeMobileSidebar(); 
+            if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); } 
+        };
+        window.showMyFollowers = function() { 
+            window.closeMobileSidebar(); 
+            if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); } 
+        };
         
         window.showUserList = function(title, userArray) {
             const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
@@ -309,34 +344,62 @@
             if (user) {
                 myUsername = user.displayName || user.email.split('@')[0];
                 
-                onSnapshot(collection(db, "users"), (snapshot) => { 
-                    allUsersData = {}; 
-                    snapshot.forEach(d => { allUsersData[d.id] = d.data(); });
-                    
-                    if(allUsersData[myUsername]) {
-                        const u = allUsersData[myUsername];
+                // YENİ: EKSİK KULLANICILARI ÇEKEN AKILLI FONKSİYON
+                window.fetchMissingUsers = async function(usernamesArray) {
+                    const missing = usernamesArray.filter(u => u && !allUsersData[u]);
+                    if (missing.length === 0) return;
+                    await Promise.all(missing.map(async (uname) => {
+                        try {
+                            const uSnap = await getDoc(doc(db, "users", uname));
+                            if (uSnap.exists()) allUsersData[uname] = uSnap.data();
+                        } catch(e) {}
+                    }));
+                };
+
+                // 1. AŞAMA: KENDİ PROFİLİMİZİ DİNLİYORUZ (İstekler ve Takipçi sayısı için)
+                onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
+                    if(docSnap.exists()) {
+                        const u = docSnap.data();
+                        allUsersData[myUsername] = u;
                         myRequests = u.followRequests || [];
                         
-                        document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
-                        document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
-                        document.getElementById('sidebar-following-count').innerText = (u.following || []).length;
-                        document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
+                        // Profil bilgisini ve bağlantı isteklerini atan kişileri çekelim
+                        const needed = [...(u.following || []), ...myRequests];
+                        await window.fetchMissingUsers(needed);
+                        
+                        const mobName = document.getElementById('sidebar-name-mobile'); if(mobName) mobName.innerText = u.fullName || myUsername;
+                        const mobHandle = document.getElementById('sidebar-handle-mobile'); if(mobHandle) mobHandle.innerText = '@' + myUsername;
+                        const mobFolCount = document.getElementById('sidebar-following-count'); if(mobFolCount) mobFolCount.innerText = (u.following || []).length;
+                        const mobFolersCount = document.getElementById('sidebar-followers-count'); if(mobFolersCount) mobFolersCount.innerText = (u.followers || []).length;
+                        
                         if(u.avatarUrl) {
                             const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-                            document.getElementById('mobile-avatar-header').innerHTML = imgTag;
-                            document.getElementById('sidebar-avatar-mobile').innerHTML = imgTag;
-                            const deskAv = document.getElementById('desktop-sidebar-avatar'); if(deskAv) deskAv.innerHTML = imgTag;
+                            const hAv = document.getElementById('mobile-avatar-header'); if(hAv) hAv.innerHTML = imgTag;
+                            const sAv = document.getElementById('sidebar-avatar-mobile'); if(sAv) sAv.innerHTML = imgTag;
+                            const dAv = document.getElementById('desktop-sidebar-avatar'); if(dAv) dAv.innerHTML = imgTag;
                         }
+                        
                         const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
                         const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                     }
+                    
                     renderNotifications(); 
                     renderWhoToFollow();
                 });
 
-                onSnapshot(query(collection(db, "notifications"), where("recipient", "==", myUsername), orderBy("createdAt", "desc")), (snapshot) => {
+                // 2. AŞAMA: SADECE BİZE GELEN BİLDİRİMLERİ DİNLİYORUZ
+                onSnapshot(query(collection(db, "notifications"), where("recipient", "==", myUsername), orderBy("createdAt", "desc")), async (snapshot) => {
                     myNotifications = [];
-                    snapshot.forEach(doc => { myNotifications.push({ id: doc.id, ...doc.data() }); });
+                    let neededUsers = new Set();
+                    
+                    snapshot.forEach(docSnap => { 
+                        const data = docSnap.data();
+                        myNotifications.push({ id: docSnap.id, ...data }); 
+                        if(data.sender) neededUsers.add(data.sender);
+                    });
+                    
+                    // Bildirimi gönderenlerin isim ve profil resimleri için eksik verileri çek
+                    await window.fetchMissingUsers(Array.from(neededUsers));
                     renderNotifications();
                 });
 
@@ -389,14 +452,16 @@
         };
 
         function renderNotifications() {
-            const container = document.getElementById('notifications-list'); container.innerHTML = '';
+            const container = document.getElementById('notifications-list'); 
+            if(!container) return;
+            container.innerHTML = '';
             
             if (currentTab === 'requests') {
                 if (myRequests.length === 0) { container.innerHTML = '<div class="empty-text"><span>📬</span>Bekleyen bağlantı isteğiniz yok.</div>'; return; }
                 let html = '';
                 myRequests.forEach(reqUser => {
                     const uData = allUsersData[reqUser] || {};
-                    const avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`;
+                    const avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
                     html += `
                         <div class="notif-card" style="cursor:default;">
                             <div class="notif-avatar" style="width:44px; height:44px; font-size:22px; display:flex; justify-content:center; align-items:center;">${avatarHtml}</div>
@@ -416,7 +481,7 @@
                 let html = '';
                 myNotifications.forEach(notif => {
                     const senderData = allUsersData[notif.sender] || {};
-                    const avatarHtml = senderData.avatarUrl ? `<img src="${senderData.avatarUrl}">` : `👤`;
+                    const avatarHtml = senderData.avatarUrl ? `<img src="${senderData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
                     
                     let icon = ''; let text = ''; let link = '#';
                     if(notif.type === 'like') { icon = '❤️'; text = `<b>@${notif.sender}</b> içeriğinizi beğendi.`; link = `profile.html?post=${notif.postId}`; }
@@ -456,15 +521,17 @@
             const myRef = doc(db, "users", myUsername); 
             const targetRef = doc(db, "users", reqUser); 
             try { 
-                await setDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }, { merge: true }); 
-                await setDoc(targetRef, { following: arrayUnion(myUsername) }, { merge: true }); 
+                await updateDoc(myRef, { followRequests: arrayRemove(reqUser), followers: arrayUnion(reqUser) }); 
+                await updateDoc(targetRef, { following: arrayUnion(myUsername) }); 
                 await addDoc(collection(db, "notifications"), { type: 'follow', sender: reqUser, recipient: myUsername, createdAt: serverTimestamp() });
+                window.showToast?.("Bağlantı isteği kabul edildi.", "success");
             } catch(e) { console.error(e); } 
         };
         
         window.rejectRequest = async function(reqUser) { 
             try { 
-                await setDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }, { merge: true }); 
+                await updateDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }); 
+                window.showToast?.("Bağlantı isteği reddedildi.", "info");
             } catch(e) { console.error(e); } 
         };
     </script>

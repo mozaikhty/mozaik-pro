@@ -1,4 +1,4 @@
-// ui.js - GÜNCELLENMİŞ SÜRÜM
+// ui.js - GÜNCELLENMİŞ VE GÜVENLİ SÜRÜM
 
 function loadUIComponents() {
     const path = window.location.pathname;
@@ -27,9 +27,9 @@ function loadUIComponents() {
                 </a>
                 </div>
             
-            <button class="desktop-post-btn" onclick="window.openMainPostModal()">Gönderi Yayınla</button>
+            <button class="desktop-post-btn" onclick="window.openMainPostModal?.() || window.location.href='feed.html?action=post'">Gönderi Yayınla</button>
 
-            <div class="sidebar-user-menu ${page === 'profile.html' ? 'active' : ''}" onclick="window.goToMyProfile()">
+            <div class="sidebar-user-menu ${page === 'profile.html' ? 'active' : ''}" onclick="window.goToMyProfile?.()">
                 <div class="sidebar-user-avatar" id="desktop-sidebar-avatar">👤</div>
                 <div class="sidebar-user-info">
                     <div class="sidebar-user-name" id="desktop-sidebar-name">Yükleniyor...</div>
@@ -66,8 +66,8 @@ function loadUIComponents() {
                           <span class="slider round"></span>
                         </label>
                     </div>
-                    <div style="font-size: 16px; font-weight: 600; color: #334155; cursor: pointer;" class="settings-text" onclick="window.openSupportModal()">❓ Yardım ve İletişim</div>
-                    <div style="font-size: 16px; font-weight: 600; color: #ef4444; cursor: pointer; padding-top: 15px; border-top: 1px solid #f1f5f9;" class="settings-text" onclick="window.logoutUser()">🚪 Çıkış Yap</div>
+                    <div style="font-size: 16px; font-weight: 600; color: #334155; cursor: pointer;" class="settings-text" onclick="window.openSupportModal?.()">❓ Yardım ve İletişim</div>
+                    <div style="font-size: 16px; font-weight: 600; color: #ef4444; cursor: pointer; padding-top: 15px; border-top: 1px solid #f1f5f9;" class="settings-text" onclick="window.logoutUser?.()">🚪 Çıkış Yap</div>
                 </div>
             </div>
         </div>
@@ -124,7 +124,7 @@ function loadUIComponents() {
         <div id="toast-container"></div>
     `;
 
-    // HTML'leri Ekrana Bas
+    // HTML'leri Ekrana Bas (Null Kontrolleri Eklendi)
     const sidebarContainer = document.getElementById('sidebar-container');
     if (sidebarContainer) sidebarContainer.innerHTML = sidebarHTML;
 
@@ -143,7 +143,7 @@ function loadUIComponents() {
 // === GLOBAL TOAST FONKSİYONU ===
 window.showToast = function(message, type = 'success') {
     const container = document.getElementById('toast-container');
-    if(!container) return;
+    if(!container) return; // Sayfada toast container yoksa hata fırlatmasını engeller
 
     const toast = document.createElement('div');
     toast.className = 'toast-msg toast-' + type;
@@ -164,27 +164,49 @@ window.showToast = function(message, type = 'success') {
 
 // === DİĞER FONKSİYONLAR ===
 window.openSettingsModal = function() {
-    document.getElementById('settings-modal').style.display = 'flex';
+    const settingsModal = document.getElementById('settings-modal');
+    if(settingsModal) {
+        settingsModal.style.display = 'flex';
+    }
     const toggle = document.getElementById('dark-mode-toggle');
     if(toggle) toggle.checked = document.body.classList.contains('dark-mode');
 };
 
 window.toggleDarkMode = function() {
-    const isDark = document.getElementById('dark-mode-toggle').checked;
+    const toggle = document.getElementById('dark-mode-toggle');
+    if(!toggle) return;
+    
+    const isDark = toggle.checked;
+    
     if(isDark) { 
         document.body.classList.add('dark-mode'); 
-        localStorage.setItem('theme', 'dark'); 
     } else { 
         document.body.classList.remove('dark-mode'); 
-        localStorage.setItem('theme', 'light'); 
+    }
+
+    // Gizli modlarda localStorage kısıtlamasına karşı Try-Catch bloğu
+    try {
+        if(isDark) {
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.setItem('theme', 'light');
+        }
+    } catch(e) {
+        console.warn("Tarayıcı gizlilik ayarları nedeniyle tema tercihi kaydedilemedi.");
     }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
     loadUIComponents();
-    if(localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-        const toggle = document.getElementById('dark-mode-toggle');
-        if(toggle) toggle.checked = true;
+    
+    // Gizli mod kısıtlamasına karşı Try-Catch
+    try {
+        if(localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            const toggle = document.getElementById('dark-mode-toggle');
+            if(toggle) toggle.checked = true;
+        }
+    } catch(e) {
+        console.warn("Tarayıcı gizlilik ayarları nedeniyle tema tercihi okunamadı.");
     }
 });

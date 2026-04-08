@@ -139,14 +139,11 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-        
-        // YENİ EKLENEN STORAGE (DEPOT) KODLARI
+        // 1. DÜZELTME: Gereksiz importlar temizlendi, sadece config'den okuyoruz
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
-
-        // VERCEL UYUMLU IMPORT'UNUZ (BURASI KORUNDU)
+        
         import { auth, db, storage } from './firebase-config.js';
 
         const ADMIN_USERNAME = "mozaik"; 
@@ -169,7 +166,8 @@
                     }
                     
                     const myUsername = user.displayName || user.email.split('@')[0];
-                    document.getElementById('my-profile-link').href = `profile.html?user=${myUsername}`;
+                    const profileLink = document.getElementById('my-profile-link');
+                    if(profileLink) profileLink.href = `profile.html?user=${myUsername}`;
                     
                     loadUsers(); 
                     loadTickets();
@@ -193,9 +191,9 @@
         const btnActivity = document.getElementById('tab-activity-btn');
         const btnTickets = document.getElementById('tab-tickets-btn');
 
-        btnUsers.addEventListener('click', () => { secUsers.style.display='block'; secActivity.style.display='none'; secTickets.style.display='none'; btnUsers.classList.add('active'); btnActivity.classList.remove('active'); btnTickets.classList.remove('active'); });
-        btnActivity.addEventListener('click', () => { secUsers.style.display='none'; secActivity.style.display='block'; secTickets.style.display='none'; btnActivity.classList.add('active'); btnUsers.classList.remove('active'); btnTickets.classList.remove('active'); });
-        btnTickets.addEventListener('click', () => { secUsers.style.display='none'; secActivity.style.display='none'; secTickets.style.display='block'; btnTickets.classList.add('active'); btnUsers.classList.remove('active'); btnActivity.classList.remove('active'); });
+        btnUsers?.addEventListener('click', () => { if(secUsers) secUsers.style.display='block'; if(secActivity) secActivity.style.display='none'; if(secTickets) secTickets.style.display='none'; btnUsers.classList.add('active'); btnActivity?.classList.remove('active'); btnTickets?.classList.remove('active'); });
+        btnActivity?.addEventListener('click', () => { if(secUsers) secUsers.style.display='none'; if(secActivity) secActivity.style.display='block'; if(secTickets) secTickets.style.display='none'; btnActivity.classList.add('active'); btnUsers?.classList.remove('active'); btnTickets?.classList.remove('active'); });
+        btnTickets?.addEventListener('click', () => { if(secUsers) secUsers.style.display='none'; if(secActivity) secActivity.style.display='none'; if(secTickets) secTickets.style.display='block'; btnTickets.classList.add('active'); btnUsers?.classList.remove('active'); btnActivity?.classList.remove('active'); });
 
         function loadUsers() {
             const q = query(collection(db, "users"), limit(50));
@@ -207,7 +205,10 @@
         }
 
         function renderUserList(users) {
-            const list = document.getElementById('users-list'); list.innerHTML = '';
+            const list = document.getElementById('users-list'); 
+            if(!list) return;
+            list.innerHTML = '';
+            
             if(users.length === 0) { list.innerHTML = '<p style="color:#aaa; text-align:center;">Kullanıcı bulunamadı.</p>'; return; }
             
             users.forEach(user => {
@@ -229,14 +230,15 @@
         }
 
         let searchTimeoutAdmin = null;
-        document.getElementById('admin-user-search').addEventListener('input', async (e) => {
+        document.getElementById('admin-user-search')?.addEventListener('input', async (e) => {
             const text = e.target.value.toLowerCase().trim();
             clearTimeout(searchTimeoutAdmin);
             
             if (!text) { renderUserList(allUsers); return; } 
 
             searchTimeoutAdmin = setTimeout(async () => {
-                document.getElementById('users-list').innerHTML = '<p style="color:#aaa; text-align:center;">Aranıyor... 🔍</p>';
+                const list = document.getElementById('users-list');
+                if(list) list.innerHTML = '<p style="color:#aaa; text-align:center;">Aranıyor... 🔍</p>';
                 try {
                     const q = query(collection(db, "users"), orderBy("__name__"), startAt(text), endAt(text + '\uf8ff'), limit(20));
                     const snap = await getDocs(q);
@@ -259,8 +261,8 @@
                     const userSnap = await getDoc(userRef);
                     if(userSnap.exists()) {
                         const uData = userSnap.data();
-                        if(uData.avatarUrl) await deleteObject(ref(storage, uData.avatarUrl)).catch(()=>console.log("Avatar silinmiş."));
-                        if(uData.bannerUrl) await deleteObject(ref(storage, uData.bannerUrl)).catch(()=>console.log("Banner silinmiş."));
+                        if(uData.avatarUrl) await deleteObject(ref(storage, uData.avatarUrl)).catch(()=>console.log("Avatar zaten silinmiş veya bulunamadı."));
+                        if(uData.bannerUrl) await deleteObject(ref(storage, uData.bannerUrl)).catch(()=>console.log("Banner zaten silinmiş veya bulunamadı."));
                     }
 
                     // 2. Kullanıcının gönderi fotoğraflarını ve postları sil
@@ -269,7 +271,7 @@
                     for (const d of snap.docs) {
                         const postData = d.data();
                         if(postData.imageUrl && !postData.isRepost) {
-                            await deleteObject(ref(storage, postData.imageUrl)).catch(()=>console.log("Post resmi silinmiş."));
+                            await deleteObject(ref(storage, postData.imageUrl)).catch(()=>console.log("Post resmi zaten silinmiş veya bulunamadı."));
                         }
                         await deleteDoc(doc(db, "posts", d.id));
                     }
@@ -288,8 +290,10 @@
         };
 
         window.viewUserPosts = async function(username) {
-            document.getElementById('admin-posts-modal').style.display = 'flex';
+            const modal = document.getElementById('admin-posts-modal');
+            if(modal) modal.style.display = 'flex';
             const list = document.getElementById('admin-posts-list');
+            if(!list) return;
             list.innerHTML = 'Gönderiler aranıyor...';
             
             const q = query(collection(db, "posts"), where("author", "==", username));
@@ -330,7 +334,9 @@
                     await deleteDoc(postRef);
                     await addDoc(collection(db, "notifications"), { type: 'admin_delete', sender: ADMIN_USERNAME, recipient: author, createdAt: serverTimestamp() });
                     
-                    document.getElementById(`admin-post-${postId}`).style.display = 'none';
+                    // DOM'dan doğrudan temizle
+                    document.getElementById(`admin-post-${postId}`)?.remove();
+                    
                     if(window.showToast) window.showToast("Gönderi ve fotoğraf kalıcı olarak silindi!", "success");
                     else alert("Gönderi ve fotoğraf kalıcı olarak silindi!");
                     
@@ -347,8 +353,9 @@
             onSnapshot(qPosts, (snapshot) => {
                 recentPostsLog = [];
                 snapshot.forEach(docSnap => { recentPostsLog.push({ id: docSnap.id, _actType: 'post', ...docSnap.data() }); });
-                if(document.getElementById('activity-search-input').value.startsWith('@')) {
-                    const currentUsername = document.getElementById('activity-search-input').value.replace('@','');
+                const searchInp = document.getElementById('activity-search-input');
+                if(searchInp && searchInp.value.startsWith('@')) {
+                    const currentUsername = searchInp.value.replace('@','');
                     renderUserFolders(currentUsername);
                 }
             });
@@ -357,8 +364,9 @@
             onSnapshot(qNotifs, (snapshot) => {
                 recentNotifsLog = [];
                 snapshot.forEach(docSnap => { recentNotifsLog.push({ id: docSnap.id, _actType: 'notif', ...docSnap.data() }); });
-                if(document.getElementById('activity-search-input').value.startsWith('@')) {
-                    const currentUsername = document.getElementById('activity-search-input').value.replace('@','');
+                const searchInp = document.getElementById('activity-search-input');
+                if(searchInp && searchInp.value.startsWith('@')) {
+                    const currentUsername = searchInp.value.replace('@','');
                     renderUserFolders(currentUsername);
                 }
             });
@@ -367,14 +375,14 @@
         const actSearchInput = document.getElementById('activity-search-input');
         const actAutoList = document.getElementById('activity-autocomplete-list');
 
-        actSearchInput.addEventListener('input', (e) => {
+        actSearchInput?.addEventListener('input', (e) => {
             let text = e.target.value.toLowerCase().trim();
-            actAutoList.innerHTML = '';
+            if(actAutoList) actAutoList.innerHTML = '';
             
             if(!text) { 
-                actAutoList.style.display = 'none'; 
-                document.getElementById('activity-list').innerHTML = '';
-                document.getElementById('activity-info-text').style.display = 'block';
+                if(actAutoList) actAutoList.style.display = 'none'; 
+                const actList = document.getElementById('activity-list'); if(actList) actList.innerHTML = '';
+                const actInfo = document.getElementById('activity-info-text'); if(actInfo) actInfo.style.display = 'block';
                 return; 
             }
             
@@ -383,26 +391,28 @@
             const filtered = allUsers.filter(u => u.id.toLowerCase().includes(text));
             
             if(filtered.length === 0) { 
-                actAutoList.style.display = 'none'; 
+                if(actAutoList) actAutoList.style.display = 'none'; 
                 return; 
             }
             
-            actAutoList.style.display = 'block';
-            filtered.forEach(u => {
-                const div = document.createElement('div');
-                div.className = 'autocomplete-item';
-                div.innerHTML = `👤 <span>@${u.id}</span>`;
-                div.onclick = () => {
-                    actSearchInput.value = '@' + u.id; 
-                    actAutoList.style.display = 'none'; 
-                    renderUserFolders(u.id); 
-                };
-                actAutoList.appendChild(div);
-            });
+            if(actAutoList) {
+                actAutoList.style.display = 'block';
+                filtered.forEach(u => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `👤 <span>@${u.id}</span>`;
+                    div.onclick = () => {
+                        actSearchInput.value = '@' + u.id; 
+                        actAutoList.style.display = 'none'; 
+                        renderUserFolders(u.id); 
+                    };
+                    actAutoList.appendChild(div);
+                });
+            }
         });
 
         document.addEventListener('click', function(event) {
-            if (!actSearchInput.contains(event.target) && !actAutoList.contains(event.target)) {
+            if (actSearchInput && actAutoList && !actSearchInput.contains(event.target) && !actAutoList.contains(event.target)) {
                 actAutoList.style.display = 'none';
             }
         });
@@ -440,8 +450,8 @@
         }
 
         function renderUserFolders(username) {
-            document.getElementById('activity-info-text').style.display = 'none';
-            const listDiv = document.getElementById('activity-list');
+            const actInfo = document.getElementById('activity-info-text'); if(actInfo) actInfo.style.display = 'none';
+            const listDiv = document.getElementById('activity-list'); if(!listDiv) return;
             
             let combinedLogs = [...recentPostsLog, ...recentNotifsLog];
             
@@ -488,7 +498,8 @@
 
         function loadTickets() {
             onSnapshot(query(collection(db, "tickets"), orderBy("createdAt", "desc")), (snapshot) => {
-                const list = document.getElementById('tickets-list'); list.innerHTML = '';
+                const list = document.getElementById('tickets-list'); if(!list) return;
+                list.innerHTML = '';
                 
                 if(snapshot.empty) { 
                     list.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">Bekleyen destek veya şikayet talebi yok. Her şey yolunda! 🎉</p>'; 
@@ -502,7 +513,7 @@
                     const cleanMsg = DOMPurify.sanitize(data.message || '');
                     
                     list.innerHTML += `
-                        <div class="ticket-item">
+                        <div class="ticket-item" id="ticket-${docSnap.id}">
                             <div class="ticket-header">
                                 <span style="color:#3498db;">Gönderen: <b style="color:white;">@${data.sender || 'Bilinmeyen'}</b></span>
                                 <span>${dateStr}</span>
@@ -519,6 +530,7 @@
         window.deleteTicket = async function(id) { 
             if(confirm("Bu destek talebini çözüldü olarak işaretleyip listeden silmek istiyor musunuz?")) { 
                 await deleteDoc(doc(db, "tickets", id)); 
+                document.getElementById(`ticket-${id}`)?.remove();
             } 
         };
 
