@@ -178,7 +178,14 @@
             }
         });
 
-        document.getElementById('register-btn').addEventListener('click', async () => {
+        // KAYIT OLMA FONKSİYONU
+        window.kayitIslemiDevamEdiyor = false;
+
+        document.getElementById('register-btn').onclick = async function(e) {
+            e.preventDefault(); 
+            
+            if (window.kayitIslemiDevamEdiyor) return; 
+            
             let username = document.getElementById('reg-username').value.trim().toLowerCase();
             const fullName = document.getElementById('reg-fullname').value.trim();
             const email = document.getElementById('reg-email').value.trim(); 
@@ -188,47 +195,64 @@
             const pass = document.getElementById('reg-pass').value;
             const passConfirm = document.getElementById('reg-pass-confirm').value;
             
-            if(!username || !fullName || !email || !birthDate || !gender || !location || !pass || !passConfirm) return showError("Lütfen tüm bilgileri eksiksiz doldurun.");
+            if(!username || !fullName || !email || !birthDate || !gender || !location || !pass || !passConfirm) {
+                return showError("Lütfen tüm bilgileri eksiksiz doldurun.");
+            }
             if(username.includes(' ')) return showError("Kullanıcı adında boşluk olamaz.");
             if(pass.length < 6) return showError("Şifre en az 6 karakter olmalıdır.");
             if(pass !== passConfirm) return showError("Şifreler birbiriyle eşleşmiyor!");
             if(!/\d/.test(pass) || !/[a-zA-Z]/.test(pass)) return showError("Şifreniz en az bir harf ve bir rakam içermelidir.");
 
-            // Kayıt işleminin başladığını sisteme bildir
-            isRegistering = true; 
-            const btn = document.getElementById('register-btn'); btn.disabled = true; btn.innerText = "Kaydediliyor...";
+            window.kayitIslemiDevamEdiyor = true; 
+            const btn = document.getElementById('register-btn'); 
+            btn.disabled = true; 
+            btn.innerText = "Kaydediliyor...";
             
             try {
-                const userRef = doc(db, "users", username); const docSnap = await getDoc(userRef);
+                const userRef = doc(db, "users", username); 
+                const docSnap = await getDoc(userRef);
                 if (docSnap.exists()) { 
                     btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl"; 
-                    isRegistering = false; // İşlem bittiği için sıfırla
+                    window.kayitIslemiDevamEdiyor = false; 
                     return showError("Bu kullanıcı adı zaten alınmış!"); 
                 }
 
-                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-                const user = userCredential.user;
+                let user;
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                    user = userCredential.user;
+                    await updateProfile(user, { displayName: username });
+                    await user.getIdToken(true); // GÜVENLİK KURALLARI İÇİN KİMLİĞİ YENİLE
+                } catch (authError) {
+                    console.error("Auth Kayıt Hatası:", authError);
+                    window.kayitIslemiDevamEdiyor = false;
+                    btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl";
+                    if(authError.code === 'auth/email-already-in-use') return showError("Bu e-posta adresi zaten kullanılıyor.");
+                    return showError("Hata: " + authError.message);
+                }
+
+                try {
+                    await setDoc(doc(db, "users", username), {
+                        email: email, fullName: fullName, birthDate: birthDate, gender: gender, location: location,
+                        followers: [], following: [], followRequests: [], bio: "Merhaba, ben Mozaik'te yeniyim!", 
+                        isPrivate: false, isVerified: false, isBanned: false, createdAt: serverTimestamp()
+                    });
+                } catch (firestoreError) {
+                    console.error("Firestore Yazma Hatası:", firestoreError);
+                    window.kayitIslemiDevamEdiyor = false;
+                    btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl";
+                    return showError("Veritabanına yazılamadı! Lütfen konsolu kontrol edin.");
+                }
                 
-                // Artık bu kodlar sayfa kapanmadan rahatça çalışabilir
-                await updateProfile(user, { displayName: username });
-                
-                await setDoc(doc(db, "users", username), {
-                    email: email, fullName: fullName, birthDate: birthDate, gender: gender, location: location,
-                    followers: [], following: [], followRequests: [], bio: "Merhaba, ben Mozaik'te yeniyim!", 
-                    isPrivate: false, isVerified: false, isBanned: false, createdAt: serverTimestamp()
-                });
-                
-                // Tüm işlemler bittiğinde yönlendirmeyi BİZ kendimiz manuel yapıyoruz
                 window.location.href = "feed.html"; 
                 
             } catch (error) { 
-                console.error("Kayıt Hatası Detayı:", error); 
-                isRegistering = false; // Hata verirse yeniden denemek için sıfırla
-                if(error.code === 'auth/email-already-in-use') showError("Bu e-posta adresi zaten kullanılıyor.");
-                else showError("Kayıt sırasında bir hata oluştu.");
+                console.error("Beklenmeyen Hata:", error); 
+                window.kayitIslemiDevamEdiyor = false; 
+                showError("Sistemde beklenmeyen bir hata oluştu.");
                 btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl"; 
             }
-        });
+        };
 
         const forgotModal = document.getElementById('forgot-modal');
         document.getElementById('open-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'flex'; });
