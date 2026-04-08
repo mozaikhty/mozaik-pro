@@ -545,7 +545,7 @@
                 }
                 
                 currentUser = auth.currentUser || user; 
-                myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
                 if (!targetUsername) { targetUsername = myUsername; }
                 
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));

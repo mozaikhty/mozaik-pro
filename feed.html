@@ -693,7 +693,7 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                currentUser = user; myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
                 
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
                 if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }

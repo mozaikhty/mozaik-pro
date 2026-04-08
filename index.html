@@ -119,19 +119,12 @@
     </div>
 
     <script type="module">
-        // 1. DÜZELTME: Firebase'i burada tekrar başlatmak yerine, zaten başlatılmış olan auth ve db'yi firebase-config.js'den içe aktarıyoruz.
         import { auth, db } from './firebase-config.js';
-        
-        // 2. Auth ve Firestore fonksiyonlarını CDN'den çekmeye devam ediyoruz.
         import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        // YENİ: Kayıt işlemi sürerken erken yönlendirmeyi engellemek için değişken
-        let isRegistering = false; 
-
         onAuthStateChanged(auth, (user) => { 
-            // Eğer bir kayıt işlemi devam etmiyorsa yönlendir
-            if (user && !isRegistering) window.location.href = "feed.html"; 
+            if (user && !window.kayitIslemiDevamEdiyor) window.location.href = "feed.html"; 
         });
 
         const loginSection = document.getElementById('login-section');
@@ -158,17 +151,15 @@
             try {
                 let loginEmail = identifier;
                 
-                // Eğer girilen metinde "@" yoksa, bunun bir kullanıcı adı olduğunu anlıyoruz
                 if (!identifier.includes('@')) {
                     const userDoc = await getDoc(doc(db, "users", identifier.toLowerCase()));
                     if (userDoc.exists() && userDoc.data().email) {
-                        loginEmail = userDoc.data().email; // Gizlice E-postayı bulduk
+                        loginEmail = userDoc.data().email; 
                     } else {
                         throw new Error("user-not-found");
                     }
                 }
                 
-                // Firebase'e bulduğumuz e-posta ile giriş yapıyoruz
                 await signInWithEmailAndPassword(auth, loginEmail, pass);
                 
             } catch (error) { 
@@ -178,7 +169,7 @@
             }
         });
 
-        // KAYIT OLMA FONKSİYONU
+        // YENİ VE HATASIZ KAYIT OLMA FONKSİYONU (SORUNUN ÇÖZÜMÜ BURADA)
         window.kayitIslemiDevamEdiyor = false;
 
         document.getElementById('register-btn').onclick = async function(e) {
@@ -201,7 +192,7 @@
             if(username.includes(' ')) return showError("Kullanıcı adında boşluk olamaz.");
             if(pass.length < 6) return showError("Şifre en az 6 karakter olmalıdır.");
             if(pass !== passConfirm) return showError("Şifreler birbiriyle eşleşmiyor!");
-            if(!/\d/.test(pass) || !/[a-zA-Z]/.test(pass)) return showError("Şifreniz en az bir harf ve bir rakam içermelidir.");
+            if(!/\\d/.test(pass) || !/[a-zA-Z]/.test(pass)) return showError("Şifreniz en az bir harf ve bir rakam içermelidir.");
 
             window.kayitIslemiDevamEdiyor = true; 
             const btn = document.getElementById('register-btn'); 
@@ -222,7 +213,10 @@
                     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                     user = userCredential.user;
                     await updateProfile(user, { displayName: username });
-                    await user.getIdToken(true); // GÜVENLİK KURALLARI İÇİN KİMLİĞİ YENİLE
+                    
+                    // GÜVENLİK KURALLARI İÇİN KİMLİĞİ YENİLE
+                    await user.getIdToken(true); 
+                    
                 } catch (authError) {
                     console.error("Auth Kayıt Hatası:", authError);
                     window.kayitIslemiDevamEdiyor = false;
@@ -237,6 +231,10 @@
                         followers: [], following: [], followRequests: [], bio: "Merhaba, ben Mozaik'te yeniyim!", 
                         isPrivate: false, isVerified: false, isBanned: false, createdAt: serverTimestamp()
                     });
+                    
+                    // ✨ SİHİRLİ DOKUNUŞ: Kullanıcı adını tarayıcıya mühürle! ✨
+                    localStorage.setItem('mozaik_username', username);
+                    
                 } catch (firestoreError) {
                     console.error("Firestore Yazma Hatası:", firestoreError);
                     window.kayitIslemiDevamEdiyor = false;

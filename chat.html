@@ -655,7 +655,7 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                currentUser = user; myUsername = currentUser.displayName || currentUser.email.split('@')[0];
+                currentUser = user; myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
                 
                 window.fetchMissingUsers = async function(usernamesArray) {
                     const missing = usernamesArray.filter(u => u && !allUsersData[u]);
