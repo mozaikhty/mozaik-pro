@@ -248,8 +248,6 @@
         </div>
     </div>
 
-    
-
     <div class="modal-overlay" id="support-modal" style="z-index: 5000;">
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
@@ -265,8 +263,10 @@
     </div>
 
     <script type="module">
-        // 1. DÜZELTME: Firebase başlatma temizliği
+        // 1. DÜZELTME: Firebase başlatma temizliği (initializeApp silindi)
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        
+        // 🔥 YENİ EKLENEN: getDocs import edildi.
         import { collection, onSnapshot, query, orderBy, doc, setDoc, arrayUnion, addDoc, serverTimestamp, where, getDoc, limit, startAt, endAt, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         import { auth, db, storage } from './firebase-config.js';
@@ -344,7 +344,7 @@
             const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
             const container = document.getElementById('users-list-container'); if(!container) return;
             container.innerHTML = '';
-            if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>'; } 
+            if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Liste boş.</p>'; } 
             else {
                 userArray.forEach(uname => {
                     let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
@@ -368,7 +368,8 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                myUsername = user.displayName || user.email.split('@')[0];
+                // 🔥 SİHİRLİ DOKUNUŞ: Kullanıcı adı önbellekten alınır (Yükleniyor hatasını çözer)
+                myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
                 fetchData();
                 
                 // GELİŞMİŞ ÇAĞRI DİNLEYİCİSİ (Global)
@@ -589,21 +590,29 @@
                 renderWhoToFollow(); 
             });
 
-            onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100)), async (snapshot) => {
-                allPosts = []; 
-                let neededUsers = new Set();
-                snapshot.forEach(docSnap => { 
-                    const data = docSnap.data();
-                    allPosts.push(data); 
-                    neededUsers.add(data.author);
-                }); 
-                
-                await window.fetchMissingUsers(Array.from(neededUsers));
-                calculateTrendingTags(); 
-                
-                const urlParams = new URLSearchParams(window.location.search); 
-                if(urlParams.get('tag') && currentTab === 'users') switchTab('tags'); else performSearch();
-            });
+            // 🔥 OPTİMİZE EDİLDİ: onSnapshot yerine getDocs ile tek seferlik okuma!
+            async function loadTrendingPosts() {
+                try {
+                    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100));
+                    const snapshot = await getDocs(q);
+                    allPosts = []; 
+                    let neededUsers = new Set();
+                    snapshot.forEach(docSnap => { 
+                        const data = docSnap.data();
+                        allPosts.push(data); 
+                        neededUsers.add(data.author);
+                    }); 
+                    
+                    await window.fetchMissingUsers(Array.from(neededUsers));
+                    calculateTrendingTags(); 
+                    
+                    const urlParams = new URLSearchParams(window.location.search); 
+                    if(urlParams.get('tag') && currentTab === 'users') switchTab('tags'); else performSearch();
+                } catch(error) {
+                    console.error("Gündem yüklenirken hata:", error);
+                }
+            }
+            loadTrendingPosts();
         }
 
         function formatHashtags(text) { if (!text) return ""; let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); return safeText.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`); }

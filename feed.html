@@ -547,8 +547,6 @@
         </div>
     </div>
 
-    
-
     <div class="modal-overlay" id="support-modal" style="z-index: 5000;">
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
@@ -564,10 +562,13 @@
     </div>
 
     <script type="module">
-        // 1. DÜZELTME: Firebase Başlatma Temizliği (Gereksiz initializeApp silindi, merkezi config kullanılıyor)
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-        import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+        
+        // DİKKAT: YENİ EKLENEN 'getDocs' KOMUTU İMPORT EDİLDİ
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, getDocs, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+
+         
         import { auth, db, storage } from './firebase-config.js';
 
         let currentUser = null; let myUsername = null; let allUsersData = {}; 
@@ -594,7 +595,6 @@
         };
 
         let postLimit = 10;
-        let postsUnsubscribe = null;
         let isLoadingMore = false;
         let hasMorePosts = true;
 
@@ -608,26 +608,12 @@
         });
 
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
-        
-        // 2. DÜZELTME: Güvenli DOM çağrıları (Optional Chaining)
-        window.openMobileSidebar = function() { 
-            const overlay = document.getElementById('mobile-sidebar-overlay');
-            if(overlay) overlay.style.display = 'block'; 
-            setTimeout(() => { document.getElementById('mobile-sidebar')?.classList.add('open'); }, 10); 
-        };
-        window.closeMobileSidebar = function() { 
-            document.getElementById('mobile-sidebar')?.classList.remove('open'); 
-            setTimeout(() => { 
-                const overlay = document.getElementById('mobile-sidebar-overlay');
-                if(overlay) overlay.style.display = 'none'; 
-            }, 300); 
-        };
-        
+        window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
+        window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
         window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
 
         window.openSupportModal = function() {
-            const settingsModal = document.getElementById('settings-modal');
-            if(settingsModal) settingsModal.style.display = 'none';
+            document.getElementById('settings-modal').style.display = 'none';
             document.getElementById('support-message-input').value = '';
             document.getElementById('support-modal').style.display = 'flex';
         };
@@ -636,7 +622,7 @@
             const btn = document.getElementById('send-support-btn');
             const message = document.getElementById('support-message-input').value.trim();
             
-            if (!message) { window.showToast?.("Lütfen bir mesaj yazın.", "error") || alert("Lütfen bir mesaj yazın."); return; }
+            if (!message) { window.showToast("Lütfen bir mesaj yazın.", "error"); return; }
 
             btn.disabled = true;
             btn.innerText = "Gönderiliyor...";
@@ -648,7 +634,7 @@
                     createdAt: serverTimestamp(),
                     status: "Yeni"
                 });
-                window.showToast?.("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success") || alert("İletildi.");
+                window.showToast("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success");
                 document.getElementById('support-modal').style.display = 'none';
             } catch (error) {
                 console.error("Hata:", error);
@@ -680,8 +666,8 @@
         window.switchFeedTab = function(tabName) {
             currentFeedTab = tabName;
             document.querySelectorAll('.feed-tabs .feed-tab').forEach(t => t.classList.remove('active'));
-            if(tabName === 'discover') document.getElementById('tab-discover')?.classList.add('active');
-            if(tabName === 'following') document.getElementById('tab-following')?.classList.add('active');
+            if(tabName === 'discover') document.getElementById('tab-discover').classList.add('active');
+            if(tabName === 'following') document.getElementById('tab-following').classList.add('active');
             renderFeed();
         };
 
@@ -693,7 +679,7 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                currentUser = user; myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
+                currentUser = user; myUsername = currentUser.displayName || localStorage.getItem('mozaik_username') || currentUser.email.split('@')[0];
                 
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
                 if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
@@ -718,17 +704,16 @@
                         
                         await window.fetchMissingUsers(myFollowingList);
 
-                        const nameMob = document.getElementById('sidebar-name-mobile'); if(nameMob) nameMob.innerText = u.fullName || myUsername;
-                        const handleMob = document.getElementById('sidebar-handle-mobile'); if(handleMob) handleMob.innerText = '@' + myUsername;
-                        const folCount = document.getElementById('sidebar-following-count'); if(folCount) folCount.innerText = myFollowingList.length;
-                        const folersCount = document.getElementById('sidebar-followers-count'); if(folersCount) folersCount.innerText = (u.followers || []).length;
-                        
+                        document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername;
+                        document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
+                        document.getElementById('sidebar-following-count').innerText = myFollowingList.length;
+                        document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
                         if(u.avatarUrl) {
                             const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
-                            const a1 = document.getElementById('desktop-input-avatar'); if(a1) a1.innerHTML = imgTag;
-                            const a2 = document.getElementById('mobile-avatar-header'); if(a2) a2.innerHTML = imgTag;
-                            const a3 = document.getElementById('sidebar-avatar-mobile'); if(a3) a3.innerHTML = imgTag;
-                            const a4 = document.getElementById('modal-avatar'); if(a4) a4.innerHTML = imgTag;
+                            document.getElementById('desktop-input-avatar').innerHTML = imgTag;
+                            document.getElementById('mobile-avatar-header').innerHTML = imgTag;
+                            document.getElementById('sidebar-avatar-mobile').innerHTML = imgTag;
+                            document.getElementById('modal-avatar').innerHTML = imgTag;
                             const deskAvatar = document.getElementById('desktop-sidebar-avatar');
                             if(deskAvatar) deskAvatar.innerHTML = imgTag;
                         }
@@ -740,7 +725,6 @@
                     renderWhoToFollow(); renderStories(); renderFeed(); 
                 });
 
-                // GELİŞMİŞ ÇAĞRI DİNLEYİCİSİ
                 onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'group'); 
                     snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
@@ -752,7 +736,9 @@
                     attachCallListeners(); 
                 });
 
+                // YENİ UYGULANAN OPTİMİZASYON FONKSİYONU
                 loadFeedPosts(); 
+                
                 const urlParams = new URLSearchParams(window.location.search);
                 if(urlParams.get('tab') === 'bookmarks') { setTimeout(() => { window.showBookmarksTab(); }, 100); }
                 if(urlParams.get('action') === 'post') { setTimeout(() => { window.openMainPostModal(); }, 300); }
@@ -772,8 +758,8 @@
             document.getElementById('editor-text-preview').style.pointerEvents = 'none';
             document.getElementById('editor-text-preview').style.background = 'transparent';
             
-            document.getElementById('img-scale-slider')?.setAttribute('disabled', 'true');
-            document.getElementById('text-scale-slider')?.setAttribute('disabled', 'true');
+            document.getElementById('img-scale-slider').disabled = true;
+            document.getElementById('text-scale-slider').disabled = true;
             
             window.editorState.image = { left: 50, top: 50, scale: 1 };
             window.editorState.text = { left: 50, top: 50, scale: 1 };
@@ -784,13 +770,13 @@
             const txtEl = document.getElementById('editor-text-preview');
             txtEl.innerText = val;
             if(val.trim() !== "") {
-                txtEl.style.pointerEvents = 'auto'; 
+                txtEl.style.pointerEvents = 'auto'; // Sürüklemeyi aç
                 txtEl.style.background = 'rgba(0,0,0,0.5)'; 
-                document.getElementById('text-scale-slider')?.removeAttribute('disabled');
+                document.getElementById('text-scale-slider').disabled = false;
             } else {
                 txtEl.style.pointerEvents = 'none';
                 txtEl.style.background = 'transparent';
-                document.getElementById('text-scale-slider')?.setAttribute('disabled', 'true');
+                document.getElementById('text-scale-slider').disabled = true;
             }
         };
 
@@ -802,7 +788,7 @@
                     const img = document.getElementById('editor-image-preview');
                     img.src = e.target.result;
                     img.style.display = 'block';
-                    document.getElementById('img-scale-slider')?.removeAttribute('disabled');
+                    document.getElementById('img-scale-slider').disabled = false;
                 }
                 reader.readAsDataURL(file);
             }
@@ -819,24 +805,19 @@
             const iState = window.editorState.image;
             const tState = window.editorState.text;
 
-            if(imgEl) {
-                imgEl.style.left = iState.left + '%';
-                imgEl.style.top = iState.top + '%';
-                imgEl.style.transform = `translate(-50%, -50%) scale(${iState.scale})`;
-            }
-            if(txtEl) {
-                txtEl.style.left = tState.left + '%';
-                txtEl.style.top = tState.top + '%';
-                txtEl.style.transform = `translate(-50%, -50%) scale(${tState.scale})`;
-            }
+            imgEl.style.left = iState.left + '%';
+            imgEl.style.top = iState.top + '%';
+            imgEl.style.transform = `translate(-50%, -50%) scale(${iState.scale})`;
+
+            txtEl.style.left = tState.left + '%';
+            txtEl.style.top = tState.top + '%';
+            txtEl.style.transform = `translate(-50%, -50%) scale(${tState.scale})`;
         };
 
         // DRAG & DROP YAPISI (SÜRÜKLE BIRAK)
         function makeDraggable(elId, type) {
             const el = document.getElementById(elId);
             const board = document.getElementById('story-editor-board');
-            if(!el || !board) return;
-            
             let isDragging = false, startX, startY, initLeft, initTop;
 
             const startDrag = (e) => {
@@ -879,6 +860,7 @@
         makeDraggable('editor-image-preview', 'image');
         makeDraggable('editor-text-preview', 'text');
 
+        // YENİ HİKAYE KAYDETME 
         document.getElementById('submit-story-btn')?.addEventListener('click', async () => {
             const textVal = document.getElementById('story-text-input').value.trim();
             const file = document.getElementById('story-image-input').files[0];
@@ -934,8 +916,7 @@
         };
 
         window.resumeStory = function() {
-            const overlay = document.getElementById('story-viewer-overlay');
-            if(overlay && overlay.style.display === 'flex') {
+            if(document.getElementById('story-viewer-overlay').style.display === 'flex') {
                 isStoryPaused = false;
                 clearInterval(storyTimerInterval);
                 storyTimerInterval = setInterval(window.storyTick, 100);
@@ -948,10 +929,7 @@
 
             activeStoryUsers = [];
             let myStories = [];
-            
-            // 3. DÜZELTME: LocalStorage Güvenliği
-            let readStories = [];
-            try { readStories = JSON.parse(localStorage.getItem('readStories') || '[]'); } catch(e) {}
+            const readStories = JSON.parse(localStorage.getItem('readStories') || '[]');
 
             Object.keys(allUsersData).forEach(uid => {
                 const uData = allUsersData[uid];
@@ -1070,15 +1048,8 @@
             const userObj = activeStoryUsers[currentStoryUserIndex];
             const story = userObj.stories[currentStoryIndex];
 
-            // LocalStorage Güvenliği
-            let readStories = [];
-            try {
-                readStories = JSON.parse(localStorage.getItem('readStories') || '[]');
-                if(!readStories.includes(story.id)) { 
-                    readStories.push(story.id); 
-                    localStorage.setItem('readStories', JSON.stringify(readStories)); 
-                }
-            } catch(e) {}
+            let readStories = JSON.parse(localStorage.getItem('readStories') || '[]');
+            if(!readStories.includes(story.id)) { readStories.push(story.id); localStorage.setItem('readStories', JSON.stringify(readStories)); }
 
             if (userObj.username !== myUsername) {
                 let sViews = story.views || [];
@@ -1221,6 +1192,7 @@
 
             const isLiked = story.likes && story.likes.includes(myUsername);
             
+            // Hızlı UI Güncellemesi 
             if(isLiked) { 
                 story.likes = story.likes.filter(u => u !== myUsername); 
                 document.getElementById('story-like-btn').innerText = '🤍'; 
@@ -1294,7 +1266,7 @@
 
             try {
                 const userObj = activeStoryUsers[currentStoryUserIndex];
-                if (!userObj || !userObj.stories) return;
+                if (!userObj || !userObj.stories) return; 
                 
                 const story = userObj.stories[currentStoryIndex];
                 if (!story) return;
@@ -1322,11 +1294,11 @@
         window.openStoryShareModal = function() {
             window.pauseStory(); 
             const container = document.getElementById('story-share-list'); container.innerHTML = '';
-            if(myFollowingList.length === 0) { container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; } 
+            if(myFollowingList.length === 0) { container.innerHTML = '<div style=\"padding:20px; text-align:center; color:#64748b;\">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; } 
             else {
                 myFollowingList.forEach(uname => {
-                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
-                    container.innerHTML += `<div class="user-row"><div class="row-avatar">${avatarHtml}</div><div style="flex:1;"><div style="font-weight:700;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div><button onclick="window.sendStoryAsMessage('${uname}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;">Gönder</button></div>`;
+                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${uData.avatarUrl}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
+                    container.innerHTML += `<div class=\"user-row\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${uData.fullName || uname} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${uname}</div></div><button onclick=\"window.sendStoryAsMessage('${uname}')\" style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
                 });
             }
             document.getElementById('story-share-modal').style.display = 'flex';
@@ -1347,7 +1319,7 @@
         };
 
         // =====================================
-        // ANA AKIŞ VE POST FONKSİYONLARI (KESİNTİSİZ TAM HALİ)
+        // ANA AKIŞ VE POST FONKSİYONLARI (OPTIMISTIC UI UYGULANDI)
         // =====================================
 
         function attachCallListeners() {
@@ -1443,12 +1415,13 @@
             }
         });
 
-        function loadFeedPosts() {
-            if (postsUnsubscribe) postsUnsubscribe(); 
+        // 🔥 OPTİMİZE EDİLDİ: onSnapshot yerine getDocs kullanılarak okuma sayısı azaltıldı!
+        async function loadFeedPosts() {
             const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(postLimit));
-            postsUnsubscribe = onSnapshot(q, async (snapshot) => { 
+            try {
+                const snapshot = await getDocs(q); 
                 globalPosts = []; 
-                let neededUsers = new Set();
+                let neededUsers = new Set(); 
 
                 snapshot.forEach(doc => { 
                     let safeData = doc.data();
@@ -1474,7 +1447,9 @@
                 
                 renderWhoToFollow(); 
                 renderFeed(); 
-            });
+            } catch(error) {
+                console.error("Gönderiler yüklenirken hata oluştu:", error);
+            }
         }
 
         function renderWhoToFollow() {
@@ -1482,22 +1457,22 @@
             let eligibleUsers = Object.keys(allUsersData).filter(uid => { return uid !== myUsername && !myFollowingList.includes(uid); });
             eligibleUsers = eligibleUsers.sort(() => 0.5 - Math.random()).slice(0, 3);
 
-            if (eligibleUsers.length === 0) { container.innerHTML = '<div style="font-size:14px; color:#64748b; padding: 10px 0;">Şu an için yeni öneri yok.</div>'; return; }
+            if (eligibleUsers.length === 0) { container.innerHTML = '<div style=\"font-size:14px; color:#64748b; padding: 10px 0;\">Şu an için yeni öneri yok.</div>'; return; }
             let html = '';
             eligibleUsers.forEach(uid => {
                 const uData = allUsersData[uid];
-                const avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+                const avatarHtml = uData.avatarUrl ? `<img src=\"${uData.avatarUrl}\" style=\"width:100%;height:100%;object-fit:cover;\">` : `👤`;
                 const fullName = uData.fullName || uid; const vHtml = uData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
                 html += `
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${uid}'">
-                        <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
-                            <div style="width:40px; height:40px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:20px; flex-shrink:0; border: 1px solid #cbd5e1;">${avatarHtml}</div>
-                            <div style="overflow:hidden;">
-                                <div style="font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f172a;">${fullName} ${vHtml}</div>
-                                <div style="color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${uid}</div>
+                    <div style=\"display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;\" class="user-row" onclick=\"window.location.href='profile.html?user=${uid}'\">
+                        <div style=\"display:flex; align-items:center; gap:10px; overflow:hidden;\">
+                            <div style=\"width:40px; height:40px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:20px; flex-shrink:0; border: 1px solid #cbd5e1;\">${avatarHtml}</div>
+                            <div style=\"overflow:hidden;\">
+                                <div style=\"font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f172a;\">${fullName} ${vHtml}</div>
+                                <div style=\"color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;\">@${uid}</div>
                             </div>
                         </div>
-                        <button onclick="event.stopPropagation(); window.quickFollow('${uid}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;">Ekle</button>
+                        <button onclick=\"event.stopPropagation(); window.quickFollow('${uid}')\" style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;\">Ekle</button>
                     </div>
                 `;
             });
@@ -1524,8 +1499,8 @@
             if (input.value.trim().length > 0) btn.classList.add('active'); else btn.classList.remove('active');
         }
 
-        document.getElementById('post-text')?.addEventListener('input', () => updateCharCount('post-text', 'inline-char-count', 'share-btn'));
-        document.getElementById('modal-post-text')?.addEventListener('input', () => updateCharCount('modal-post-text', 'modal-char-count', 'modal-share-btn'));
+        document.getElementById('post-text').addEventListener('input', () => updateCharCount('post-text', 'inline-char-count', 'share-btn'));
+        document.getElementById('modal-post-text').addEventListener('input', () => updateCharCount('modal-post-text', 'modal-char-count', 'modal-share-btn'));
 
         window.openMainPostModal = function() { document.getElementById('main-post-modal').style.display = 'flex'; document.getElementById('modal-post-text').focus(); };
         let currentPostLocation = null;
@@ -1570,8 +1545,8 @@
             window.removeLocation(true);
         };
 
-        document.getElementById('image-input')?.addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('image-preview-text').style.display = 'block'; document.getElementById('share-btn').classList.add('active'); }});
-        document.getElementById('modal-image-input')?.addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('modal-image-preview-text').style.display = 'block'; document.getElementById('modal-share-btn').classList.add('active'); }});
+        document.getElementById('image-input').addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('image-preview-text').style.display = 'block'; document.getElementById('share-btn').classList.add('active'); }});
+        document.getElementById('modal-image-input').addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('modal-image-preview-text').style.display = 'block'; document.getElementById('modal-share-btn').classList.add('active'); }});
 
         async function submitPost(textId, imageId, btnId, previewId, isModal) {
             const text = document.getElementById(textId).value.trim(); 
@@ -1606,6 +1581,10 @@
                 btn.disabled = false; btn.innerText = "Yayınla"; btn.classList.remove('active');
                 updateCharCount(textId, isModal ? 'modal-char-count' : 'inline-char-count', btnId);
                 if (isModal) window.closeMainPostModal();
+                
+                // Gönderi atıldığında listeyi yenile
+                loadFeedPosts();
+                
             } catch(e) {
                 console.error("Gönderi paylaşılırken hata:", e);
                 alert("İçerik paylaşılırken bir hata oluştu!");
@@ -1613,10 +1592,9 @@
             }
         }
 
-        document.getElementById('share-btn')?.addEventListener('click', () => submitPost('post-text', 'image-input', 'share-btn', 'image-preview-text', false));
-        document.getElementById('modal-share-btn')?.addEventListener('click', () => submitPost('modal-post-text', 'modal-image-input', 'modal-share-btn', 'modal-image-preview-text', true));
+        document.getElementById('share-btn').addEventListener('click', () => submitPost('post-text', 'image-input', 'share-btn', 'image-preview-text', false));
+        document.getElementById('modal-share-btn').addEventListener('click', () => submitPost('modal-post-text', 'modal-image-input', 'modal-share-btn', 'modal-image-preview-text', true));
 
-        // SPAM ENGELLEYİCİ KİLİT SİSTEMİ (1.5 Saniye Bekletir)
         window.actionLocks = {};
         window.isActionLocked = function(actionId) {
             if (window.actionLocks[actionId]) return true;
@@ -1625,26 +1603,56 @@
             return false;
         };
 
+        // 🔥 OPTİMİZE EDİLDİ: Beğeni işlemi artık Optimistic UI kullanıyor (Sıfır ek okuma)
         window.toggleLike = async function(postId, isLiked, postAuthor, event) { 
             event.stopPropagation();
-            
             if (window.isActionLocked('like_' + postId)) return; 
 
+            // 1. Önce arayüzü anında güncelle (İyimser Yaklaşım)
+            const postObj = globalPosts.find(p => p.id === postId);
+            if (postObj) {
+                if (!postObj.data.likes) postObj.data.likes = [];
+                if (isLiked) {
+                    postObj.data.likes = postObj.data.likes.filter(u => u !== myUsername);
+                } else {
+                    postObj.data.likes.push(myUsername);
+                }
+                renderFeed(); 
+                if (window.currentOpenPostId === postId) window.openPostDetail(postId);
+            }
+
+            // 2. Arka planda Firebase'i güncelle (Sadece 1 Yazma işlemi, 0 Okuma)
             const postRef = doc(db, "posts", postId); 
-            if (isLiked) { await updateDoc(postRef, { likes: arrayRemove(myUsername) }); } 
-            else { await updateDoc(postRef, { likes: arrayUnion(myUsername) }); if (postAuthor !== myUsername) { await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); } } 
+            if (isLiked) { 
+                await updateDoc(postRef, { likes: arrayRemove(myUsername) }); 
+            } else { 
+                await updateDoc(postRef, { likes: arrayUnion(myUsername) }); 
+                if (postAuthor !== myUsername) { 
+                    await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); 
+                } 
+            } 
         };
 
         window.toggleBookmark = async function(postId, isBookmarked, event) {
             event.stopPropagation(); const myRef = doc(db, "users", myUsername);
             if (isBookmarked) { await updateDoc(myRef, { bookmarks: arrayRemove(postId) }); } else { await updateDoc(myRef, { bookmarks: arrayUnion(postId) }); }
+            // Yer işaretleri zaten profil dinleyicisinden anlık güncelleniyor.
         };
 
+        // 🔥 OPTİMİZE EDİLDİ: Silme işlemi UI'dan anında kaldırılır
         window.deletePost = async function(postId) { 
             if(confirm("Bu gönderiyi kalıcı olarak silmek istediğinize emin misiniz?")) {
                 try {
                     let postObj = globalPosts.find(p => p.id === postId);
 
+                    // Arayüzden anında kaldır
+                    globalPosts = globalPosts.filter(p => p.id !== postId);
+                    renderFeed();
+                    const detailModal = document.getElementById('post-detail-modal');
+                    if (detailModal) detailModal.style.display = 'none';
+                    window.currentOpenPostId = null;
+
+                    // Arka planda sunucudan sil
                     if (postObj && postObj.data && postObj.data.imageUrl && !postObj.data.isRepost) {
                         try {
                             const imageRef = ref(storage, postObj.data.imageUrl);
@@ -1655,12 +1663,6 @@
                     }
                     
                     await deleteDoc(doc(db, "posts", postId)); 
-
-                    const detailModal = document.getElementById('post-detail-modal');
-                    if (detailModal) {
-                        detailModal.style.display = 'none';
-                    }
-                    window.currentOpenPostId = null;
 
                 } catch(e) {
                     console.error("Firebase Silme Hatası:", e);
@@ -1676,6 +1678,7 @@
                 try {
                     await addDoc(collection(db, "posts"), { isRepost: true, originalPostId: postId, originalPostAuthor: originalAuthor, content: originalPost.data.content || '', imageUrl: originalPost.data.imageUrl || null, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [] });
                     alert("Ağınıza eklendi! 🔁");
+                    loadFeedPosts(); // Yeni gönderi olduğu için sayfayı tazele
                 } catch (error) { console.error("Hata: ", error); }
             }
         };
@@ -1684,22 +1687,35 @@
             event.stopPropagation();
             document.querySelectorAll('.dropdown-menu').forEach(menu => { if(menu.id !== `dropdown-${postId}`) menu.style.display = 'none'; });
             const menu = document.getElementById(`dropdown-${postId}`);
-            if(menu) menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+            menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
         };
 
         window.openEditModal = function(postId, currentContent) { currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex'; };
-        document.getElementById('save-edited-post-btn')?.addEventListener('click', async () => {
+        
+        // 🔥 OPTİMİZE EDİLDİ: Düzenleme anında UI'a yansır
+        document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
             if(!currentlyEditingPostId) return; const newContent = document.getElementById('edit-post-input').value.trim(); if(!newContent) return;
-            try { await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true }); document.getElementById('edit-post-modal').style.display = 'none'; } catch(e) {}
+            
+            // Optimistic UI Update
+            const postObj = globalPosts.find(p => p.id === currentlyEditingPostId);
+            if (postObj) {
+                postObj.data.content = newContent;
+                postObj.data.isEdited = true;
+                renderFeed();
+                if (window.currentOpenPostId === currentlyEditingPostId) window.openPostDetail(currentlyEditingPostId);
+            }
+            document.getElementById('edit-post-modal').style.display = 'none';
+
+            try { await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true }); } catch(e) {}
         });
 
         window.openShareModal = function(postId, event) {
             event.stopPropagation(); postToShare = postId; const container = document.getElementById('share-users-list'); container.innerHTML = '';
-            if(myFollowingList.length === 0) { container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; }
+            if(myFollowingList.length === 0) { container.innerHTML = '<div style=\"padding:20px; text-align:center; color:#64748b;\">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; }
             else {
                 myFollowingList.forEach(uname => {
-                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
-                    container.innerHTML += `<div class="user-row" onclick="window.sendPostAsMessage('${uname}')"><div class="row-avatar">${avatarHtml}</div><div style="flex:1;"><div style="font-weight:700;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div><button style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;">Gönder</button></div>`;
+                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${uData.avatarUrl}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
+                    container.innerHTML += `<div class=\"user-row\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${uData.fullName || uname} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${uname}</div></div><button onclick=\"window.sendPostAsMessage('${uname}')\" style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
                 });
             }
             document.getElementById('share-dm-modal').style.display = 'flex';
@@ -1728,7 +1744,7 @@
             
             let originalAuthor = postData.author; if(postData.isRepost) { originalAuthor = postData.originalPostAuthor; }
             const authorData = allUsersData[originalAuthor] || {}; const likesArray = postData.likes || []; const isLiked = likesArray.includes(myUsername);
-            const vHtml = authorData.isVerified ? '<span class="verified-badge">☑️</span>' : ''; const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+            const vHtml = authorData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : ''; const avatarImg = authorData.avatarUrl ? `<img src=\"${authorData.avatarUrl}\" style=\"width:100%;height:100%;object-fit:cover;\">` : `👤`;
             const fullName = authorData.fullName || originalAuthor;
             
             let timeString = "";
@@ -1740,44 +1756,44 @@
             let locHtml = postData.location ? `<span style="font-size:14px; color:#3b82f6; margin-left:10px;">📍 ${postData.location}</span>` : '';
 
             let repostLabel = "";
-            if(postData.isRepost) { repostLabel = `<div style="color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;">🔁 @${postData.author} ağında paylaştı</div>`; }
+            if(postData.isRepost) { repostLabel = `<div style=\"color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;\">🔁 @${postData.author} ağında paylaştı</div>`; }
 
             let html = `
                 ${repostLabel}
-                <div style="padding: 10px 25px 25px 25px; border-bottom:1px solid #f1f5f9;">
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${originalAuthor}'">
-                        <div style="width:48px; height:48px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;">${avatarImg}</div>
-                        <div style="flex:1;">
-                            <div style="font-weight:700; font-size:16px; color:#0f172a;">${fullName} ${vHtml}</div>
-                            <div style="color:#64748b; font-size:14px;">@${originalAuthor} ${locHtml}</div>
+                <div style=\"padding: 10px 25px 25px 25px; border-bottom:1px solid #f1f5f9;\">
+                    <div style=\"display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;\" onclick=\"window.location.href='profile.html?user=${originalAuthor}'\">
+                        <div style=\"width:48px; height:48px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;\">${avatarImg}</div>
+                        <div style=\"flex:1;\">
+                            <div style=\"font-weight:700; font-size:16px; color:#0f172a;\">${fullName} ${vHtml}</div>
+                            <div style=\"color:#64748b; font-size:14px;\">@${originalAuthor} ${locHtml}</div>
                         </div>
                     </div>
-                    <div style="font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;">
-                        ${postData.content ? postData.content.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`) : ''}
+                    <div style=\"font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;\">
+                        ${postData.content ? postData.content.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href=\"search.html?tag=$1\" style=\"color:#3b82f6; font-weight:500; text-decoration:none;\">#$1</a>`) : ''}
                     </div>
-                    ${postData.imageUrl ? `<img src="${postData.imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">` : ''}
-                    <div style="color:#94a3b8; font-size:13px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;">${timeString}</div>
+                    ${postData.imageUrl ? `<img src=\"${postData.imageUrl}\" style=\"width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;\">` : ''}
+                    <div style=\"color:#94a3b8; font-size:13px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;\">${timeString}</div>
                     
-                    <div style="display:flex; justify-content:flex-start; gap:30px; padding:15px 0; color:#64748b;">
-                        <div class="action-item" onclick="document.getElementById('detail-comment-input').focus()"><span class="action-icon">💬</span> ${(postData.comments || []).length}</div>
-                        <div class="action-item repost-box" onclick="window.repostPost('${postId}', '${originalAuthor}', event)"><span class="action-icon">🔁</span></div>
-                        <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${originalAuthor}', event)"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${postId}', event)">${likesArray.length}</span></div>
-                        <div class="action-item ${myBookmarks.includes(postId) ? 'liked' : ''}" onclick="window.toggleBookmark('${postId}', ${myBookmarks.includes(postId)}, event)" title="Yer İşaretlerine Ekle/Çıkar"><span class="action-icon">${myBookmarks.includes(postId) ? '🔖' : '📑'}</span></div>
-                        <div class="action-item" onclick="window.openShareModal('${postId}', event)"><span class="action-icon">📤</span></div>
+                    <div style=\"display:flex; justify-content:flex-start; gap:30px; padding:15px 0; color:#64748b;\">
+                        <div class=\"action-item\" onclick=\"document.getElementById('detail-comment-input').focus()\"><span class=\"action-icon\">💬</span> ${(postData.comments || []).length}</div>
+                        <div class=\"action-item repost-box\" onclick=\"window.repostPost('${postId}', '${originalAuthor}', event)\"><span class=\"action-icon\">🔁</span></div>
+                        <div class=\"action-item like-box ${isLiked ? 'liked' : ''}\" onclick=\"window.toggleLike('${postId}', ${isLiked}, '${originalAuthor}', event)\"><span class=\"action-icon\">${isLiked ? '❤️' : '🤍'}</span> <span onclick=\"window.showLikes('${postId}', event)\">${likesArray.length}</span></div>
+                        <div class=\"action-item ${myBookmarks.includes(postId) ? 'liked' : ''}\" onclick=\"window.toggleBookmark('${postId}', ${myBookmarks.includes(postId)}, event)\" title=\"Yer İşaretlerine Ekle/Çıkar\"><span class=\"action-icon\">${myBookmarks.includes(postId) ? '🔖' : '📑'}</span></div>
+                        <div class=\"action-item\" onclick=\"window.openShareModal('${postId}', event)\"><span class=\"action-icon\">📤</span></div>
                     </div>
                 </div>
 
-                <div class="comments-wrapper" style="padding: 0 25px;">
+                <div class=\"comments-wrapper\" style=\"padding: 0 25px;\">
                     ${buildCommentsTree(postData.comments || [], null, 0, postId, originalAuthor)}
                 </div>
                 
-                <div style="position:sticky; bottom:0; background:white; padding:20px 25px; border-top:1px solid #f1f5f9; display:flex; flex-direction:column; gap:10px;">
-                    <div id="replying-to-info" style="display:none; font-size:13px; color:#64748b;">
-                        Yanıtlanıyor: <b id="replying-to-name"></b> <span style="cursor:pointer; color:#ef4444; margin-left:10px;" onclick="window.cancelDetailReply()">İptal</span>
+                <div style=\"position:sticky; bottom:0; background:white; padding:20px 25px; border-top:1px solid #f1f5f9; display:flex; flex-direction:column; gap:10px;\">
+                    <div id=\"replying-to-info\" style=\"display:none; font-size:13px; color:#64748b;\">
+                        Yanıtlanıyor: <b id=\"replying-to-name\"></b> <span style=\"cursor:pointer; color:#ef4444; margin-left:10px;\" onclick=\"window.cancelDetailReply()\">İptal</span>
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="detail-comment-input" style="flex:1; background:#f8fafc; border:1px solid #e2e8f0; padding:12px 15px; border-radius:8px; outline:none; font-size:15px; color:#0f172a;" placeholder="Görüşünüzü bildirin...">
-                        <button onclick="window.sendDetailComment('${postId}', '${originalAuthor}')" style="background:#2c3e50; color:white; border:none; border-radius:8px; padding:0 20px; font-weight:600; cursor:pointer;">Gönder</button>
+                    <div style=\"display:flex; gap:10px;\">
+                        <input type=\"text\" id=\"detail-comment-input\" style=\"flex:1; background:#f8fafc; border:1px solid #e2e8f0; padding:12px 15px; border-radius:8px; outline:none; font-size:15px; color:#0f172a;\" placeholder=\"Görüşünüzü bildirin...\">
+                        <button onclick=\"window.sendDetailComment('${postId}', '${originalAuthor}')\" style=\"background:#2c3e50; color:white; border:none; border-radius:8px; padding:0 20px; font-weight:600; cursor:pointer;\">Gönder</button>
                     </div>
                 </div>
             `;
@@ -1792,27 +1808,27 @@
             const children = allComments.filter(c => (c.parentId || null) === safeParentId).sort((a,b) => a.timestamp - b.timestamp);
             
             children.forEach(c => {
-                const cUserData = allUsersData[c.author] || {}; const avatarHtml = cUserData.avatarUrl ? `<img src="${cUserData.avatarUrl}">` : `👤`;
-                const vHtml = cUserData.isVerified ? `<span class="verified-badge" style="font-size:12px;">☑️</span>` : '';
+                const cUserData = allUsersData[c.author] || {}; const avatarHtml = cUserData.avatarUrl ? `<img src=\"${cUserData.avatarUrl}\">` : `👤`;
+                const vHtml = cUserData.isVerified ? `<span class=\"verified-badge\" style=\"font-size:12px;\">☑️</span>` : '';
                 const safeCommentId = c.id || ('legacy_' + Math.random().toString(36).substr(2, 9));
 
                 let deleteBtnHtml = '';
-                if (myUsername === c.author || myUsername === postAuthor) { deleteBtnHtml = `<div class="comment-action-btn" style="color:#ef4444;" onclick="window.deleteComment('${postId}', '${safeCommentId}')">Sil</div>`; }
+                if (myUsername === c.author || myUsername === postAuthor) { deleteBtnHtml = `<div class=\"comment-action-btn\" style=\"color:#ef4444;\" onclick=\"window.deleteComment('${postId}', '${safeCommentId}')\">Sil</div>`; }
 
                 html += `
-                    <div class="comment-node">
-                        <div class="comment-header">
-                            <div class="comment-avatar" onclick="window.location.href='profile.html?user=${c.author}'" style="cursor:pointer;">${avatarHtml}</div>
-                            <div class="comment-body">
-                                <div><a href="profile.html?user=${c.author}" class="comment-author-name">${cUserData.fullName || c.author}</a> ${vHtml} <span style="color:#64748b; font-size:13px; font-weight:normal;">@${c.author}</span></div>
-                                <div class="comment-text">${c.text}</div>
-                                <div class="comment-actions">
-                                    <div class="comment-action-btn" onclick="window.setDetailReply('${safeCommentId}', '${c.author}')">Yanıtla</div>
+                    <div class=\"comment-node\">
+                        <div class=\"comment-header\">
+                            <div class=\"comment-avatar\" onclick=\"window.location.href='profile.html?user=${c.author}'\" style=\"cursor:pointer;\">${avatarHtml}</div>
+                            <div class=\"comment-body\">
+                                <div><a href=\"profile.html?user=${c.author}\" class=\"comment-author-name\">${cUserData.fullName || c.author}</a> ${vHtml} <span style=\"color:#64748b; font-size:13px; font-weight:normal;\">@${c.author}</span></div>
+                                <div class=\"comment-text\">${c.text}</div>
+                                <div class=\"comment-actions\">
+                                    <div class=\"comment-action-btn\" onclick=\"window.setDetailReply('${safeCommentId}', '${c.author}')\">Yanıtla</div>
                                     ${deleteBtnHtml}
                                 </div>
                             </div>
                         </div>
-                        <div class="comment-replies">
+                        <div class=\"comment-replies\">
                             ${buildCommentsTree(allComments, safeCommentId, depth + 1, postId, postAuthor)}
                         </div>
                     </div>
@@ -1824,22 +1840,43 @@
         window.setDetailReply = function(commentId, authorName) { activeReplyParentId = commentId; document.getElementById('replying-to-info').style.display = 'block'; document.getElementById('replying-to-name').innerText = '@' + authorName; document.getElementById('detail-comment-input').focus(); };
         window.cancelDetailReply = function() { activeReplyParentId = null; document.getElementById('replying-to-info').style.display = 'none'; };
 
+        // 🔥 OPTİMİZE EDİLDİ: Yorum UI'a anında yansır
         window.sendDetailComment = async function(postId, postAuthor) {
             const input = document.getElementById('detail-comment-input'); const text = input.value.trim(); if (!text) return;
             const newComment = { id: generateUniqueId(), text: text, author: myUsername, timestamp: Date.now(), parentId: activeReplyParentId };
+            
+            // Optimistic UI Update
+            const postObj = globalPosts.find(p => p.id === postId);
+            if (postObj) {
+                if (!postObj.data.comments) postObj.data.comments = [];
+                postObj.data.comments.push(newComment);
+                renderFeed();
+                window.openPostDetail(postId);
+            }
+
+            // Background Firebase Update
             await updateDoc(doc(db, "posts", postId), { comments: arrayUnion(newComment) });
             if (postAuthor !== myUsername && !activeReplyParentId) { await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); }
             input.value = ''; window.cancelDetailReply();
         };
 
+        // 🔥 OPTİMİZE EDİLDİ: Yorum silme UI'dan anında gerçekleşir
         window.deleteComment = async function(postId, commentId) {
             if(confirm("Bu yorumu silmek istediğinize emin misiniz?")) {
+                // Optimistic UI
+                const postObj = globalPosts.find(p => p.id === postId);
+                if (postObj && postObj.data.comments) {
+                    postObj.data.comments = postObj.data.comments.filter(c => c.id !== commentId && c.parentId !== commentId);
+                    renderFeed();
+                    window.openPostDetail(postId);
+                }
+
                 try {
                     const postRef = doc(db, "posts", postId); const postSnap = await getDoc(postRef);
                     if(postSnap.exists()) {
                         const postData = postSnap.data();
                         const updatedComments = postData.comments.filter(c => c.id !== commentId && c.parentId !== commentId);
-                        await updateDoc(postRef, { comments: updatedComments }); window.openPostDetail(postId);
+                        await updateDoc(postRef, { comments: updatedComments }); 
                     }
                 } catch(e) { console.error("Yorum silinemedi:", e); alert("Yorum silinirken bir hata oluştu."); }
             }
@@ -1865,11 +1902,11 @@
 
                 displayedPosts++;
                 const likesArray = postData.likes || []; const isLiked = likesArray.includes(myUsername);
-                const editedHtml = postData.isEdited ? '<span style="font-size:12px; color:#94a3b8; font-style:italic; margin-left:5px;">(düzenlendi)</span>' : '';
+                const editedHtml = postData.isEdited ? '<span style=\"font-size:12px; color:#94a3b8; font-style:italic; margin-left:5px;\">(düzenlendi)</span>' : '';
                 
                 const authorData = allUsersData[originalAuthor] || {};
-                const vHtml = authorData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
-                const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+                const vHtml = authorData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
+                const avatarImg = authorData.avatarUrl ? `<img src=\"${authorData.avatarUrl}\" style=\"width:100%;height:100%;object-fit:cover;\">` : `👤`;
                 const fullName = authorData.fullName || originalAuthor;
                 
                 let timeAgo = "";
@@ -1891,49 +1928,50 @@
                 let repostHtml = '';
                 if(postData.isRepost) {
                     const reposterName = postData.author === myUsername ? 'Sen' : (allUsersData[postData.author]?.fullName || postData.author);
-                    repostHtml = `<div class="repost-indicator" onclick="event.stopPropagation(); window.location.href='profile.html?user=${postData.author}'">🔁 ${reposterName} ağında paylaştı</div>`;
+                    repostHtml = `<div class=\"repost-indicator\" onclick=\"event.stopPropagation(); window.location.href='profile.html?user=${postData.author}'\">🔁 ${reposterName} ağında paylaştı</div>`;
                 }
 
                 const postDiv = document.createElement('div'); postDiv.className = 'post';
                 postDiv.onclick = () => window.openPostDetail(post.id); 
 
                 postDiv.innerHTML = `
-                    <div style="width:100%; display:flex; flex-direction:column;">
+                    <div style=\"width:100%; display:flex; flex-direction:column;\">
                         ${repostHtml}
-                        <div style="display:flex; gap:15px;">
-                            <div class="post-left" onclick="event.stopPropagation(); window.location.href='profile.html?user=${originalAuthor}'">
-                                <div class="post-avatar-img">${avatarImg}</div>
+                        <div style=\"display:flex; gap:15px;\">
+                            <div class=\"post-left\" onclick=\"event.stopPropagation(); window.location.href='profile.html?user=${originalAuthor}'\">
+                                <div class=\"post-avatar-img\">${avatarImg}</div>
                             </div>
-                            <div class="post-right">
-                                <div class="post-header-info">
-                                    <div class="author-group" onclick="event.stopPropagation(); window.location.href='profile.html?user=${originalAuthor}'">
-                                        <span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${originalAuthor}</span> <span class="post-time">· ${timeAgo}</span> ${locationHtml}
+                            <div class=\"post-right\">
+                                <div class=\"post-header-info\">
+                                    <div class=\"author-group\" onclick=\"event.stopPropagation(); window.location.href='profile.html?user=${originalAuthor}'\">
+                                        <span class=\"author-name\">${fullName}</span>${vHtml} <span class=\"author-username\">@${originalAuthor}</span> <span class=\"post-time\">· ${timeAgo}</span> ${locationHtml}
                                         ${editedHtml}
                                     </div>
-                                    <div style="position:relative;">
-                                        <button class="post-options-btn" onclick="window.toggleDropdown('${post.id}', event)">•••</button>
-                                        <div id="dropdown-${post.id}" class="dropdown-menu">
+                                    <div style=\"position:relative;\">
+                                        <button class=\"post-options-btn\" onclick=\"window.toggleDropdown('${post.id}', event)\">•••</button>
+                                        <div id=\"dropdown-${post.id}\" class=\"dropdown-menu\">
                                             ${(isOwner || (postData.isRepost && postData.author === myUsername)) ? `
-                                                <div class="dropdown-item danger" onclick="event.stopPropagation(); window.deletePost('${post.id}')">Sil</div>
-                                                ${!postData.isRepost ? `<div class="dropdown-item" onclick="event.stopPropagation(); window.openEditModal('${post.id}', '${safeContentForEdit}')">Düzenle</div>` : ''}
-                                            ` : `<div class="dropdown-item" onclick="event.stopPropagation(); alert('Bildirildi.')">Bildir</div>`}
+                                                <div class=\"dropdown-item danger\" onclick=\"event.stopPropagation(); window.deletePost('${post.id}')\">Sil</div>
+                                                ${!postData.isRepost ? `<div class=\"dropdown-item\" onclick=\"event.stopPropagation(); window.openEditModal('${post.id}', '${safeContentForEdit}')\">Düzenle</div>` : ''}
+                                                <div class=\"dropdown-item\" onclick=\"event.stopPropagation(); window.pinPost('${post.id}')\">Sabitle</div>
+                                            ` : `<div class=\"dropdown-item\" onclick=\"event.stopPropagation(); alert('Bildirildi.')">Bildir</div>`}
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div class="post-content">${postData.content ? postData.content.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`) : ''}</div>
+                                <div class=\"post-content\">${postData.content ? postData.content.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href=\"search.html?tag=$1\" class=\"hashtag\">#$1</a>`) : ''}</div>
                                 
                                 ${postData.imageUrl ? `
-                                <div class="post-image-container" onclick="event.stopPropagation()">
-                                    <img src="${postData.imageUrl}" class="post-image">
+                                <div class=\"post-image-container\" onclick=\"event.stopPropagation()\">
+                                    <img src=\"${postData.imageUrl}\" class=\"post-image\">
                                 </div>` : ''}
                                 
-                                <div class="post-footer-actions">
-                                    <div class="action-item" onclick="event.stopPropagation(); window.openPostDetail('${post.id}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
-                                    <div class="action-item repost-box" onclick="window.repostPost('${post.id}', '${originalAuthor}', event)" title="Ağınıza Ekle"><span class="action-icon">🔁</span> </div>
-                                    <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${originalAuthor}', event)" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${post.id}', event)">${likesArray.length || ''}</span></div>
-                                    <div class="action-item ${myBookmarks.includes(post.id) ? 'liked' : ''}" onclick="window.toggleBookmark('${post.id}', ${myBookmarks.includes(post.id)}, event)" title="Kaydet"><span class="action-icon">${myBookmarks.includes(post.id) ? '🔖' : '📑'}</span></div>
-                                    <div class="action-item" onclick="window.openShareModal('${post.id}', event)" title="İlet"><span class="action-icon">📤</span></div>
+                                <div class=\"post-footer-actions\">
+                                    <div class=\"action-item\" onclick=\"event.stopPropagation(); window.openPostDetail('${post.id}')\" title=\"Yanıtla\"><span class=\"action-icon\">💬</span> ${(postData.comments || []).length || ''}</div>
+                                    <div class=\"action-item repost-box\" onclick=\"window.repostPost('${post.id}', '${originalAuthor}', event)\" title=\"Ağınıza Ekle\"><span class=\"action-icon\">🔁</span> </div>
+                                    <div class=\"action-item like-box ${isLiked ? 'liked' : ''}\" onclick=\"window.toggleLike('${post.id}', ${isLiked}, '${originalAuthor}', event)\" title=\"Beğen\"><span class=\"action-icon\">${isLiked ? '❤️' : '🤍'}</span> <span onclick=\"window.showLikes('${post.id}', event)\">${likesArray.length || ''}</span></div>
+                                    <div class=\"action-item ${myBookmarks.includes(post.id) ? 'liked' : ''}\" onclick=\"window.toggleBookmark('${post.id}', ${myBookmarks.includes(post.id)}, event)\" title=\"Kaydet\"><span class=\"action-icon\">${myBookmarks.includes(post.id) ? '🔖' : '📑'}</span></div>
+                                    <div class=\"action-item\" onclick=\"window.openShareModal('${post.id}', event)\" title=\"İlet\"><span class=\"action-icon\">📤</span></div>
                                 </div>
                             </div>
                         </div>
@@ -1943,9 +1981,9 @@
             });
             if(displayedPosts === 0) { 
                 if(currentFeedTab === 'bookmarks') {
-                    feedContainer.innerHTML = '<div style="padding: 60px 20px; text-align: center; color: #64748b;"><div style="font-size:40px; margin-bottom:15px;">📑</div><div style="font-size:18px; font-weight:700; color:#0f172a; margin-bottom:5px;">Henüz kaydedilmiş içerik yok.</div>İçeriklerdeki yer işareti ikonuna tıklayarak koleksiyonunuzu oluşturun.</div>';
+                    feedContainer.innerHTML = '<div style=\"padding: 60px 20px; text-align: center; color: #64748b;\"><div style=\"font-size:40px; margin-bottom:15px;\">📑</div><div style=\"font-size:18px; font-weight:700; color:#0f172a; margin-bottom:5px;\">Henüz kaydedilmiş içerik yok.</div>İçeriklerdeki yer işareti ikonuna tıklayarak koleksiyonunuzu oluşturun.</div>';
                 } else {
-                    feedContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: #64748b;">Buralar çok sessiz...</div>'; 
+                    feedContainer.innerHTML = '<div style=\"padding: 40px; text-align: center; color: #64748b;\">Buralar çok sessiz...</div>'; 
                 }
             }
         }
