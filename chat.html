@@ -252,13 +252,6 @@
         body.dark-mode .new-chat-results { border-top-color: #334155; }
         body.dark-mode .group-user-label { border-bottom-color: #334155; color: #f8fafc; }
         body.dark-mode .modal-input { background-color: #0f172a; border-color: #334155; color: #f8fafc; }
-        /* Toggle Switch CSS */
-        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px;}
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%;}
-        input:checked + .slider { background-color: #2c3e50; }
-        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body>
@@ -484,7 +477,6 @@
     <div id="bottom-nav-container"></div>
 
     <script type="module">
-        // 1. DÜZELTME: Firebase başlatma temizliği
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
@@ -495,11 +487,14 @@
         let currentReplyData = null; let typingTimeout = null;
         let currentInboxTab = 'all'; 
 
+        // 🟢 EKLENDİ: Firebase dinleyici (Listener) sızıntılarını önlemek için temizleme değişkenleri
+        let unsubscribeMessages = null;
+        let unsubscribeChatMeta = null;
+
         let callListeners = {};
         let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
         const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
         
-        // ---------- GÖRÜNTÜLÜ ARAMA İÇİN TURN SUNUCU AYARLARI ----------
         const servers = { 
             iceServers: [
                 { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
@@ -508,11 +503,19 @@
                 { urls: "turn:a.relay.metered.ca:443?transport=tcp", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" }
             ] 
         };
-        // ---------------------------------------------------------------
 
         const urlParams = new URLSearchParams(window.location.search);
         const targetUsername = urlParams.get('user');
         const targetGroupId = urlParams.get('group');
+
+        // 🟢 EKLENDİ: Arama kutularının performansı için Debounce (Gecikme) fonksiyonu
+        function debounce(func, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
 
         window.goToChatProfile = function() {
             if (!isGroupChat && targetUsername) { window.location.href = 'profile.html?user=' + targetUsername; }
@@ -520,7 +523,6 @@
 
         window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
         
-        // 2. DÜZELTME: DOM Güvenliği (Optional Chaining)
         window.openMobileSidebar = function() { 
             const overlay = document.getElementById('mobile-sidebar-overlay');
             if(overlay) overlay.style.display = 'block'; 
@@ -556,7 +558,7 @@
             try {
                 await addDoc(collection(db, "tickets"), {
                     sender: myUsername || "Bilinmeyen Kullanıcı",
-                    message: message,
+                    message: DOMPurify.sanitize(message), // XSS Güvenliği
                     createdAt: serverTimestamp(),
                     status: "Yeni"
                 });
@@ -583,14 +585,17 @@
         window.showUserList = function(title, userArray) {
             const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
             const container = document.getElementById('users-list-container'); if(!container) return;
-            container.innerHTML = '';
-            if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>'; } 
+            // 🟢 EKLENDİ: innerHTML döngüsü yerine string birleştirme ile performans iyileştirmesi
+            let html = '';
+            if(userArray.length === 0) { html = '<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>'; } 
             else {
                 userArray.forEach(uname => {
                     let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
-                    container.innerHTML += `<a href="profile.html?user=${uname}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></a>`;
+                    let safeName = DOMPurify.sanitize(uData.fullName || uname); // XSS Güvenliği
+                    html += `<a href="profile.html?user=${uname}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${safeName} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></a>`;
                 });
             }
+            container.innerHTML = html;
             document.getElementById('users-list-modal').style.display = 'flex';
         };
         document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
@@ -762,13 +767,15 @@
             });
         }
 
-        document.getElementById('dm-search-input')?.addEventListener('input', updateInboxDisplay);
+        // 🟢 EKLENDİ: Arama çubuğu performans optimizasyonu
+        document.getElementById('dm-search-input')?.addEventListener('input', debounce(updateInboxDisplay, 300));
 
         function updateInboxDisplay() {
             const text = document.getElementById('dm-search-input')?.value.toLowerCase().trim() || "";
             const container = document.getElementById('dm-list'); 
             if(!container) return;
-            container.innerHTML = '';
+            
+            let html = ''; // 🟢 EKLENDİ: Performans için DOM stringi
             
             let allConversations = [...activeChats];
             allConversations.sort((a, b) => { let timeA = a.updatedAt ? a.updatedAt.toMillis() : 0; let timeB = b.updatedAt ? b.updatedAt.toMillis() : 0; return timeB - timeA; });
@@ -803,47 +810,57 @@
 
                     if (conv.type === 'private') {
                         const otherUser = conv.participants.find(p => p !== myUsername); const uData = allUsersData[otherUser] || {};
-                        title = `${uData.fullName || otherUser} ${uData.isVerified ? '<span style="color:#3b82f6; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
+                        title = DOMPurify.sanitize(`${uData.fullName || otherUser}`); // XSS Koruması
+                        title += uData.isVerified ? '<span style="color:#3b82f6; font-size:14px; margin-left:4px;">☑️</span>' : '';
                         avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤'; link = `chat.html?user=${otherUser}`;
                     } else {
-                        title = conv.name; avatar = `<div style="background:#10b981; color:white; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">👥</div>`; link = `chat.html?group=${conv.id}`;
+                        title = DOMPurify.sanitize(conv.name); // XSS Koruması
+                        avatar = `<div style="background:#10b981; color:white; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">👥</div>`; link = `chat.html?group=${conv.id}`;
                     }
                     
                     let lastMsgText = conv.lastMessage || 'Sohbet başlatıldı'; 
-                    if(lastMsgText.includes('https://i.ibb.co')) lastMsgText = '📷 Fotoğraf';
-                    let subtitleHtml = isUnread ? `<span class="unread-text">${lastMsgText}</span> <div class="unread-dot"></div>` : `<span class="read-text">${lastMsgText}</span>`;
+                    if(lastMsgText.includes('https://firebasestorage.googleapis.com')) lastMsgText = '📷 Fotoğraf';
+                    let subtitleHtml = isUnread ? `<span class="unread-text">${DOMPurify.sanitize(lastMsgText)}</span> <div class="unread-dot"></div>` : `<span class="read-text">${DOMPurify.sanitize(lastMsgText)}</span>`;
                     const isActive = (targetUsername && link.includes(targetUsername)) || (targetGroupId && link.includes(targetGroupId));
                     
-                    container.innerHTML += `<a href="${link}" class="dm-user-card ${isActive ? 'active' : ''}"><div class="dm-avatar">${avatar}</div><div class="dm-info"><div class="dm-username">${title}</div><div class="dm-subtitle">${subtitleHtml}</div></div><div class="time-badge">${timeAgoStr}</div></a>`;
+                    html += `<a href="${link}" class="dm-user-card ${isActive ? 'active' : ''}"><div class="dm-avatar">${avatar}</div><div class="dm-info"><div class="dm-username">${title}</div><div class="dm-subtitle">${subtitleHtml}</div></div><div class="time-badge">${timeAgoStr}</div></a>`;
                 });
-            } else { container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Sohbet bulunamadı.</p>'; }
+            } else { html = '<p style="text-align:center; color:#64748b; padding:20px;">Sohbet bulunamadı.</p>'; }
+            
+            container.innerHTML = html; // Tek seferde DOM güncelleme
         }
 
-        document.getElementById('new-chat-search')?.addEventListener('input', (e) => {
+        // 🟢 EKLENDİ: Arama çubuğu performans optimizasyonu
+        document.getElementById('new-chat-search')?.addEventListener('input', debounce((e) => {
             const text = e.target.value.toLowerCase().trim(); const container = document.getElementById('new-chat-results'); if(!container) return;
-            container.innerHTML = '';
-            if(!text) return;
+            let html = '';
+            if(!text) { container.innerHTML = ''; return; }
+            
             const searchResults = Object.keys(allUsersData).filter(uid => uid !== myUsername && uid.toLowerCase().includes(text));
             if (searchResults.length > 0) {
                 searchResults.forEach(uid => {
                     const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤';
-                    const title = `${uData.fullName || uid} ${uData.isVerified ? '<span style="color:#3b82f6; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
-                    container.innerHTML += `<label class="group-user-label" onclick="window.location.href='chat.html?user=${uid}'"><div style="display:flex; align-items:center; gap:10px;"><div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1;">${avatar}</div>${title}</div></label>`;
+                    const safeTitle = DOMPurify.sanitize(uData.fullName || uid);
+                    const title = `${safeTitle} ${uData.isVerified ? '<span style="color:#3b82f6; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
+                    html += `<label class="group-user-label" onclick="window.location.href='chat.html?user=${uid}'"><div style="display:flex; align-items:center; gap:10px;"><div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1;">${avatar}</div>${title}</div></label>`;
                 });
             }
-        });
+            container.innerHTML = html;
+        }, 300));
 
         const openGroupModalBtn = document.getElementById('open-group-modal');
         if (openGroupModalBtn) {
             openGroupModalBtn.addEventListener('click', () => {
                 const groupModal = document.getElementById('group-modal'); if(groupModal) groupModal.style.display = 'flex';
                 const listDiv = document.getElementById('group-users-list'); if(!listDiv) return;
-                listDiv.innerHTML = '';
+                
+                let html = '';
                 if(myFollowing.length === 0) { listDiv.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">Önce ağınıza birilerini eklemelisiniz!</div>'; return; }
                 myFollowing.forEach(uid => {
                     const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
-                    listDiv.innerHTML += `<label class="group-user-label"><div style="display:flex; align-items:center; gap:10px;"><div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1;">${avatar}</div>@${uid}</div><input type="checkbox" class="group-member-checkbox" value="${uid}" style="width:18px; height:18px;"></label>`;
+                    html += `<label class="group-user-label"><div style="display:flex; align-items:center; gap:10px;"><div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1;">${avatar}</div>@${uid}</div><input type="checkbox" class="group-member-checkbox" value="${uid}" style="width:18px; height:18px;"></label>`;
                 });
+                listDiv.innerHTML = html;
             });
         }
 
@@ -855,12 +872,23 @@
             const members = [myUsername, ...Array.from(selectedCheckboxes).map(cb => cb.value)]; 
             const btn = document.getElementById('create-group-btn'); if(btn) { btn.disabled = true; btn.innerText = "Oluşturuluyor..."; }
             try {
-                const newGroupRef = await addDoc(collection(db, "groups"), { name: groupName, members: members, createdBy: myUsername, lastMessage: 'Grup oluşturuldu', lastSender: myUsername, updatedAt: serverTimestamp() });
+                const newGroupRef = await addDoc(collection(db, "groups"), { 
+                    name: DOMPurify.sanitize(groupName), // XSS Güvenliği 
+                    members: members, 
+                    createdBy: myUsername, 
+                    lastMessage: 'Grup oluşturuldu', 
+                    lastSender: myUsername, 
+                    updatedAt: serverTimestamp() 
+                });
                 window.location.href = `chat.html?group=${newGroupRef.id}`;
             } catch(e) { alert("Hata!"); if(btn) { btn.disabled = false; btn.innerText = "Grubu Oluştur"; } }
         });
 
         async function setupActiveChat() {
+            // 🟢 EKLENDİ: Yeni bir sohbete geçerken önceki dinleyicileri temizle (Memory Leak engellendi)
+            if (unsubscribeChatMeta) { unsubscribeChatMeta(); unsubscribeChatMeta = null; }
+            if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+
             if (targetUsername) {
                 isGroupChat = false; chatId = [myUsername, targetUsername].sort().join('_');
                 const addMemBtn = document.getElementById('add-member-btn'); if(addMemBtn) addMemBtn.style.display = 'none';
@@ -868,7 +896,8 @@
                     const uSnap = await getDoc(doc(db, "users", targetUsername)); 
                     if (uSnap.exists()) {
                         const data = uSnap.data();
-                        const uText = document.getElementById('chat-username-text'); if(uText) uText.innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span style="color:#3b82f6; font-size:16px;">☑️</span>' : ''}`;
+                        const safeName = DOMPurify.sanitize(data.fullName || targetUsername);
+                        const uText = document.getElementById('chat-username-text'); if(uText) uText.innerHTML = `${safeName} ${data.isVerified ? '<span style="color:#3b82f6; font-size:16px;">☑️</span>' : ''}`;
                         const cSub = document.getElementById('chat-subtitle'); if(cSub) cSub.innerText = `@${targetUsername}`;
                         const cAv = document.getElementById('chat-avatar'); if (data.avatarUrl && cAv) cAv.innerHTML = `<img src="${data.avatarUrl}">`; 
                     }
@@ -881,7 +910,7 @@
                     const gSnap = await getDoc(doc(db, "groups", targetGroupId));
                     if (gSnap.exists()) {
                         const gData = gSnap.data(); 
-                        const uText = document.getElementById('chat-username-text'); if(uText) uText.innerText = gData.name;
+                        const uText = document.getElementById('chat-username-text'); if(uText) uText.innerText = DOMPurify.sanitize(gData.name);
                         const otherMembers = gData.members.filter(m => m !== myUsername).join(', ');
                         const cSub = document.getElementById('chat-subtitle'); if(cSub) cSub.innerText = `Sen, ${otherMembers}`;
                     } else { alert("Grup bulunamadı!"); window.location.href = "chat.html"; }
@@ -894,7 +923,7 @@
                 unreadBy: arrayRemove(myUsername)
             }).catch(e=>{});
 
-            onSnapshot(doc(db, colName, chatId), (docSnap) => {
+            unsubscribeChatMeta = onSnapshot(doc(db, colName, chatId), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data(); const typingObj = data.typing || {}; let typingUsers = [];
                     for (let usr in typingObj) { if (usr !== myUsername && typingObj[usr] === true) typingUsers.push(usr); }
@@ -923,7 +952,7 @@
         });
 
         window.prepareReply = function(msgId, sender, text) {
-            let summary = text; if (text.includes('i.ibb.co')) summary = '📷 Fotoğraf';
+            let summary = text; if (text.includes('firebasestorage.googleapis.com')) summary = '📷 Fotoğraf';
             currentReplyData = { id: msgId, sender: sender, text: summary };
             const rpSender = document.getElementById('reply-preview-sender'); if(rpSender) rpSender.innerText = sender;
             const rpMsg = document.getElementById('reply-preview-msg'); if(rpMsg) rpMsg.innerText = summary.length > 50 ? summary.substring(0, 50) + "..." : summary;
@@ -959,10 +988,12 @@
             const collectionName = isGroupChat ? "groups" : "chats";
             const messagesRef = collection(db, collectionName, chatId, "messages");
             
-            onSnapshot(query(messagesRef, orderBy("createdAt", "asc")), (snapshot) => {
+            // 🟢 EKLENDİ: Dinleyiciyi bir değişkene atıyoruz
+            unsubscribeMessages = onSnapshot(query(messagesRef, orderBy("createdAt", "asc")), (snapshot) => {
                 const messagesContainer = document.getElementById('chat-messages');
                 if(!messagesContainer) return;
-                messagesContainer.innerHTML = ''; 
+                
+                let html = ''; // 🟢 EKLENDİ: Mesaj listesini oluşturmak için performans düzeltmesi
 
                 snapshot.forEach((docSnap) => {
                     let data = docSnap.data(); 
@@ -977,10 +1008,8 @@
                     }
 
                     if (data.type === 'system') {
-                        const sysDiv = document.createElement('div'); sysDiv.className = 'system-message';
                         const icon = data.text.includes('görüntülü') ? '📹' : '📞';
-                        sysDiv.innerHTML = `<span>${icon} ${data.text} - ${timeString}</span>`;
-                        messagesContainer.appendChild(sysDiv);
+                        html += `<div class="system-message"><span>${icon} ${DOMPurify.sanitize(data.text)} - ${timeString}</span></div>`;
                         return; 
                     }
 
@@ -1008,23 +1037,24 @@
                     }
                     actionsHtml += `</div>`;
 
-                    const msgDiv = document.createElement('div'); msgDiv.className = `message-wrapper ${isMe ? 'wrapper-me' : 'wrapper-them'}`;
-                    msgDiv.innerHTML = `
-                        ${senderNameHtml}
-                        <div class="message-bubble ${isMe ? 'msg-me' : 'msg-them'}">
-                            ${replyHtml}
-                            ${imageHtml}
-                            ${data.text ? `<div>${data.text}</div>` : ''}
-                            <div class="msg-meta">
-                                ${data.isEdited ? '<span class="msg-edited">(düzenlendi)</span>' : ''}
-                                <div class="msg-time">${timeString}</div>
-                                ${tickHtml}
+                    html += `
+                        <div class="message-wrapper ${isMe ? 'wrapper-me' : 'wrapper-them'}">
+                            ${senderNameHtml}
+                            <div class="message-bubble ${isMe ? 'msg-me' : 'msg-them'}">
+                                ${replyHtml}
+                                ${imageHtml}
+                                ${data.text ? `<div>${data.text}</div>` : ''}
+                                <div class="msg-meta">
+                                    ${data.isEdited ? '<span class="msg-edited">(düzenlendi)</span>' : ''}
+                                    <div class="msg-time">${timeString}</div>
+                                    ${tickHtml}
+                                </div>
                             </div>
+                            ${actionsHtml}
                         </div>
-                        ${actionsHtml}
                     `;
-                    messagesContainer.appendChild(msgDiv);
                 });
+                messagesContainer.innerHTML = html;
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             });
         }
@@ -1238,14 +1268,16 @@
         document.getElementById('add-member-btn')?.addEventListener('click', () => {
             const modal = document.getElementById('add-member-modal'); if(modal) modal.style.display = 'flex';
             const inp = document.getElementById('add-member-search'); if(inp) { inp.value = ''; inp.focus(); }
-            const res = document.getElementById('add-member-results'); if(res) res.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">İsim veya kullanıcı adı yazın...</div>';
+            const res = document.getElementById('add-member-results'); if(res) res.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">Kişi aratın...</div>';
         });
 
-        document.getElementById('add-member-search')?.addEventListener('input', (e) => {
+        // 🟢 EKLENDİ: Arama çubuğu performans optimizasyonu
+        document.getElementById('add-member-search')?.addEventListener('input', debounce((e) => {
             const text = e.target.value.toLowerCase().trim();
             const container = document.getElementById('add-member-results');
             if(!container) return;
-            container.innerHTML = '';
+            
+            let html = '';
             
             if(!text) {
                 container.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">İsim veya kullanıcı adı yazın...</div>';
@@ -1266,14 +1298,14 @@
                 searchResults.forEach(uid => {
                     const uData = allUsersData[uid] || {};
                     const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
-                    const title = `${uData.fullName || uid}`;
+                    const safeTitle = DOMPurify.sanitize(uData.fullName || uid);
                     
-                    container.innerHTML += `
+                    html += `
                         <div class="group-user-label" style="display:flex; justify-content:space-between; align-items:center;">
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1; display:flex; justify-content:center; align-items:center;">${avatar}</div>
                                 <div>
-                                    <div style="font-weight:700; font-size:14px; color:#0f172a;">${title}</div>
+                                    <div style="font-weight:700; font-size:14px; color:#0f172a;">${safeTitle}</div>
                                     <div style="font-size:12px; color:#64748b;">@${uid}</div>
                                 </div>
                             </div>
@@ -1282,9 +1314,10 @@
                     `;
                 });
             } else {
-                container.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">Kişi bulunamadı veya zaten grupta.</div>';
+                html = '<div style="padding:10px; color:#64748b; text-align:center;">Kişi bulunamadı veya zaten grupta.</div>';
             }
-        });
+            container.innerHTML = html;
+        }, 300));
 
         window.addMemberToGroup = async function(uid) {
             if(!confirm(`@${uid} adlı kişiyi gruba eklemek istediğinize emin misiniz?`)) return;
