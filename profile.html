@@ -457,9 +457,18 @@
         };
 
         let currentUser = null; let myUsername = null; let allUsersData = {}; 
-        let currentFeedTab = 'discover'; let currentProfileTab = 'posts'; let myFollowingList = []; let myBookmarks = []; let globalPosts = []; 
-        let currentlyEditingPostId = null; let postToShare = null; let activeReplyParentId = null; 
-        const MAX_CHARS = 280;
+let currentFeedTab = 'discover'; let myFollowingList = []; let myBookmarks = []; let globalPosts = []; 
+let currentlyEditingPostId = null; let postToShare = null; let activeReplyParentId = null; 
+const MAX_CHARS = 280;
+
+// EKLENEN EKSİK DEĞİŞKENLER
+let currentProfileTab = 'posts';
+let currentProfileFollowers = [];
+let currentProfileFollowing = [];
+let isTargetPrivate = false;
+let isTargetVerified = false;
+let isFollowing = false;
+let isRequested = false;
 
         // GLOBAL ÇAĞRI DİNLEYİCİ DEĞİŞKENLERİ
         let activeChats = [];
