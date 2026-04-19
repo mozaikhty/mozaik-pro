@@ -1,5 +1,6 @@
 import { collection, addDoc, doc, updateDoc, arrayUnion, getDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+// 🔥 GÜNCELLEME: deleteObject fonksiyonu import edildi
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 import { db, storage } from './firebase-config.js';
 
 // Global Hikaye Değişkenleri
@@ -439,4 +440,58 @@ window.sendStoryAsMessage = async function(targetUser) {
     await addDoc(collection(db, "chats", chatId, "messages"), { text: `🔗 @${storyOwner} adlı kullanıcının hikayesi iletildi.`, sender: window.myUsername, createdAt: serverTimestamp(), isRead: false, type: 'regular' });
     await setDoc(doc(db, "chats", chatId), { participants: [window.myUsername, targetUser], lastMessage: '🔗 Hikaye İletildi', lastSender: window.myUsername, updatedAt: serverTimestamp() }, { merge: true });
     alert(`Hikaye iletildi.`); window.closeStoryShareModal();
+};
+
+// =====================================
+// OTOMATİK ÇÖP TOPLAYICI (GARBAGE COLLECTOR)
+// Süresi dolan hikayeleri sunucudan kalıcı silerek maliyeti düşürür.
+// =====================================
+window.cleanupExpiredStories = async function() {
+    if (!window.myUsername) return;
+
+    try {
+        const userRef = doc(db, "users", window.myUsername);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            if (data.stories && data.stories.length > 0) {
+                const now = Date.now();
+                const validStories = [];
+                const expiredStories = [];
+
+                // Hikayeleri 24 saat kuralına göre ayır
+                data.stories.forEach(story => {
+                    if (now - story.createdAt > 24 * 60 * 60 * 1000) {
+                        expiredStories.push(story);
+                    } else {
+                        validStories.push(story);
+                    }
+                });
+
+                // Eğer süresi dolmuş hikaye varsa temizlik operasyonunu başlat
+                if (expiredStories.length > 0) {
+                    console.log(`${expiredStories.length} adet eski hikaye tespit edildi. Temizleniyor...`);
+
+                    // 1. Dosyaları Firebase Storage'dan kalıcı olarak sil
+                    for (const story of expiredStories) {
+                        if (story.imageUrl) {
+                            try {
+                                const fileRef = ref(storage, story.imageUrl);
+                                await deleteObject(fileRef);
+                            } catch(e) { 
+                                console.warn("Storage'dan dosya silinemedi (Belki zaten silinmiş):", e); 
+                            }
+                        }
+                    }
+
+                    // 2. Veritabanını (Firestore) sadece geçerli hikayeler kalacak şekilde güncelle
+                    await updateDoc(userRef, { stories: validStories });
+                    console.log("Çöp toplama işlemi tamamlandı. Sunucu maliyetinden tasarruf edildi!");
+                }
+            }
+        }
+    } catch(e) { 
+        console.error("Çöp toplayıcı hatası:", e); 
+    }
 };

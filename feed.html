@@ -725,6 +725,13 @@
 
                 loadFeedPosts(); 
                 
+                // 🔥 EKLENEN KISIM: Arka planda kullanıcının eski hikayelerini temizle (Maliyet Optimizasyonu)
+                if (window.cleanupExpiredStories) {
+                    setTimeout(() => {
+                        window.cleanupExpiredStories();
+                    }, 5000); // Sayfa açıldıktan 5 saniye sonra sessizce çalışsın (UI donmasını engeller)
+                }
+                
                 const urlParams = new URLSearchParams(window.location.search);
                 if(urlParams.get('tab') === 'bookmarks') { setTimeout(() => { window.showBookmarksTab(); }, 100); }
                 if(urlParams.get('action') === 'post') { setTimeout(() => { window.openMainPostModal(); }, 300); }
