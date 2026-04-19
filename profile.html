@@ -421,7 +421,7 @@
 
     <script type="module">
         import { onAuthStateChanged, signOut, deleteUser, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, getDocs, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, getDocs, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
         import { auth, db, storage } from './firebase-config.js';
@@ -463,22 +463,30 @@
 
         // GLOBAL ÇAĞRI DİNLEYİCİ DEĞİŞKENLERİ
         let activeChats = [];
-        let callListeners = {};
-        let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
-        const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
-        const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+        // (Diğer WebRTC değişkenleri webrtc.js dosyasına taşındı)
 
-        let postLimit = 10;
+        let lastVisiblePostSnap = null;
+        const POSTS_PER_PAGE = 10;
         let isLoadingMore = false;
         let hasMorePosts = true;
-        let isPostsLoaded = false; 
+        let isPostsLoaded = false;
+
+        // KAYDIRMA (SCROLL) İLE YENİ GÖNDERİLERİ ÇEKME
+        window.addEventListener('scroll', () => { 
+            if (isLoadingMore || !hasMorePosts) return; 
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) { 
+                isLoadingMore = true; 
+                loadUserPosts(true); 
+                setTimeout(() => { isLoadingMore = false; }, 1000); 
+            } 
+        });
 
         document.addEventListener('click', function(event) {
             if (!event.target.closest('.post-options-btn')) { document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none'); }
             if (event.target.classList.contains('modal-overlay') && event.target.id !== 'story-viewer-overlay') {
                 event.target.style.display = 'none';
                 if(event.target.id === 'post-detail-modal') { window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; }
-                if(event.target.id === 'story-details-modal' || event.target.id === 'story-share-modal') { window.resumeStory(); }
+                if(event.target.id === 'story-details-modal' || event.target.id === 'story-share-modal') { if(window.resumeStory) window.resumeStory(); }
             }
         });
 
@@ -571,6 +579,8 @@
             if (user) {
                 currentUser = auth.currentUser || user; 
                 myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
+                window.myUsername = myUsername; // WebRTC ve diğer dosyalar için
+
                 if (!targetUsername) { targetUsername = myUsername; }
                 
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
@@ -614,102 +624,17 @@
                 onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'group'); 
                     snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
-                    attachCallListeners(); 
+                    if(window.attachCallListeners) window.attachCallListeners(activeChats); 
                 });
                 onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
                     activeChats = activeChats.filter(c => c.type === 'private'); 
                     snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); 
-                    attachCallListeners(); 
+                    if(window.attachCallListeners) window.attachCallListeners(activeChats); 
                 });
                 
             } else { window.location.href = "index.html"; }
         });
 
-        // ÇAĞRI DİNLEME ALGORİTMASI
-        function attachCallListeners() {
-            activeChats.forEach(chat => {
-                if (!callListeners[chat.id]) {
-                    const colName = chat.type === 'group' ? "groups" : "chats";
-                    const callRef = collection(db, colName, chat.id, "calls");
-                    callListeners[chat.id] = onSnapshot(callRef, (snapshot) => {
-                        snapshot.docChanges().forEach(async (change) => {
-                            const callData = change.doc.data();
-                            if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
-                                currentCallDocId = change.doc.id; currentCallChatId = chat.id; currentCallCollection = colName; isCallVideo = callData.type === 'video';
-                                document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
-                                document.getElementById('accept-call-btn').style.display = 'block';
-                                callOverlay.style.display = 'flex';
-                                document.getElementById('video-container').style.display = isCallVideo ? 'flex' : 'none';
-                            }
-                            if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername && currentCallDocId === change.doc.id) {
-                                document.getElementById('call-status-text').innerText = "Bağlandı";
-                                const desc = new RTCSessionDescription(callData.answer);
-                                await peerConnection.setRemoteDescription(desc);
-                            }
-                            if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed') && currentCallDocId === change.doc.id) {
-                                endCallUI();
-                            }
-                        });
-                    });
-                }
-            });
-        }
-
-        document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
-            document.getElementById('accept-call-btn').style.display = 'none'; 
-            document.getElementById('call-status-text').innerText = "Bağlanıyor...";
-            const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); 
-            const callData = (await getDoc(callDocRef)).data();
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
-                if(isCallVideo) localVideo.srcObject = localStream;
-                peerConnection = new RTCPeerConnection(servers);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
-                peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-                
-                peerConnection.onicecandidate = event => { 
-                    if(event.candidate) { addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); } 
-                };
-                
-                const offerDescription = callData.offer; 
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
-                const answerDescription = await peerConnection.createAnswer(); 
-                await peerConnection.setLocalDescription(answerDescription);
-                await updateDoc(callDocRef, { answer: { type: answerDescription.type, sdp: answerDescription.sdp }, status: 'answered' });
-                
-                onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { 
-                    snapshot.docChanges().forEach((change) => { 
-                        if(change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); peerConnection.addIceCandidate(candidate); } 
-                    }); 
-                });
-                document.getElementById('call-status-text').innerText = "Bağlandı";
-            } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
-        });
-
-        document.getElementById('end-call-btn')?.addEventListener('click', async () => { 
-            if(currentCallDocId && currentCallCollection && currentCallChatId) { 
-                const callRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId);
-                const callSnap = await getDoc(callRef);
-                if(callSnap.exists()) {
-                    const callData = callSnap.data();
-                    if(callData.status === 'ringing') {
-                        await updateDoc(callRef, { status: 'missed' });
-                        await addDoc(collection(db, currentCallCollection, currentCallChatId, "messages"), { type: 'system', text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama', sender: myUsername, createdAt: serverTimestamp() });
-                    } else { await updateDoc(callRef, { status: 'ended' }); }
-                }
-            } 
-            endCallUI(); 
-        });
-
-        function endCallUI() { 
-            if (callOverlay) callOverlay.style.display = 'none'; 
-            if(localStream) { localStream.getTracks().forEach(track => track.stop()); } 
-            if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } 
-            if(peerConnection) { peerConnection.close(); } 
-            localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; currentCallChatId = null; currentCallCollection = null;
-            if (localVideo) localVideo.srcObject = null; if (remoteVideo) remoteVideo.srcObject = null; 
-        }
 
         window.toggleLike = async function(postId, isLiked, postAuthor, event) { 
             event.stopPropagation();
@@ -1225,40 +1150,59 @@
             else { btn.innerText = "Takip Et"; }
         }
 
-        async function loadUserPosts() {
+        async function loadUserPosts(isLoadMore = false) {
             const feedContainer = document.getElementById('profile-feed-container'); 
-            if(feedContainer) feedContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Yükleniyor...</div>';
+            if (!isLoadMore) { 
+                if(feedContainer) feedContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Yükleniyor...</div>';
+                globalPosts = []; 
+                lastVisiblePostSnap = null; 
+                hasMorePosts = true; 
+            }
+            
+            if (!hasMorePosts) return;
+
+            let q;
+            if (lastVisiblePostSnap) {
+                q = query(collection(db, "posts"), where("author", "==", targetUsername), orderBy("createdAt", "desc"), startAfter(lastVisiblePostSnap), limit(POSTS_PER_PAGE));
+            } else {
+                q = query(collection(db, "posts"), where("author", "==", targetUsername), orderBy("createdAt", "desc"), limit(POSTS_PER_PAGE));
+            }
             
             try {
-                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
                 const snapshot = await getDocs(q);
-                globalPosts = []; 
                 let neededUsers = new Set(); 
-                
                 if(targetUsername) neededUsers.add(targetUsername); 
 
-                snapshot.forEach((postDoc) => {
-                    let postData = postDoc.data();
-                    if(postData.content) postData.content = DOMPurify.sanitize(postData.content);
-                    if(postData.comments) postData.comments.forEach(c => { 
-                        if(c.text) c.text = DOMPurify.sanitize(c.text); 
-                        if(c.author) neededUsers.add(c.author); 
+                if (snapshot.empty) {
+                    hasMorePosts = false;
+                    if (!isLoadMore) isPostsLoaded = true;
+                } else {
+                    lastVisiblePostSnap = snapshot.docs[snapshot.docs.length - 1];
+
+                    snapshot.forEach((postDoc) => {
+                        let postData = postDoc.data();
+                        if(postData.content) postData.content = DOMPurify.sanitize(postData.content);
+                        if(postData.comments) postData.comments.forEach(c => { 
+                            if(c.text) c.text = DOMPurify.sanitize(c.text); 
+                            if(c.author) neededUsers.add(c.author); 
+                        });
+                        
+                        neededUsers.add(postData.author); 
+                        if(postData.isRepost && postData.originalPostAuthor) neededUsers.add(postData.originalPostAuthor);
+
+                        globalPosts.push({ id: postDoc.id, data: postData }); 
                     });
-                    
-                    neededUsers.add(postData.author); 
-                    if(postData.isRepost && postData.originalPostAuthor) neededUsers.add(postData.originalPostAuthor);
 
-                    globalPosts.push({ id: postDoc.id, data: postData }); 
-                });
+                    await window.fetchMissingUsers(Array.from(neededUsers));
+                }
 
-                await window.fetchMissingUsers(Array.from(neededUsers));
-                
+                if (snapshot.docs.length < POSTS_PER_PAGE) { hasMorePosts = false; }
                 isPostsLoaded = true;
                 window.renderProfileFeed();
 
             } catch (error) {
                 console.error("Gönderiler yüklenirken hata:", error);
-                if(feedContainer) feedContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Gönderiler yüklenemedi.</div>';
+                if(feedContainer && !isLoadMore) feedContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Gönderiler yüklenemedi. (Konsolda belirtilen Firebase Index ayarını yapmanız gerekebilir).</div>';
             }
         }
 
@@ -1383,6 +1327,7 @@
         };
 
     </script>
+    <script type="module" src="webrtc.js"></script>
     <script src="ui.js"></script>
 </body>
 </html>

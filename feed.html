@@ -563,7 +563,7 @@
 
     <script type="module">
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, getDocs, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, getDocs, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
         import { auth, db, storage } from './firebase-config.js';
@@ -605,25 +605,16 @@
 
         // GLOBAL ÇAĞRI DİNLEYİCİ DEĞİŞKENLERİ
         let activeChats = [];
-        let callListeners = {};
-        let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
-        const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
-        const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+        // (Diğer WebRTC değişkenleri webrtc.js dosyasına taşındı)
 
-        // HİKAYE DEĞİŞKENLERİ
-        let activeStoryUsers = []; let currentStoryUserIndex = 0; let currentStoryIndex = 0; 
-        let storyTimerInterval; let storyProgress = 0; let isStoryPaused = false; let storyPressTime = 0;
-        let storyDetailsTab = 'views';
-
-        window.editorState = { image: { left: 50, top: 50, scale: 1 }, text: { left: 50, top: 50, scale: 1 } };
-        let postLimit = 10; let isLoadingMore = false; let hasMorePosts = true;
+        let lastVisiblePostSnap = null; const POSTS_PER_PAGE = 10; let isLoadingMore = false; let hasMorePosts = true;
 
         document.addEventListener('click', function(event) {
             if (!event.target.closest('.post-options-btn')) { document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none'); }
             if (event.target.classList.contains('modal-overlay') && event.target.id !== 'story-viewer-overlay') {
                 event.target.style.display = 'none';
                 if(event.target.id === 'post-detail-modal') { window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; }
-                if(event.target.id === 'story-details-modal' || event.target.id === 'story-share-modal') { window.resumeStory(); }
+                if(event.target.id === 'story-details-modal' || event.target.id === 'story-share-modal') { if(window.resumeStory) window.resumeStory(); }
             }
         });
 
@@ -675,6 +666,7 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user; myUsername = currentUser.displayName || localStorage.getItem('mozaik_username') || currentUser.email.split('@')[0];
+                window.myUsername = myUsername; // webrtc.js'nin kim olduğumuzu bilmesi için eklendi
                 const checkMyBan = await getDoc(doc(db, "users", myUsername));
                 if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
 
@@ -692,6 +684,7 @@
                 onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
                     if(docSnap.exists()) {
                         const u = docSnap.data(); allUsersData[myUsername] = u; myFollowingList = u.following || []; myBookmarks = u.bookmarks || []; 
+                        window.allUsersData = allUsersData; window.myFollowingList = myFollowingList; // story.js için eklendi
                         await window.fetchMissingUsers(myFollowingList);
                         document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername; document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
                         document.getElementById('sidebar-following-count').innerText = myFollowingList.length; document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
@@ -704,14 +697,14 @@
                         const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
                         const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
                     }
-                    renderWhoToFollow(); renderStories(); renderFeed(); 
+                    renderWhoToFollow(); if(window.renderStories) window.renderStories(); renderFeed(); 
                 });
 
                 onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
-                    activeChats = activeChats.filter(c => c.type === 'group'); snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); attachCallListeners(); 
+                    activeChats = activeChats.filter(c => c.type === 'group'); snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); if(window.attachCallListeners) window.attachCallListeners(activeChats); 
                 });
                 onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
-                    activeChats = activeChats.filter(c => c.type === 'private'); snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); attachCallListeners(); 
+                    activeChats = activeChats.filter(c => c.type === 'private'); snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); if(window.attachCallListeners) window.attachCallListeners(activeChats); 
                 });
 
                 loadFeedPosts(); 
@@ -723,338 +716,40 @@
         });
 
         // =====================================
-        // INSTAGRAM SÜRÜKLE-BIRAK HİKAYE EDİTÖRÜ
-        // =====================================
-
-        window.openAddStoryModal = function() {
-            document.getElementById('add-story-modal').style.display = 'flex'; document.getElementById('story-text-input').value = ''; document.getElementById('story-image-input').value = '';
-            document.getElementById('editor-image-preview').style.display = 'none'; document.getElementById('editor-text-preview').innerText = '';
-            document.getElementById('editor-text-preview').style.pointerEvents = 'none'; document.getElementById('editor-text-preview').style.background = 'transparent';
-            document.getElementById('img-scale-slider').disabled = true; document.getElementById('text-scale-slider').disabled = true;
-            window.editorState.image = { left: 50, top: 50, scale: 1 }; window.editorState.text = { left: 50, top: 50, scale: 1 }; window.applyEditorTransforms();
-        };
-
-        window.updateEditorText = function(val) {
-            const txtEl = document.getElementById('editor-text-preview'); txtEl.innerText = val;
-            if(val.trim() !== "") { txtEl.style.pointerEvents = 'auto'; txtEl.style.background = 'rgba(0,0,0,0.5)'; document.getElementById('text-scale-slider').disabled = false; } 
-            else { txtEl.style.pointerEvents = 'none'; txtEl.style.background = 'transparent'; document.getElementById('text-scale-slider').disabled = true; }
-        };
-
-        window.loadEditorImage = function(event) {
-            const file = event.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.getElementById('editor-image-preview'); img.src = e.target.result; img.style.display = 'block'; document.getElementById('img-scale-slider').disabled = false;
-                }
-                reader.readAsDataURL(file);
-            }
-        };
-
-        window.updateScale = function(type, val) { window.editorState[type].scale = parseFloat(val); window.applyEditorTransforms(); };
-
-        window.applyEditorTransforms = function() {
-            const imgEl = document.getElementById('editor-image-preview'); const txtEl = document.getElementById('editor-text-preview');
-            const iState = window.editorState.image; const tState = window.editorState.text;
-            imgEl.style.left = iState.left + '%'; imgEl.style.top = iState.top + '%'; imgEl.style.transform = `translate(-50%, -50%) scale(${iState.scale})`;
-            txtEl.style.left = tState.left + '%'; txtEl.style.top = tState.top + '%'; txtEl.style.transform = `translate(-50%, -50%) scale(${tState.scale})`;
-        };
-
-        function makeDraggable(elId, type) {
-            const el = document.getElementById(elId); const board = document.getElementById('story-editor-board'); let isDragging = false, startX, startY, initLeft, initTop;
-            const startDrag = (e) => { if(e.target !== el) return; isDragging = true; startX = e.touches ? e.touches[0].clientX : e.clientX; startY = e.touches ? e.touches[0].clientY : e.clientY; initLeft = window.editorState[type].left; initTop = window.editorState[type].top; el.style.cursor = 'grabbing'; e.preventDefault(); };
-            const doDrag = (e) => { if(!isDragging) return; let currentX = e.touches ? e.touches[0].clientX : e.clientX; let currentY = e.touches ? e.touches[0].clientY : e.clientY; let dx = currentX - startX; let dy = currentY - startY; window.editorState[type].left = initLeft + (dx / board.offsetWidth) * 100; window.editorState[type].top = initTop + (dy / board.offsetHeight) * 100; window.applyEditorTransforms(); };
-            const endDrag = () => { isDragging = false; el.style.cursor = 'grab'; };
-            el.addEventListener('mousedown', startDrag); el.addEventListener('touchstart', startDrag, {passive: false}); document.addEventListener('mousemove', doDrag); document.addEventListener('touchmove', doDrag, {passive: false}); document.addEventListener('mouseup', endDrag); document.addEventListener('touchend', endDrag);
-        }
-        makeDraggable('editor-image-preview', 'image'); makeDraggable('editor-text-preview', 'text');
-
-        // 🔥 OPTİMİZE EDİLDİ: HİKAYELER İÇİN SIKIŞTIRMA (COMPRESSION)
-        document.getElementById('submit-story-btn')?.addEventListener('click', async () => {
-            const textVal = document.getElementById('story-text-input').value.trim();
-            let rawFile = document.getElementById('story-image-input').files[0];
-            let file = rawFile;
-            if(!textVal && !rawFile) return;
-
-            if (rawFile && rawFile.size > 10 * 1024 * 1024) { alert("Hikaye fotoğrafı 10 MB'dan büyük olamaz!"); return; }
-
-            const btn = document.getElementById('submit-story-btn'); btn.disabled = true; btn.innerText = "Sıkıştırılıyor...";
-            
-            try {
-                let imgUrl = null;
-                if(rawFile) { 
-                    file = await window.compressImage(rawFile, 1080, 1920, 0.7); // Hikayeler için uzun portre sıkıştırma
-                    btn.innerText = "Yükleniyor...";
-                    const fileName = `stories/${Date.now()}_${file.name}`;
-                    const storageRef = ref(storage, fileName);
-                    await uploadBytes(storageRef, file);
-                    imgUrl = await getDownloadURL(storageRef);
-                }
-
-                const finalLayout = JSON.parse(JSON.stringify(window.editorState));
-                const newStory = { id: 'story_' + generateUniqueId(), text: textVal, imageUrl: imgUrl, createdAt: Date.now(), likes: [], views: [], layout: finalLayout };
-
-                await updateDoc(doc(db, "users", myUsername), { stories: arrayUnion(newStory) });
-                document.getElementById('add-story-modal').style.display = 'none';
-            } catch(e) { console.error("Hikaye yükleme hatası:", e); alert("Hata oluştu."); } 
-            finally { btn.disabled = false; btn.innerText = "Hikayemi Yayınla"; }
-        });
-
-        // =====================================
-        // HİKAYE (STORY) GÖSTERİM & MANTIK
-        // =====================================
-
-        window.pauseStory = function() { isStoryPaused = true; clearInterval(storyTimerInterval); };
-        window.resumeStory = function() { if(document.getElementById('story-viewer-overlay').style.display === 'flex') { isStoryPaused = false; clearInterval(storyTimerInterval); storyTimerInterval = setInterval(window.storyTick, 100); } };
-
-        function renderStories() {
-            const container = document.getElementById('stories-container'); if(!container) return; activeStoryUsers = []; let myStories = []; const readStories = JSON.parse(localStorage.getItem('readStories') || '[]');
-            Object.keys(allUsersData).forEach(uid => {
-                const uData = allUsersData[uid];
-                if(uData.stories && Array.isArray(uData.stories)) {
-                    const valid = uData.stories.filter(s => Date.now() - s.createdAt < 24*60*60*1000);
-                    if(valid.length > 0) { if(uid === myUsername) myStories = valid; else if(myFollowingList.includes(uid)) { activeStoryUsers.push({ username: uid, stories: valid }); } }
-                }
-            });
-            if(myStories.length > 0) activeStoryUsers.unshift({ username: myUsername, stories: myStories });
-
-            let html = '';
-            if(myStories.length === 0) {
-                const myAvatar = allUsersData[myUsername]?.avatarUrl ? `<img src="${allUsersData[myUsername].avatarUrl}">` : '👤';
-                html += `<div class="story-item" onclick="window.openAddStoryModal()"><div class="story-avatar-wrapper add-story"><div class="story-avatar">${myAvatar}<div class="story-add-badge">+</div></div></div><div class="story-username">Sen</div></div>`;
-            }
-
-            activeStoryUsers.forEach(uObj => {
-                const uData = allUsersData[uObj.username]; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤'; const name = uObj.username === myUsername ? 'Sen' : (uData.fullName ? uData.fullName.split(' ')[0] : uObj.username);
-                const allRead = uObj.stories.every(s => readStories.includes(s.id)); const ringClass = allRead ? 'read' : 'unread';
-                html += `<div class="story-item" onclick="window.openStoryViewer('${uObj.username}')"><div class="story-avatar-wrapper ${ringClass}"><div class="story-avatar">${avatar}</div></div><div class="story-username">${name}</div></div>`;
-            });
-            container.innerHTML = html;
-
-            const viewerOverlay = document.getElementById('story-viewer-overlay');
-            if (viewerOverlay && viewerOverlay.style.display === 'flex') {
-                try {
-                    const currentUserObj = activeStoryUsers[currentStoryUserIndex];
-                    if (currentUserObj && currentUserObj.stories) {
-                        const currentStory = currentUserObj.stories[currentStoryIndex];
-                        if (currentStory) {
-                            if (currentUserObj.username === myUsername) {
-                                const vEl = document.getElementById('story-view-count'); if(vEl) vEl.innerText = (currentStory.views || []).length;
-                                const detailsModal = document.getElementById('story-details-modal'); if (detailsModal && detailsModal.style.display === 'flex') { window.switchStoryDetailsTab(storyDetailsTab); }
-                            } else {
-                                const likeBtn = document.getElementById('story-like-btn'); if(likeBtn) likeBtn.innerText = currentStory.likes && currentStory.likes.includes(myUsername) ? '❤️' : '🤍';
-                            }
-                        }
-                    }
-                } catch(e) {}
-            }
-        }
-
-        window.openStoryViewer = function(username) { currentStoryUserIndex = activeStoryUsers.findIndex(u => u.username === username); currentStoryIndex = 0; if(currentStoryUserIndex !== -1) { document.getElementById('story-viewer-overlay').style.display = 'flex'; renderCurrentStory(); } }
-        window.closeStoryViewer = function() { document.getElementById('story-viewer-overlay').style.display = 'none'; document.getElementById('story-reply-input').value = ''; clearInterval(storyTimerInterval); isStoryPaused = false; renderStories(); }
-        window.storyTick = function() { storyProgress += 2; const fill = document.getElementById(`story-fill-${currentStoryIndex}`); if(fill) fill.style.width = storyProgress + '%'; if(storyProgress >= 100) { window.nextStory(); } };
-        window.handleStoryPointerDown = function() { storyPressTime = Date.now(); window.pauseStory(); };
-        window.handleStoryPointerUp = function(direction) { window.resumeStory(); if (Date.now() - storyPressTime < 250) { if (direction === 'next') window.nextStory(); else window.prevStory(); } };
-
-        function renderCurrentStory() {
-            clearInterval(storyTimerInterval); storyProgress = 0; const userObj = activeStoryUsers[currentStoryUserIndex]; const story = userObj.stories[currentStoryIndex];
-            let readStories = JSON.parse(localStorage.getItem('readStories') || '[]');
-            if(!readStories.includes(story.id)) { readStories.push(story.id); localStorage.setItem('readStories', JSON.stringify(readStories)); }
-            if (userObj.username !== myUsername && !(story.views || []).includes(myUsername)) { addStoryView(userObj.username, story.id); }
-
-            const uData = allUsersData[userObj.username];
-            document.getElementById('story-viewer-avatar-container').innerHTML = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
-            document.getElementById('story-viewer-name').innerHTML = `${uData.fullName || userObj.username} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
-            const secs = Math.floor((Date.now() - story.createdAt) / 1000); document.getElementById('story-viewer-time').innerText = secs < 60 ? `${secs}s` : (secs < 3600 ? `${Math.floor(secs/60)}d` : `${Math.floor(secs/3600)}sa`);
-
-            if (userObj.username === myUsername) { document.getElementById('story-footer').style.display = 'none'; document.getElementById('story-footer-owner').style.display = 'flex'; document.getElementById('story-view-count').innerText = (story.views || []).length; } 
-            else { document.getElementById('story-footer').style.display = 'flex'; document.getElementById('story-footer-owner').style.display = 'none'; document.getElementById('story-like-btn').innerText = story.likes && story.likes.includes(myUsername) ? '❤️' : '🤍'; }
-
-            const imgEl = document.getElementById('story-viewer-image'); const txtEl = document.getElementById('story-viewer-text');
-            if(story.imageUrl) { imgEl.src = story.imageUrl; imgEl.style.display = 'block'; } else { imgEl.style.display = 'none'; }
-            if(story.text) { txtEl.innerText = story.text; txtEl.style.display = 'block'; } else { txtEl.style.display = 'none'; }
-
-            if(story.layout) {
-                imgEl.style.width = 'auto'; imgEl.style.height = 'auto'; imgEl.style.maxWidth = '100%'; imgEl.style.maxHeight = '100%'; imgEl.style.left = story.layout.image.left + '%'; imgEl.style.top = story.layout.image.top + '%'; imgEl.style.transform = `translate(-50%, -50%) scale(${story.layout.image.scale})`;
-                txtEl.style.left = story.layout.text.left + '%'; txtEl.style.top = story.layout.text.top + '%'; txtEl.style.transform = `translate(-50%, -50%) scale(${story.layout.text.scale})`; txtEl.style.background = story.text ? 'rgba(0,0,0,0.5)' : 'transparent';
-            } else {
-                imgEl.style.width = '100%'; imgEl.style.height = '100%'; imgEl.style.maxWidth = 'none'; imgEl.style.maxHeight = 'none'; imgEl.style.left = '50%'; imgEl.style.top = '50%'; imgEl.style.transform = 'translate(-50%, -50%)'; imgEl.style.objectFit = 'cover';
-                txtEl.style.left = '50%'; txtEl.style.top = '50%'; txtEl.style.transform = 'translate(-50%, -50%)'; txtEl.style.background = 'rgba(0,0,0,0.5)';
-            }
-
-            const progressContainer = document.getElementById('story-progress-container'); progressContainer.innerHTML = '';
-            userObj.stories.forEach((s, idx) => { progressContainer.innerHTML += `<div class="story-progress-bar"><div class="story-progress-fill" id="story-fill-${idx}" style="width:${idx < currentStoryIndex ? '100%' : '0%'}"></div></div>`; });
-            if (!isStoryPaused) { storyTimerInterval = setInterval(window.storyTick, 100); }
-        }
-
-       async function addStoryView(ownerUsername, storyId) {
-            const userObj = activeStoryUsers.find(u => u.username === ownerUsername);
-            if(userObj) { const s = userObj.stories.find(st => st.id === storyId); if(s) { if(!s.views) s.views = []; if(!s.views.includes(myUsername)) s.views.push(myUsername); } }
-            try {
-                const userRef = doc(db, "users", ownerUsername); const userSnap = await getDoc(userRef);
-                if(userSnap.exists() && userSnap.data().stories) {
-                    const updatedStories = userSnap.data().stories.map(s => { if(s.id === storyId) { let sViews = s.views || []; if(!sViews.includes(myUsername)) sViews.push(myUsername); return { ...s, views: sViews }; } return s; });
-                    await updateDoc(userRef, { stories: updatedStories });
-                }
-            } catch(e) {}
-        }
-
-        window.nextStory = function() { const userObj = activeStoryUsers[currentStoryUserIndex]; if(currentStoryIndex < userObj.stories.length - 1) { currentStoryIndex++; renderCurrentStory(); } else { if(currentStoryUserIndex < activeStoryUsers.length - 1) { currentStoryUserIndex++; currentStoryIndex = 0; renderCurrentStory(); } else { window.closeStoryViewer(); } } }
-        window.prevStory = function() { if(currentStoryIndex > 0) { currentStoryIndex--; renderCurrentStory(); } else { if(currentStoryUserIndex > 0) { currentStoryUserIndex--; currentStoryIndex = activeStoryUsers[currentStoryUserIndex].stories.length - 1; renderCurrentStory(); } else { renderCurrentStory(); } } }
-
-        window.sendStoryReply = async function() {
-            const input = document.getElementById('story-reply-input'); const text = input.value.trim(); if(!text) return;
-            const targetUser = activeStoryUsers[currentStoryUserIndex].username; if (targetUser === myUsername) return; 
-            const chatId = [myUsername, targetUser].sort().join('_'); const story = activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex];
-            let storySummary = "🖼️ Hikayeye Yanıt: " + (story.imageUrl ? "(Görsel)" : `"${story.text.substring(0, 20)}..."`);
-            await addDoc(collection(db, "chats", chatId, "messages"), { text: `${storySummary}\n\n${text}`, sender: myUsername, createdAt: serverTimestamp(), isRead: false, type: 'regular' });
-            await setDoc(doc(db, "chats", chatId), { participants: [myUsername, targetUser], lastMessage: "Hikayeye yanıt", lastSender: myUsername, unreadBy: [targetUser], updatedAt: serverTimestamp() }, { merge: true });
-            alert("Yanıtınız gönderildi! 🚀"); input.value = ''; window.resumeStory(); window.closeStoryViewer();
-        };
-
-        window.likeStory = async function() {
-            const targetUser = activeStoryUsers[currentStoryUserIndex]?.username; if (!targetUser || targetUser === myUsername) return;
-            const story = activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex]; if (!story) return;
-            const isLiked = story.likes && story.likes.includes(myUsername);
-            if(isLiked) { story.likes = story.likes.filter(u => u !== myUsername); document.getElementById('story-like-btn').innerText = '🤍'; } 
-            else { if(!story.likes) story.likes = []; story.likes.push(myUsername); document.getElementById('story-like-btn').innerText = '❤️'; }
-            try {
-                const userRef = doc(db, "users", targetUser); const userSnap = await getDoc(userRef);
-                if(userSnap.exists()) {
-                    const updatedStories = userSnap.data().stories.map(s => { if(s.id === story.id) { let sLikes = s.likes || []; if(isLiked) sLikes = sLikes.filter(u => u !== myUsername); else { if(!sLikes.includes(myUsername)) sLikes.push(myUsername); } return { ...s, likes: sLikes }; } return s; });
-                    await updateDoc(userRef, { stories: updatedStories });
-                    if(!isLiked) { await setDoc(doc(db, "chats", [myUsername, targetUser].sort().join('_')), { participants: [myUsername, targetUser], lastMessage: "❤️ Hikaye beğenildi", lastSender: myUsername, unreadBy: [targetUser], updatedAt: serverTimestamp() }, { merge: true }); }
-                }
-            } catch(e) {}
-        };
-
-        window.deleteCurrentStory = async function() {
-            if(confirm("Bu hikayeyi kalıcı olarak silmek istediğinize emin misiniz?")) {
-                const storyId = activeStoryUsers[currentStoryUserIndex].stories[currentStoryIndex].id;
-                try {
-                    const userRef = doc(db, "users", myUsername); const userSnap = await getDoc(userRef);
-                    if(userSnap.exists()) { await updateDoc(userRef, { stories: userSnap.data().stories.filter(s => s.id !== storyId) }); document.getElementById('story-details-modal').style.display = 'none'; window.closeStoryViewer(); }
-                } catch(e) {}
-            }
-        };
-
-        window.openStoryDetailsModal = function() { window.pauseStory(); document.getElementById('story-details-modal').style.display = 'flex'; window.switchStoryDetailsTab('views'); };
-        window.closeStoryDetailsModal = function() { document.getElementById('story-details-modal').style.display = 'none'; window.resumeStory(); }
-        window.switchStoryDetailsTab = function(tabName) {
-            storyDetailsTab = tabName; document.querySelectorAll('#story-details-modal .feed-tab').forEach(t => t.classList.remove('active'));
-            if(tabName === 'views') document.getElementById('tab-story-views').classList.add('active'); else document.getElementById('tab-story-likes').classList.add('active');
-            const container = document.getElementById('story-details-list'); container.innerHTML = '';
-            try {
-                const userObj = activeStoryUsers[currentStoryUserIndex]; if (!userObj || !userObj.stories) return; const story = userObj.stories[currentStoryIndex]; if (!story) return;
-                const listData = tabName === 'views' ? (story.views || []) : (story.likes || []);
-                if (listData.length === 0) { container.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>`; return; }
-                let html = '';
-                listData.forEach(uname => {
-                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
-                    html += `<div class="user-row" onclick="window.location.href='profile.html?user=${uname}'"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
-                });
-                container.innerHTML = html;
-            } catch(e) {}
-        };
-
-        window.openStoryShareModal = function() {
-            window.pauseStory(); const container = document.getElementById('story-share-list'); container.innerHTML = '';
-            if(myFollowingList.length === 0) { container.innerHTML = '<div style=\"padding:20px; text-align:center; color:#64748b;\">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; } 
-            else {
-                myFollowingList.forEach(uname => {
-                    let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${uData.avatarUrl}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
-                    container.innerHTML += `<div class=\"user-row\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${uData.fullName || uname} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${uname}</div></div><button onclick=\"window.sendStoryAsMessage('${uname}')\" style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
-                });
-            }
-            document.getElementById('story-share-modal').style.display = 'flex';
-        };
-
-        window.closeStoryShareModal = function() { document.getElementById('story-share-modal').style.display = 'none'; window.resumeStory(); }
-        window.sendStoryAsMessage = async function(targetUser) {
-            const chatId = [myUsername, targetUser].sort().join('_'); const storyOwner = activeStoryUsers[currentStoryUserIndex].username;
-            await addDoc(collection(db, "chats", chatId, "messages"), { text: `🔗 @${storyOwner} adlı kullanıcının hikayesi iletildi.`, sender: myUsername, createdAt: serverTimestamp(), isRead: false, type: 'regular' });
-            await setDoc(doc(db, "chats", chatId), { participants: [myUsername, targetUser], lastMessage: '🔗 Hikaye İletildi', lastSender: myUsername, updatedAt: serverTimestamp() }, { merge: true });
-            alert(`Hikaye iletildi.`); window.closeStoryShareModal();
-        };
-
-        // =====================================
         // ANA AKIŞ VE POST FONKSİYONLARI (OPTIMISTIC UI + COMPRESSION)
         // =====================================
 
-        function attachCallListeners() {
-            activeChats.forEach(chat => {
-                if (!callListeners[chat.id]) {
-                    const colName = chat.type === 'group' ? "groups" : "chats";
-                    const callRef = collection(db, colName, chat.id, "calls");
-                    callListeners[chat.id] = onSnapshot(callRef, (snapshot) => {
-                        snapshot.docChanges().forEach(async (change) => {
-                            const callData = change.doc.data();
-                            if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
-                                currentCallDocId = change.doc.id; currentCallChatId = chat.id; currentCallCollection = colName; isCallVideo = callData.type === 'video';
-                                document.getElementById('call-status-text').innerText = `@${callData.caller} Arıyor...`;
-                                document.getElementById('accept-call-btn').style.display = 'block';
-                                callOverlay.style.display = 'flex';
-                                document.getElementById('video-container').style.display = isCallVideo ? 'flex' : 'none';
-                            }
-                            if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername && currentCallDocId === change.doc.id) {
-                                document.getElementById('call-status-text').innerText = "Bağlandı";
-                                const desc = new RTCSessionDescription(callData.answer);
-                                await peerConnection.setRemoteDescription(desc);
-                            }
-                            if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed') && currentCallDocId === change.doc.id) { endCallUI(); }
-                        });
+        window.addEventListener('scroll', () => { if (isLoadingMore || !hasMorePosts) return; if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) { isLoadingMore = true; loadFeedPosts(true); setTimeout(() => { isLoadingMore = false; }, 1000); } });
+
+        async function loadFeedPosts(isLoadMore = false) {
+            if (!isLoadMore) { globalPosts = []; lastVisiblePostSnap = null; hasMorePosts = true; }
+            if (!hasMorePosts) return;
+
+            let q = lastVisiblePostSnap 
+                ? query(collection(db, "posts"), orderBy("createdAt", "desc"), startAfter(lastVisiblePostSnap), limit(POSTS_PER_PAGE))
+                : query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(POSTS_PER_PAGE));
+
+            try {
+                const snapshot = await getDocs(q);
+                let neededUsers = new Set();
+                
+                if (snapshot.empty) {
+                    hasMorePosts = false;
+                    if (isLoadMore) return;
+                } else {
+                    lastVisiblePostSnap = snapshot.docs[snapshot.docs.length - 1];
+                    snapshot.forEach(doc => { 
+                        let safeData = doc.data();
+                        if(safeData.content) safeData.content = DOMPurify.sanitize(safeData.content);
+                        neededUsers.add(safeData.author); 
+                        if(safeData.isRepost && safeData.originalPostAuthor) neededUsers.add(safeData.originalPostAuthor); 
+                        if(safeData.comments) { safeData.comments.forEach(c => { if(c.text) c.text = DOMPurify.sanitize(c.text); if(c.author) neededUsers.add(c.author); }); }
+                        globalPosts.push({ id: doc.id, data: safeData }); 
                     });
+                    await window.fetchMissingUsers(Array.from(neededUsers));
                 }
-            });
-        }
 
-        document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
-            document.getElementById('accept-call-btn').style.display = 'none'; document.getElementById('call-status-text').innerText = "Bağlanıyor...";
-            const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); const callData = (await getDoc(callDocRef)).data();
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
-                if(isCallVideo) localVideo.srcObject = localStream;
-                peerConnection = new RTCPeerConnection(servers);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                remoteStream = new MediaStream(); remoteVideo.srcObject = remoteStream;
-                peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-                peerConnection.onicecandidate = event => { if(event.candidate) { addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); } };
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
-                const answerDescription = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answerDescription);
-                await updateDoc(callDocRef, { answer: { type: answerDescription.type, sdp: answerDescription.sdp }, status: 'answered' });
-                onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if(change.type === 'added') { peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); } }); });
-                document.getElementById('call-status-text').innerText = "Bağlandı";
-            } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
-        });
-
-        document.getElementById('end-call-btn')?.addEventListener('click', async () => { 
-            if(currentCallDocId && currentCallCollection && currentCallChatId) { 
-                const callRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); const callSnap = await getDoc(callRef);
-                if(callSnap.exists()) {
-                    const callData = callSnap.data();
-                    if(callData.status === 'ringing') { await updateDoc(callRef, { status: 'missed' }); await addDoc(collection(db, currentCallCollection, currentCallChatId, "messages"), { type: 'system', text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama', sender: myUsername, createdAt: serverTimestamp() }); } 
-                    else { await updateDoc(callRef, { status: 'ended' }); }
-                }
-            } endCallUI(); 
-        });
-
-        function endCallUI() { if (callOverlay) callOverlay.style.display = 'none'; if(localStream) { localStream.getTracks().forEach(track => track.stop()); } if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } if(peerConnection) { peerConnection.close(); } localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; currentCallChatId = null; currentCallCollection = null; if (localVideo) localVideo.srcObject = null; if (remoteVideo) remoteVideo.srcObject = null; }
-
-        window.addEventListener('scroll', () => { if (isLoadingMore || !hasMorePosts) return; if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) { isLoadingMore = true; postLimit += 10; loadFeedPosts(); setTimeout(() => { isLoadingMore = false; }, 1000); } });
-
-        async function loadFeedPosts() {
-            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(postLimit));
-            try {
-                const snapshot = await getDocs(q); globalPosts = []; let neededUsers = new Set(); 
-                snapshot.forEach(doc => { 
-                    let safeData = doc.data();
-                    if(safeData.content) safeData.content = DOMPurify.sanitize(safeData.content);
-                    neededUsers.add(safeData.author); if(safeData.isRepost && safeData.originalPostAuthor) neededUsers.add(safeData.originalPostAuthor); 
-                    if(safeData.comments) { safeData.comments.forEach(c => { if(c.text) c.text = DOMPurify.sanitize(c.text); if(c.author) neededUsers.add(c.author); }); }
-                    globalPosts.push({ id: doc.id, data: safeData }); 
-                });
-                await window.fetchMissingUsers(Array.from(neededUsers));
-                if (snapshot.docs.length < postLimit) { hasMorePosts = false; }
+                if (snapshot.docs.length < POSTS_PER_PAGE) { hasMorePosts = false; }
                 if(window.currentOpenPostId) { window.openPostDetail(window.currentOpenPostId); }
                 renderWhoToFollow(); renderFeed(); 
             } catch(error) { console.error("Gönderiler yüklenirken hata oluştu:", error); }
@@ -1256,7 +951,7 @@
                         <div class=\"action-item repost-box\" onclick=\"window.repostPost('${postId}', '${originalAuthor}', event)\"><span class=\"action-icon\">🔁</span></div>
                         <div class=\"action-item like-box ${isLiked ? 'liked' : ''}\" onclick=\"window.toggleLike('${postId}', ${isLiked}, '${originalAuthor}', event)\"><span class=\"action-icon\">${isLiked ? '❤️' : '🤍'}</span> <span onclick=\"window.showLikes('${postId}', event)\">${likesArray.length}</span></div>
                         <div class=\"action-item ${myBookmarks.includes(postId) ? 'liked' : ''}\" onclick=\"window.toggleBookmark('${postId}', ${myBookmarks.includes(postId)}, event)\" title=\"Yer İşaretlerine Ekle/Çıkar\"><span class=\"action-icon\">${myBookmarks.includes(postId) ? '🔖' : '📑'}</span></div>
-                        <div class=\"action-item\" onclick=\"window.openShareModal('${postId}', event)\"><span class=\"action-icon\">📤</span></div>
+                        <div class=\"action-item\" onclick=\"window.openShareModal('${postId}', event)\" title=\"İlet\"><span class=\"action-icon\">📤</span></div>
                     </div>
                 </div>
                 <div class=\"comments-wrapper\" style=\"padding: 0 25px;\">${buildCommentsTree(postData.comments || [], null, 0, postId, originalAuthor)}</div>
@@ -1369,6 +1064,8 @@
             }
         }
     </script>
+    <script type="module" src="webrtc.js"></script>
+    <script type="module" src="story.js"></script>
     <script src="ui.js"></script>
 </body>
 </html>
