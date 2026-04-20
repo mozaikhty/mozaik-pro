@@ -5,7 +5,9 @@ import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/fi
 window.kayitIslemiDevamEdiyor = false; 
 
 onAuthStateChanged(auth, (user) => { 
-    if (user && !window.kayitIslemiDevamEdiyor) window.location.href = "feed.html"; 
+    if (user && !window.kayitIslemiDevamEdiyor) {
+        window.location.href = "feed.html"; 
+    }
 });
 
 const loginSection = document.getElementById('login-section');
@@ -42,6 +44,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
         }
         
         await signInWithEmailAndPassword(auth, loginEmail, pass);
+        // Giriş başarılıysa onAuthStateChanged zaten feed.html'e yönlendirecek.
         
     } catch (error) { 
         if (error.message === "user-not-found") showError("Bu kullanıcı adıyla kayıtlı bir hesap bulunamadı.");
@@ -91,6 +94,7 @@ document.getElementById('register-btn').onclick = async function(e) {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             user = userCredential.user;
             await updateProfile(user, { displayName: username });
+            // Firebase token'ını yenile ki username anında oturuma yansısın
             await user.getIdToken(true); 
         } catch (authError) {
             console.error("Auth Kayıt Hatası:", authError);
