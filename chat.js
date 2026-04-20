@@ -1,17 +1,15 @@
-// app.js ve firebase bağlantılarının doğru (noktalı) yollarla içe aktarılması
 import './app.js';
-import { auth, db, storage } from './firebase-config.js';
-
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+import { auth, db, storage } from './firebase-config.js';
 
 let currentUser = null; let myUsername = null; let chatId = null; let isGroupChat = false;
 let allUsersData = {}; let activeChats = []; let myFollowing = [];
 let currentReplyData = null; let typingTimeout = null;
 let currentInboxTab = 'all'; 
 
-// Firebase dinleyici (Listener) sızıntılarını önlemek için temizleme değişkenleri
+// Firebase dinleyici sızıntılarını önlemek için temizleme değişkenleri
 let unsubscribeMessages = null;
 let unsubscribeChatMeta = null;
 
@@ -32,7 +30,6 @@ const urlParams = new URLSearchParams(window.location.search);
 const targetUsername = urlParams.get('user');
 const targetGroupId = urlParams.get('group');
 
-// Arama kutularının performansı için Debounce (Gecikme) fonksiyonu
 function debounce(func, delay) {
     let timeoutId;
     return function(...args) {
@@ -41,12 +38,10 @@ function debounce(func, delay) {
     };
 }
 
-// UI Yönlendirmeleri
 window.goToChatProfile = function() {
     if (!isGroupChat && targetUsername) { window.location.href = 'profile.html?user=' + targetUsername; }
 };
 window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
-
 window.openMobileSidebar = function() { 
     const overlay = document.getElementById('mobile-sidebar-overlay');
     if(overlay) overlay.style.display = 'block'; 
