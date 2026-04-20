@@ -8,20 +8,31 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <script>
+        try {
+            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+        } catch(e) { console.warn("Gizli mod veya erişim engeli nedeniyle tema okunamadı."); }
+    </script>
+
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
-            <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
+            <div class="sidebar-top-icons">
+                <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
+                <div class="sidebar-extra-icons">
+                    <div class="s-icon-btn" title="Başka hesap ekle">+</div>
+                </div>
+            </div>
             <div class="sidebar-name-mobile" id="sidebar-name-mobile">Yükleniyor...</div>
             <div class="sidebar-handle-mobile" id="sidebar-handle-mobile">@bekleniyor</div>
             <div class="sidebar-stats-mobile">
                 <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Ağım</div>
-                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçi</div>
+                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçiler</div>
             </div>
         </div>
         <div class="sidebar-menu-mobile">
             <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
-            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Yer İşaretleri</a>
+            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Koleksiyonum</a>
             <div class="sidebar-divider"></div>
             <div class="sidebar-bottom-menu">
                 <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
@@ -35,21 +46,23 @@
 
         <main class="feed-main">
             <div class="header-sticky">
-                <div class="mobile-header-top">
-                    <div id="mobile-avatar-header" style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">👤</div>
-                    <div style="flex:1; text-align:center; font-weight:900; font-size:20px; color:#2c3e50;">Keşfet</div>
+                <div class="mobile-header-top" style="display: flex; padding: 10px 0; align-items: center; justify-content: space-between;">
+                    <div id="mobile-avatar-header" style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; overflow:hidden; cursor:pointer; display: flex; justify-content: center; align-items: center; font-size: 20px;" onclick="window.openMobileSidebar()">👤</div>
+                    <div class="mobile-logo-text" style="font-size: 20px; font-weight: 900; color: #2c3e50;">Keşfet</div>
                     <div style="width:36px;"></div>
                 </div>
                 
-                <div class="search-header-box">
-                    <input type="text" id="search-input" class="search-input" placeholder="Arama yapın...">
+                <div class="search-header-box" style="padding: 10px 0;">
+                    <input type="text" id="search-input" class="search-input" placeholder="Kişi veya Gündem arayın..." style="width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 15px; outline: none; background: white; transition: 0.2s;">
                 </div>
-                <div class="feed-tabs">
+                
+                <div class="feed-tabs" style="margin-top: 5px;">
                     <div class="feed-tab active" id="tab-users">Kişiler</div>
                     <div class="feed-tab" id="tab-tags">Gündem</div>
                 </div>
             </div>
-            <div id="search-results" class="search-results-container"></div>
+            
+            <div id="search-results" class="search-results-container" style="padding-top: 15px;"></div>
         </main>
 
         <aside class="sidebar-right">
@@ -59,10 +72,14 @@
                     <div style="font-size:14px; color:#64748b;">Öneriler yükleniyor...</div>
                 </div>
             </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 20px; text-align:center;">
+                © 2026 Mozaik Platform
+            </div>
         </aside>
     </div>
 
     <button class="fab-button" onclick="window.location.href='feed.html?action=post'">+</button>
+    
     <div id="bottom-nav-container"></div>
 
     <div class="call-overlay" id="call-overlay">
