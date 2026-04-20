@@ -35,13 +35,15 @@ function createPostElement(postId, post) {
     postDiv.className = 'post';
     postDiv.id = `post-${postId}`;
 
-    // 2. Güvenli Metin İşleme
-    const cleanText = DOMPurify.sanitize(post.text);
+    // 2. Güvenli Metin İşleme (Boş metin hatasına karşı koruma eklendi)
+    // Eğer post.text veritabanında yoksa, undefined yerine '' (boş metin) kullanır.
+    const cleanText = DOMPurify.sanitize(post.text || '');
 
     // 3. İç Elementleri Yarat (String yerine Element kullanıyoruz)
     const headerDiv = document.createElement('div');
     headerDiv.className = 'post-header';
-    headerDiv.textContent = `@${post.author}`; // innerText/textContent XSS'e karşı doğal korumalıdır
+    // Eğer author alanı yoksa sistem çökmesin diye 'bilinmeyen' atanır.
+    headerDiv.textContent = `@${post.author || 'bilinmeyen'}`; 
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'post-content';
@@ -52,7 +54,8 @@ function createPostElement(postId, post) {
     
     const likeBtn = document.createElement('button');
     likeBtn.className = 'btn-primary';
-    likeBtn.textContent = `❤️ Beğen (${post.likes ? post.likes.length : 0})`;
+    // Eksik beğeni dizisi hatasına karşı koruma (|| []) eklendi
+    likeBtn.textContent = `❤️ Beğen (${(post.likes || []).length})`;
     
     // Window objesine fonksiyon atamak yerine, direkt butona Event Listener ekliyoruz!
     likeBtn.addEventListener('click', () => {
@@ -71,7 +74,8 @@ function createPostElement(postId, post) {
 
 function handleLike(postId) {
     // Firebase beğeni mantığı buraya...
-    console.log(`${postId} id'li gönderi beğenildi. Kullanıcı:`, MozaikApp.state.currentUser);
+    // MozaikApp henüz yüklenmemişse hata vermemesi için ?. kullanıldı
+    console.log(`${postId} id'li gönderi beğenildi. Kullanıcı:`, MozaikApp?.state?.currentUser || 'Bilinmiyor');
 }
 
 // Sayfa yüklenince Feed'i başlat
