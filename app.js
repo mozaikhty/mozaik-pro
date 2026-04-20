@@ -70,8 +70,6 @@ window.logoutUser = function() {
  * JS dosyalarımızda kullanılan window.showToast fonksiyonunun global karşılığı.
  */
 window.showToast = function(message, type = 'info') {
-    // Şimdilik alert olarak gösteriyoruz, isterseniz ileride buraya 
-    // ekranda beliren şık bir bildirim (toast) UI'ı kodlayabilirsiniz.
     if(type === 'error') {
         console.error(message);
         alert("Hata: " + message);
@@ -82,3 +80,19 @@ window.showToast = function(message, type = 'info') {
         console.log(message);
     }
 };
+
+/**
+ * 4. PWA (PROGRESSIVE WEB APP) KURULUMU
+ * Uygulamanın telefona indirilebilmesini sağlayan arka plan işçisi.
+ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((registration) => {
+        console.log('PWA Service Worker başarıyla kaydedildi! Kapsam:', registration.scope);
+      })
+      .catch((error) => {
+        console.log('PWA Service Worker kaydı başarısız oldu:', error);
+      });
+  });
+}

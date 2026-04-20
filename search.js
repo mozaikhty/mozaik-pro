@@ -268,11 +268,13 @@ window.quickFollow = async function(targetUser) {
     }
 };
 
+// 🚀 GÜVENLİ GÜNCELLEME: `post.content` ve `post.text` için koruma eklendi
 function calculateTrendingTags() {
     const tagCounts = {};
     allPosts.forEach(post => {
-        if (post.content) {
-            const matches = post.content.match(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g);
+        const postText = post.content || post.text || ""; // Hem content hem text alanını kontrol et
+        if (postText) {
+            const matches = postText.match(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g);
             if (matches) { matches.forEach(tag => { const lowerTag = tag.toLowerCase(); tagCounts[lowerTag] = (tagCounts[lowerTag] || 0) + 1; }); }
         }
     });
@@ -338,7 +340,12 @@ function fetchData() {
     loadTrendingPosts();
 }
 
-function formatHashtags(text) { if (!text) return ""; let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); return safeText.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`); }
+// 🚀 GÜVENLİ GÜNCELLEME: `text` değişkeninin mutlaka String formunda olmasını sağlıyoruz
+function formatHashtags(text) { 
+    if (!text) return ""; 
+    let safeText = String(text).replace(/</g, "&lt;").replace(/>/g, "&gt;"); 
+    return safeText.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`); 
+}
 
 let searchTimeout = null;
 searchInput?.addEventListener('input', () => {
@@ -404,7 +411,12 @@ async function performSearch() {
         }
     } else {
         const searchTag = typedText.startsWith('#') ? typedText : `#${typedText}`;
-        const filteredPosts = allPosts.filter(post => post.content && post.content.toLowerCase().includes(searchTag));
+        
+        // 🚀 GÜVENLİ GÜNCELLEME: `post.content` ve `post.text` için koruma eklendi
+        const filteredPosts = allPosts.filter(post => {
+            const pText = post.content || post.text || "";
+            return pText && pText.toLowerCase().includes(searchTag);
+        });
         
         if (filteredPosts.length === 0) { resultsContainer.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">Bu etikete sahip içerik yok...</div>'; return; }
         
@@ -414,7 +426,8 @@ async function performSearch() {
 
         let html = '';
         filteredPosts.forEach(post => {
-            const cleanContent = DOMPurify.sanitize(post.content || '');
+            // 🚀 GÜVENLİ GÜNCELLEME: Hem content hem text koruması
+            const cleanContent = DOMPurify.sanitize(post.content || post.text || '');
             const formattedContent = formatHashtags(cleanContent);
             const authorData = allUsersData[post.author] || {};
             const vHtml = authorData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
