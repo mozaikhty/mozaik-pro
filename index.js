@@ -5,9 +5,7 @@ import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/fi
 window.kayitIslemiDevamEdiyor = false; 
 
 onAuthStateChanged(auth, (user) => { 
-    if (user && !window.kayitIslemiDevamEdiyor) {
-        window.location.href = "feed.html"; 
-    }
+    if (user && !window.kayitIslemiDevamEdiyor) window.location.href = "feed.html"; 
 });
 
 const loginSection = document.getElementById('login-section');
@@ -44,7 +42,6 @@ document.getElementById('login-btn').addEventListener('click', async () => {
         }
         
         await signInWithEmailAndPassword(auth, loginEmail, pass);
-        // Giriş başarılıysa onAuthStateChanged zaten feed.html'e yönlendirecek.
         
     } catch (error) { 
         if (error.message === "user-not-found") showError("Bu kullanıcı adıyla kayıtlı bir hesap bulunamadı.");
@@ -53,6 +50,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     }
 });
 
+// YENİ VE HATASIZ KAYIT OLMA FONKSİYONU
 document.getElementById('register-btn').onclick = async function(e) {
     e.preventDefault(); 
     
@@ -81,6 +79,7 @@ document.getElementById('register-btn').onclick = async function(e) {
     btn.innerText = "Kaydediliyor...";
     
     try {
+        // Kullanıcı adı kontrolü
         const userRef = doc(db, "users", username); 
         const docSnap = await getDoc(userRef);
         if (docSnap.exists()) { 
@@ -89,12 +88,12 @@ document.getElementById('register-btn').onclick = async function(e) {
             return showError("Bu kullanıcı adı zaten alınmış!"); 
         }
 
+        // Auth Kaydı
         let user;
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             user = userCredential.user;
             await updateProfile(user, { displayName: username });
-            // Firebase token'ını yenile ki username anında oturuma yansısın
             await user.getIdToken(true); 
         } catch (authError) {
             console.error("Auth Kayıt Hatası:", authError);
@@ -104,6 +103,7 @@ document.getElementById('register-btn').onclick = async function(e) {
             return showError("Hata: " + authError.message);
         }
 
+        // Veritabanı Kaydı
         try {
             await setDoc(doc(db, "users", username), {
                 email: email, fullName: fullName, birthDate: birthDate, gender: gender, location: location,
@@ -111,6 +111,7 @@ document.getElementById('register-btn').onclick = async function(e) {
                 isPrivate: false, isVerified: false, isBanned: false, createdAt: serverTimestamp()
             });
             
+            // Tarayıcıya mühürle (profilin anında yüklenmesi için)
             localStorage.setItem('mozaik_username', username);
             
         } catch (firestoreError) {
@@ -120,6 +121,7 @@ document.getElementById('register-btn').onclick = async function(e) {
             return showError("Veritabanına yazılamadı! Lütfen konsolu kontrol edin.");
         }
         
+        // Başarılı giriş
         window.location.href = "feed.html"; 
         
     } catch (error) { 
