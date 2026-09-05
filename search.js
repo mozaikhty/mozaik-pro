@@ -1,6 +1,7 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { collection, onSnapshot, query, orderBy, doc, setDoc, arrayUnion, addDoc, serverTimestamp, where, getDoc, limit, startAt, endAt, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { auth, db } from './firebase-config.js';
+import './shared.js';
 
 let allUsers = []; let allPosts = []; let allUsersData = {}; let trendingTags = []; let currentTab = 'users'; let myUsername = null; let myFollowing = [];
 
@@ -16,71 +17,6 @@ const searchInput = document.getElementById('search-input'); const resultsContai
 
 window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
 
-window.openMobileSidebar = function() { 
-    const overlay = document.getElementById('mobile-sidebar-overlay');
-    if(overlay) overlay.style.display = 'block'; 
-    setTimeout(() => { document.getElementById('mobile-sidebar')?.classList.add('open'); }, 10); 
-};
-window.closeMobileSidebar = function() { 
-    document.getElementById('mobile-sidebar')?.classList.remove('open'); 
-    setTimeout(() => { 
-        const overlay = document.getElementById('mobile-sidebar-overlay');
-        if(overlay) overlay.style.display = 'none'; 
-    }, 300); 
-};
-
-window.openSupportModal = function() {
-    const settingsModal = document.getElementById('settings-modal');
-    if(settingsModal) settingsModal.style.display = 'none';
-    const supportInput = document.getElementById('support-message-input');
-    if(supportInput) supportInput.value = '';
-    const supportModal = document.getElementById('support-modal');
-    if(supportModal) supportModal.style.display = 'flex';
-};
-
-window.sendSupportMessage = async function() {
-    const btn = document.getElementById('send-support-btn');
-    const input = document.getElementById('support-message-input');
-    const message = input ? input.value.trim() : '';
-    
-    if (!message) { window.showToast?.("Lütfen bir mesaj yazın.", "error") || alert("Lütfen bir mesaj yazın."); return; }
-    if(btn) { btn.disabled = true; btn.innerText = "Gönderiliyor..."; }
-
-    try {
-        await addDoc(collection(db, "tickets"), {
-            sender: myUsername || "Bilinmeyen Kullanıcı",
-            message: message,
-            createdAt: serverTimestamp(),
-            status: "Yeni"
-        });
-        window.showToast?.("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success") || alert("Gönderildi.");
-        const modal = document.getElementById('support-modal');
-        if(modal) modal.style.display = 'none';
-    } catch (error) {
-        console.error("Hata:", error);
-        alert("Mesaj gönderilirken bir hata oluştu.");
-    } finally {
-        if(btn) { btn.disabled = false; btn.innerText = "Gönder"; }
-    }
-};
-
-window.showMyFollowing = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); } };
-window.showMyFollowers = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); } };
-
-window.showUserList = function(title, userArray) {
-    const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
-    const container = document.getElementById('users-list-container'); if(!container) return;
-    container.innerHTML = '';
-    if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Liste boş.</p>'; } 
-    else {
-        userArray.forEach(uname => {
-            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:2px;">☑️</span>' : '';
-            container.innerHTML += `<div onclick="window.location.href='profile.html?user=${uname}'" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
-        });
-    }
-    document.getElementById('users-list-modal').style.display = 'flex';
-};
-document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
 
 function switchTab(tab) {
     currentTab = tab;
@@ -96,53 +32,23 @@ tabTags?.addEventListener('click', () => switchTab('tags'));
 onAuthStateChanged(auth, (user) => {
     if (user) {
         myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
+        window.myUsername = myUsername; window.allUsersData = allUsersData;
         fetchData();
         
         onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
             activeChats = activeChats.filter(c => c.type === 'group'); 
             snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
-            attachCallListeners(); 
+            window.attachCallListeners(activeChats); 
         });
         onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
             activeChats = activeChats.filter(c => c.type === 'private'); 
             snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); 
-            attachCallListeners(); 
+            window.attachCallListeners(activeChats); 
         });
 
     } else { window.location.href = "index.html"; }
 });
 
-function attachCallListeners() {
-    activeChats.forEach(chat => {
-        if (!callListeners[chat.id]) {
-            const colName = chat.type === 'group' ? "groups" : "chats";
-            const callRef = collection(db, colName, chat.id, "calls");
-            callListeners[chat.id] = onSnapshot(callRef, (snapshot) => {
-                snapshot.docChanges().forEach(async (change) => {
-                    const callData = change.doc.data();
-                    if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
-                        currentCallDocId = change.doc.id;
-                        currentCallChatId = chat.id;
-                        currentCallCollection = colName;
-                        isCallVideo = callData.type === 'video';
-                        const cText = document.getElementById('call-status-text'); if(cText) cText.innerText = `@${callData.caller} Arıyor...`;
-                        const aBtn = document.getElementById('accept-call-btn'); if(aBtn) aBtn.style.display = 'block';
-                        if(callOverlay) callOverlay.style.display = 'flex';
-                        const vCont = document.getElementById('video-container'); if(vCont) vCont.style.display = isCallVideo ? 'flex' : 'none';
-                    }
-                    if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername && currentCallDocId === change.doc.id) {
-                        const cText = document.getElementById('call-status-text'); if(cText) cText.innerText = "Bağlandı";
-                        const desc = new RTCSessionDescription(callData.answer);
-                        await peerConnection.setRemoteDescription(desc);
-                    }
-                    if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed') && currentCallDocId === change.doc.id) {
-                        endCallUI();
-                    }
-                });
-            });
-        }
-    });
-}
 
 document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
     document.getElementById('accept-call-btn').style.display = 'none'; 
@@ -249,24 +155,6 @@ function renderWhoToFollow() {
     container.innerHTML = html;
 }
 
-window.quickFollow = async function(targetUser) {
-    try {
-        const myRef = doc(db, "users", myUsername);
-        const targetRef = doc(db, "users", targetUser);
-        const targetData = allUsersData[targetUser] || {};
-        
-        if (targetData.isPrivate) {
-            await setDoc(targetRef, { followRequests: arrayUnion(myUsername) }, { merge: true });
-            alert("Hesap gizli. Takip isteği gönderildi!");
-        } else {
-            await setDoc(myRef, { following: arrayUnion(targetUser) }, { merge: true });
-            await setDoc(targetRef, { followers: arrayUnion(myUsername) }, { merge: true });
-            await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUser, createdAt: serverTimestamp() });
-        }
-    } catch (e) {
-        console.error("Takip etme hatası: ", e);
-    }
-};
 
 // 🚀 GÜVENLİ GÜNCELLEME: `post.content` ve `post.text` için koruma eklendi
 function calculateTrendingTags() {
@@ -281,16 +169,7 @@ function calculateTrendingTags() {
     trendingTags = Object.keys(tagCounts).map(tag => { return { tag: tag, count: tagCounts[tag] }; }).sort((a, b) => b.count - a.count).slice(0, 15);
 }
 
-window.fetchMissingUsers = async function(usernamesArray) {
-    const missing = usernamesArray.filter(u => u && !allUsersData[u]);
-    if (missing.length === 0) return;
-    await Promise.all(missing.map(async (uname) => {
-        try {
-            const uSnap = await getDoc(doc(db, "users", uname));
-            if (uSnap.exists()) allUsersData[uname] = uSnap.data();
-        } catch(e) {}
-    }));
-};
+
 
 function fetchData() {
     onSnapshot(doc(db, "users", myUsername), (docSnap) => {

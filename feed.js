@@ -4,6 +4,7 @@ import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, st
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
 import { auth, db, storage } from './firebase-config.js';
+import './shared.js';
 
 // 🔥 TARAYICI TABANLI FOTOĞRAF SIKIŞTIRMA ALGORİTMASI (CANVAS)
 window.compressImage = function(file, maxWidth = 1200, maxHeight = 1200, quality = 0.7) {
@@ -55,39 +56,7 @@ document.addEventListener('click', function(event) {
 });
 
 window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
-window.openMobileSidebar = function() { document.getElementById('mobile-sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('mobile-sidebar').classList.add('open'); }, 10); };
-window.closeMobileSidebar = function() { document.getElementById('mobile-sidebar').classList.remove('open'); setTimeout(() => { document.getElementById('mobile-sidebar-overlay').style.display = 'none'; }, 300); };
 window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
-
-window.openSupportModal = function() { document.getElementById('settings-modal').style.display = 'none'; document.getElementById('support-message-input').value = ''; document.getElementById('support-modal').style.display = 'flex'; };
-
-window.sendSupportMessage = async function() {
-    const btn = document.getElementById('send-support-btn'); const message = document.getElementById('support-message-input').value.trim();
-    if (!message) { window.showToast?.("Lütfen bir mesaj yazın.", "error") || alert("Mesaj girin."); return; }
-    btn.disabled = true; btn.innerText = "Gönderiliyor...";
-    try {
-        await addDoc(collection(db, "tickets"), { sender: myUsername || "Bilinmeyen", message: message, createdAt: serverTimestamp(), status: "Yeni" });
-        window.showToast?.("İletildi!", "success") || alert("İletildi!"); document.getElementById('support-modal').style.display = 'none';
-    } catch (error) { alert("Hata oluştu."); } finally { btn.disabled = false; btn.innerText = "Gönder"; }
-};
-
-window.showMyFollowing = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); } };
-window.showMyFollowers = function() { window.closeMobileSidebar(); if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); } };
-
-window.showUserList = function(title, userArray) {
-    const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
-    const container = document.getElementById('users-list-container'); if(!container) return;
-    container.innerHTML = '';
-    if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Liste boş.</p>'; } 
-    else {
-        userArray.forEach(uname => {
-            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
-            container.innerHTML += `<div onclick="window.location.href='profile.html?user=${uname}'" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
-        });
-    }
-    document.getElementById('users-list-modal').style.display = 'flex';
-};
-document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
 
 window.switchFeedTab = function(tabName) {
     currentFeedTab = tabName;
@@ -105,17 +74,6 @@ onAuthStateChanged(auth, async (user) => {
         window.myUsername = myUsername; // webrtc.js'nin kim olduğumuzu bilmesi için eklendi
         const checkMyBan = await getDoc(doc(db, "users", myUsername));
         if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
-
-        window.fetchMissingUsers = async function(usernamesArray) {
-            const missing = usernamesArray.filter(u => u && !allUsersData[u]);
-            if (missing.length === 0) return;
-            await Promise.all(missing.map(async (uname) => {
-                try {
-                    const uSnap = await getDoc(doc(db, "users", uname));
-                    if (uSnap.exists()) allUsersData[uname] = uSnap.data();
-                } catch(e) {}
-            }));
-        };
 
         onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
             if(docSnap.exists()) {
@@ -153,6 +111,7 @@ onAuthStateChanged(auth, async (user) => {
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.get('tab') === 'bookmarks') { setTimeout(() => { window.showBookmarksTab(); }, 100); }
         if(urlParams.get('action') === 'post') { setTimeout(() => { window.openMainPostModal(); }, 300); }
+        if(urlParams.get('post')) { setTimeout(() => { window.openPostDetail(urlParams.get('post')); }, 400); }
     } else { window.location.href = "index.html"; }
 });
 
@@ -210,13 +169,7 @@ function renderWhoToFollow() {
     container.innerHTML = html;
 }
 
-window.quickFollow = async function(targetUser) {
-    try {
-        const myRef = doc(db, "users", myUsername); const targetRef = doc(db, "users", targetUser); const targetData = allUsersData[targetUser] || {};
-        if (targetData.isPrivate) { await setDoc(targetRef, { followRequests: arrayUnion(myUsername) }, { merge: true }); alert("Kullanıcı gizli. İstek gönderildi."); } 
-        else { await updateDoc(myRef, { following: arrayUnion(targetUser) }); await updateDoc(targetRef, { followers: arrayUnion(myUsername) }); await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUser, createdAt: serverTimestamp() }); }
-    } catch (e) {}
-};
+
 
 function updateCharCount(inputId, counterId, btnId) {
     const input = document.getElementById(inputId); const counter = document.getElementById(counterId); const btn = document.getElementById(btnId);
@@ -359,8 +312,24 @@ window.showLikes = function(postId, event) { event.stopPropagation(); const post
 function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
 window.closePostDetail = function() { document.getElementById('post-detail-modal').style.display = 'none'; window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; window.history.replaceState({}, document.title, window.location.pathname); };
 
-window.openPostDetail = function(postId) {
-    window.currentOpenPostId = postId; activeReplyParentId = null; const postObj = globalPosts.find(p => p.id === postId); if(!postObj) return; const postData = postObj.data; 
+window.openPostDetail = async function(postId) {
+    window.currentOpenPostId = postId; activeReplyParentId = null; 
+    let postObj = globalPosts.find(p => p.id === postId); 
+    if (!postObj) {
+        try {
+            const pSnap = await getDoc(doc(db, "posts", postId));
+            if (pSnap.exists()) {
+                postObj = { id: pSnap.id, data: pSnap.data() };
+                globalPosts.push(postObj);
+                const authorsToFetch = [postObj.data.author];
+                if (postObj.data.originalPostAuthor) authorsToFetch.push(postObj.data.originalPostAuthor);
+                await window.fetchMissingUsers(authorsToFetch);
+            }
+        } catch (e) {
+            console.error("Gönderi getirilemedi:", e);
+        }
+    }
+    if(!postObj) return; const postData = postObj.data; 
     let originalAuthor = postData.author; if(postData.isRepost) { originalAuthor = postData.originalPostAuthor; }
     const authorData = allUsersData[originalAuthor] || {}; const likesArray = postData.likes || []; const isLiked = likesArray.includes(myUsername);
     const vHtml = authorData.isVerified ? `<span class="verified-badge">☑️</span>` : ''; const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; const fullName = authorData.fullName || originalAuthor;
@@ -425,7 +394,16 @@ window.sendDetailComment = async function(postId, postAuthor) {
     const postObj = globalPosts.find(p => p.id === postId);
     if (postObj) { if (!postObj.data.comments) postObj.data.comments = []; postObj.data.comments.push(newComment); renderFeed(); window.openPostDetail(postId); }
     await updateDoc(doc(db, "posts", postId), { comments: arrayUnion(newComment) });
-    if (postAuthor !== myUsername && !activeReplyParentId) { await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); }
+    
+    let notifyTarget = postAuthor;
+    if (activeReplyParentId && postObj && postObj.data && postObj.data.comments) {
+        const parentComment = postObj.data.comments.find(c => c.id === activeReplyParentId);
+        if (parentComment && parentComment.author) notifyTarget = parentComment.author;
+    }
+    if (notifyTarget && notifyTarget !== myUsername) {
+        await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: notifyTarget, postId: postId, createdAt: serverTimestamp() });
+    }
+
     input.value = ''; window.cancelDetailReply();
 };
 

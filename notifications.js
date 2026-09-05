@@ -1,6 +1,7 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { collection, onSnapshot, query, where, orderBy, doc, getDoc, updateDoc, arrayRemove, arrayUnion, setDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { auth, db } from './firebase-config.js';
+import './shared.js';
 
 let myUsername = null; let allUsersData = {}; let myRequests = []; let myNotifications = [];
 let currentTab = 'all';
@@ -21,98 +22,14 @@ document.getElementById('tab-requests')?.addEventListener('click', () => {
 
 window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
 
-window.openMobileSidebar = function() { 
-    const overlay = document.getElementById('mobile-sidebar-overlay');
-    if(overlay) overlay.style.display = 'block'; 
-    setTimeout(() => { document.getElementById('mobile-sidebar')?.classList.add('open'); }, 10); 
-};
 
-window.closeMobileSidebar = function() { 
-    document.getElementById('mobile-sidebar')?.classList.remove('open'); 
-    setTimeout(() => { 
-        const overlay = document.getElementById('mobile-sidebar-overlay');
-        if(overlay) overlay.style.display = 'none'; 
-    }, 300); 
-};
 
-window.openSupportModal = function() {
-    const settingsModal = document.getElementById('settings-modal');
-    if(settingsModal) settingsModal.style.display = 'none';
-    const sInput = document.getElementById('support-message-input');
-    if(sInput) sInput.value = '';
-    const sModal = document.getElementById('support-modal');
-    if(sModal) sModal.style.display = 'flex';
-};
-
-window.sendSupportMessage = async function() {
-    const btn = document.getElementById('send-support-btn');
-    const input = document.getElementById('support-message-input');
-    const message = input ? input.value.trim() : '';
-    
-    if (!message) { window.showToast?.("Lütfen bir mesaj yazın.", "error") || alert("Lütfen bir mesaj yazın."); return; }
-    if(btn) { btn.disabled = true; btn.innerText = "Gönderiliyor..."; }
-
-    try {
-        await addDoc(collection(db, "tickets"), {
-            sender: myUsername || "Bilinmeyen Kullanıcı",
-            message: message,
-            createdAt: serverTimestamp(),
-            status: "Yeni"
-        });
-        window.showToast?.("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success") || alert("Gönderildi.");
-        const modal = document.getElementById('support-modal');
-        if(modal) modal.style.display = 'none';
-    } catch (error) {
-        console.error("Hata:", error);
-        alert("Mesaj gönderilirken bir hata oluştu.");
-    } finally {
-        if(btn) { btn.disabled = false; btn.innerText = "Gönder"; }
-    }
-};
-
-window.showMyFollowing = function() { 
-    window.closeMobileSidebar(); 
-    if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); } 
-};
-
-window.showMyFollowers = function() { 
-    window.closeMobileSidebar(); 
-    if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); } 
-};
-
-window.showUserList = function(title, userArray) {
-    const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
-    const container = document.getElementById('users-list-container'); if(!container) return;
-    container.innerHTML = '';
-    if(userArray.length === 0) { container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Liste boş.</p>'; } 
-    else {
-        let html = '';
-        userArray.forEach(uname => {
-            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
-            html += `<div onclick="window.location.href='profile.html?user=${uname}'" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
-        });
-        container.innerHTML = html;
-    }
-    document.getElementById('users-list-modal').style.display = 'flex';
-};
-
-document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        myUsername = user.displayName || user.email.split('@')[0];
+        myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
+        window.myUsername = myUsername; window.allUsersData = allUsersData;
         
-        window.fetchMissingUsers = async function(usernamesArray) {
-            const missing = usernamesArray.filter(u => u && !allUsersData[u]);
-            if (missing.length === 0) return;
-            await Promise.all(missing.map(async (uname) => {
-                try {
-                    const uSnap = await getDoc(doc(db, "users", uname));
-                    if (uSnap.exists()) allUsersData[uname] = uSnap.data();
-                } catch(e) {}
-            }));
-        };
-
         // 1. AŞAMA: KENDİ PROFİLİMİZİ DİNLİYORUZ (İstekler ve Takipçi sayısı için)
         onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
             if(docSnap.exists()) {
@@ -143,8 +60,8 @@ onAuthStateChanged(auth, (user) => {
             renderWhoToFollow();
         });
 
-        // 2. AŞAMA: SADECE BİZE GELEN BİLDİRİMLERİ DİNLİYORUZ
-        onSnapshot(query(collection(db, "notifications"), where("recipient", "==", myUsername), orderBy("createdAt", "desc")), async (snapshot) => {
+        // 2. AŞAMA: SADECE BİZE GELEN BİLDİRİMLERİ DİNLİYORUZ (Index hatasını önlemek için orderBy JS tarafında yapılır)
+        onSnapshot(query(collection(db, "notifications"), where("recipient", "==", myUsername)), async (snapshot) => {
             myNotifications = [];
             let neededUsers = new Set();
             
@@ -154,8 +71,17 @@ onAuthStateChanged(auth, (user) => {
                 if(data.sender) neededUsers.add(data.sender);
             });
             
+            // Tarihe göre sıralama (en yeniden eskiye)
+            myNotifications.sort((a, b) => {
+                const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
+                const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
+                return timeB - timeA;
+            });
+
             await window.fetchMissingUsers(Array.from(neededUsers));
             renderNotifications();
+        }, (err) => {
+            console.error("Bildirimler dinlenirken hata oluştu:", err);
         });
 
     } else { window.location.href = "index.html"; }
@@ -200,29 +126,19 @@ function renderWhoToFollow() {
     container.innerHTML = html;
 }
 
-window.quickFollow = async function(targetUser) {
-    try {
-        const myRef = doc(db, "users", myUsername);
-        const targetRef = doc(db, "users", targetUser);
-        const targetData = allUsersData[targetUser] || {};
-        
-        if (targetData.isPrivate) {
-            await setDoc(targetRef, { followRequests: arrayUnion(myUsername) }, { merge: true });
-            window.showToast?.("Hesap gizli. Takip isteği gönderildi!", "success") || alert("Hesap gizli. Takip isteği gönderildi!");
-        } else {
-            await setDoc(myRef, { following: arrayUnion(targetUser) }, { merge: true });
-            await setDoc(targetRef, { followers: arrayUnion(myUsername) }, { merge: true });
-            await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUser, createdAt: serverTimestamp() });
-        }
-    } catch (e) {
-        console.error("Takip etme hatası: ", e);
-    }
-};
+
 
 window.deleteNotification = async function(notifId, event) {
     event.stopPropagation();
     if(confirm("Bu bildirimi silmek istiyor musunuz?")) {
-        await deleteDoc(doc(db, "notifications", notifId));
+        try {
+            myNotifications = myNotifications.filter(n => n.id !== notifId);
+            renderNotifications();
+            await deleteDoc(doc(db, "notifications", notifId));
+            window.showToast?.("Bildirim silindi.", "info");
+        } catch(e) {
+            console.error("Bildirim silinirken hata:", e);
+        }
     }
 };
 
@@ -262,6 +178,7 @@ function renderNotifications() {
             if(notif.type === 'like') { icon = '❤️'; text = `<b>@${notif.sender}</b> içeriğinizi beğendi.`; link = `profile.html?post=${notif.postId}`; }
             else if(notif.type === 'comment') { icon = '💬'; text = `<b>@${notif.sender}</b> içeriğinize yanıt verdi.`; link = `profile.html?post=${notif.postId}`; }
             else if(notif.type === 'follow') { icon = '🤝'; text = `<b>@${notif.sender}</b> sizi ağına ekledi.`; link = `profile.html?user=${notif.sender}`; }
+            else if(notif.type === 'admin_delete') { icon = '⚠️'; text = `Bir gönderiniz kurallara uymadığı gerekçesiyle yönetici tarafından kaldırıldı.`; link = '#'; }
             
             let timeAgo = "";
             if(notif.createdAt) {

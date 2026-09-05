@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
 import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 import { auth, db, storage } from './firebase-config.js';
+import './shared.js';
 
 let currentUser = null; let myUsername = null; let chatId = null; let isGroupChat = false;
 let allUsersData = {}; let activeChats = []; let myFollowing = [];
@@ -42,79 +43,8 @@ window.goToChatProfile = function() {
     if (!isGroupChat && targetUsername) { window.location.href = 'profile.html?user=' + targetUsername; }
 };
 window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
-window.openMobileSidebar = function() { 
-    const overlay = document.getElementById('mobile-sidebar-overlay');
-    if(overlay) overlay.style.display = 'block'; 
-    setTimeout(() => { document.getElementById('mobile-sidebar')?.classList.add('open'); }, 10); 
-};
-window.closeMobileSidebar = function() { 
-    document.getElementById('mobile-sidebar')?.classList.remove('open'); 
-    setTimeout(() => { 
-        const overlay = document.getElementById('mobile-sidebar-overlay');
-        if(overlay) overlay.style.display = 'none'; 
-    }, 300); 
-};
 
-window.openSupportModal = function() {
-    const settingsModal = document.getElementById('settings-modal');
-    if(settingsModal) settingsModal.style.display = 'none';
-    const sInput = document.getElementById('support-message-input');
-    if(sInput) sInput.value = '';
-    const sModal = document.getElementById('support-modal');
-    if(sModal) sModal.style.display = 'flex';
-};
 
-window.sendSupportMessage = async function() {
-    const btn = document.getElementById('send-support-btn');
-    const input = document.getElementById('support-message-input');
-    const message = input ? input.value.trim() : '';
-    
-    if (!message) { window.showToast?.("Lütfen bir mesaj yazın.", "error") || alert("Lütfen bir mesaj yazın."); return; }
-    if(btn) { btn.disabled = true; btn.innerText = "Gönderiliyor..."; }
-
-    try {
-        await addDoc(collection(db, "tickets"), {
-            sender: myUsername || "Bilinmeyen Kullanıcı",
-            message: DOMPurify.sanitize(message),
-            createdAt: serverTimestamp(),
-            status: "Yeni"
-        });
-        window.showToast?.("Mesajınız başarıyla iletildi. Teşekkür ederiz!", "success") || alert("Gönderildi.");
-        const modal = document.getElementById('support-modal');
-        if(modal) modal.style.display = 'none';
-    } catch (error) {
-        console.error("Hata:", error);
-        alert("Mesaj gönderilirken bir hata oluştu.");
-    } finally {
-        if(btn) { btn.disabled = false; btn.innerText = "Gönder"; }
-    }
-};
-
-window.showMyFollowing = function() {
-    window.closeMobileSidebar();
-    if (allUsersData[myUsername]) { window.showUserList("Ağım", allUsersData[myUsername].following || []); }
-};
-window.showMyFollowers = function() {
-    window.closeMobileSidebar();
-    if (allUsersData[myUsername]) { window.showUserList("Takipçiler", allUsersData[myUsername].followers || []); }
-};
-
-window.showUserList = function(title, userArray) {
-    const titleEl = document.getElementById('users-list-title'); if(titleEl) titleEl.innerText = title;
-    const container = document.getElementById('users-list-container'); if(!container) return;
-    let html = '';
-    if(userArray.length === 0) { html = '<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>'; } 
-    else {
-        userArray.forEach(uname => {
-            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
-            let safeName = DOMPurify.sanitize(uData.fullName || uname);
-            html += `<a href="profile.html?user=${uname}" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${safeName} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></a>`;
-        });
-    }
-    container.innerHTML = html;
-    document.getElementById('users-list-modal').style.display = 'flex';
-};
-document.getElementById('close-list-btn')?.addEventListener('click', () => { document.getElementById('users-list-modal').style.display = 'none'; });
 
 window.showNewChatScreen = function() {
     const emptyState = document.getElementById('chat-empty-state'); if(emptyState) emptyState.style.display = 'none';
@@ -177,17 +107,8 @@ document.getElementById('msg-input')?.addEventListener('input', (e) => {
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user; myUsername = user.displayName || localStorage.getItem('mozaik_username') || user.email.split('@')[0];
+        window.myUsername = myUsername; window.allUsersData = allUsersData;
         
-        window.fetchMissingUsers = async function(usernamesArray) {
-            const missing = usernamesArray.filter(u => u && !allUsersData[u]);
-            if (missing.length === 0) return;
-            await Promise.all(missing.map(async (uname) => {
-                try {
-                    const uSnap = await getDoc(doc(db, "users", uname));
-                    if (uSnap.exists()) allUsersData[uname] = uSnap.data();
-                } catch(e) {}
-            }));
-        };
 
         onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
             if(docSnap.exists()) {
@@ -224,7 +145,7 @@ onAuthStateChanged(auth, async (user) => {
             }); 
             await window.fetchMissingUsers(Array.from(neededUsers));
             updateInboxDisplay(); 
-            attachCallListeners(); 
+            window.attachCallListeners(activeChats); 
         });
 
         onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), async (snapshot) => { 
@@ -237,7 +158,7 @@ onAuthStateChanged(auth, async (user) => {
             }); 
             await window.fetchMissingUsers(Array.from(neededUsers));
             updateInboxDisplay(); 
-            attachCallListeners(); 
+            window.attachCallListeners(activeChats); 
         });
 
         if (targetUsername || targetGroupId) {
@@ -251,37 +172,6 @@ onAuthStateChanged(auth, async (user) => {
     } else { window.location.href = "index.html"; }
 });
 
-function attachCallListeners() {
-    activeChats.forEach(chat => {
-        if (!callListeners[chat.id]) {
-            const colName = chat.type === 'group' ? "groups" : "chats";
-            const callRef = collection(db, colName, chat.id, "calls");
-            callListeners[chat.id] = onSnapshot(callRef, (snapshot) => {
-                snapshot.docChanges().forEach(async (change) => {
-                    const callData = change.doc.data();
-                    if (change.type === 'added' && callData.status === 'ringing' && callData.caller !== myUsername) {
-                        currentCallDocId = change.doc.id;
-                        currentCallChatId = chat.id;
-                        currentCallCollection = colName;
-                        isCallVideo = callData.type === 'video';
-                        const callStatus = document.getElementById('call-status-text'); if(callStatus) callStatus.innerText = `@${callData.caller} Arıyor...`;
-                        const acceptBtn = document.getElementById('accept-call-btn'); if(acceptBtn) acceptBtn.style.display = 'block';
-                        if(callOverlay) callOverlay.style.display = 'flex';
-                        const vCont = document.getElementById('video-container'); if(vCont) vCont.style.display = isCallVideo ? 'flex' : 'none';
-                    }
-                    if (change.type === 'modified' && callData.status === 'answered' && callData.caller === myUsername && currentCallDocId === change.doc.id) {
-                        const callStatus = document.getElementById('call-status-text'); if(callStatus) callStatus.innerText = "Bağlandı";
-                        const desc = new RTCSessionDescription(callData.answer);
-                        await peerConnection.setRemoteDescription(desc);
-                    }
-                    if (change.type === 'modified' && (callData.status === 'ended' || callData.status === 'missed') && currentCallDocId === change.doc.id) {
-                        endCallUI();
-                    }
-                });
-            });
-        }
-    });
-}
 
 document.getElementById('dm-search-input')?.addEventListener('input', debounce(updateInboxDisplay, 300));
 
