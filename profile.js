@@ -300,7 +300,7 @@ window.openPostDetail = async function(postId) {
                 Yanıtlanıyor: <b id=\"replying-to-name\"></b> <span style=\"cursor:pointer; color:#ef4444; margin-left:10px;\" onclick=\"window.cancelDetailReply()\">İptal</span>
             </div>
             <div style=\"display:flex; gap:10px;\">
-                <input type=\"text\" id=\"detail-comment-input\" style=\"flex:1; background:#f8fafc; border:1px solid #e2e8f0; padding:12px 15px; border-radius:8px; outline:none; font-size:15px; color:#0f172a;\" placeholder=\"Görüşünüzü bildirin...\">
+                <input type=\"text\" id=\"detail-comment-input\" maxlength=\"500\" style=\"flex:1; background:#f8fafc; border:1px solid #e2e8f0; padding:12px 15px; border-radius:8px; outline:none; font-size:15px; color:#0f172a;\" placeholder=\"Görüşünüzü bildirin...\">
                 <button onclick=\"window.sendDetailComment('${postId}', '${originalAuthor}')\" style=\"background:#2c3e50; color:white; border:none; border-radius:8px; padding:0 20px; font-weight:600; cursor:pointer;\">Gönder</button>
             </div>
         </div>
@@ -351,6 +351,11 @@ window.cancelDetailReply = function() { activeReplyParentId = null; document.get
 
 window.sendDetailComment = async function(postId, postAuthor) {
     const input = document.getElementById('detail-comment-input'); const text = input.value.trim(); if (!text) return;
+    if (text.length > 500) { alert("Yorumunuz en fazla 500 karakter olabilir!"); return; }
+    if (window.isActionLocked && window.isActionLocked('comment_' + postId)) {
+        window.showToast?.("Lütfen yeni yorum için birkaç saniye bekleyin.", "info");
+        return;
+    }
     const newComment = { id: generateUniqueId(), text: text, author: myUsername, timestamp: Date.now(), parentId: activeReplyParentId };
     
     const postObj = globalPosts.find(p => p.id === postId);
@@ -515,14 +520,16 @@ document.getElementById('save-edit-btn')?.addEventListener('click', async () => 
     
     try {
         if (rawAvatarFile) { 
-            const avatarFile = await window.compressImage(rawAvatarFile, 400, 400, 0.7); 
+            // Profil avatarı: Maks 400x400 ve maks 300 KB hedef boyut
+            const avatarFile = await window.compressImage(rawAvatarFile, 400, 400, 0.8, 300 * 1024); 
             saveBtn.innerText = "Fotoğraf yükleniyor...";
             const avatarRef = ref(storage, `avatars/${Date.now()}_${avatarFile.name}`);
             await uploadBytes(avatarRef, avatarFile);
             newAvatarUrl = await getDownloadURL(avatarRef);
         }
         if (rawBannerFile) { 
-            const bannerFile = await window.compressImage(rawBannerFile, 1200, 600, 0.7); 
+            // Kapak fotoğrafı: Maks 1200x600 ve maks 600 KB hedef boyut
+            const bannerFile = await window.compressImage(rawBannerFile, 1200, 600, 0.75, 600 * 1024); 
             saveBtn.innerText = "Kapak yükleniyor...";
             const bannerRef = ref(storage, `banners/${Date.now()}_${bannerFile.name}`);
             await uploadBytes(bannerRef, bannerFile);

@@ -6,35 +6,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "http
 import { auth, db, storage } from './firebase-config.js';
 import './shared.js';
 
-// 🔥 TARAYICI TABANLI FOTOĞRAF SIKIŞTIRMA ALGORİTMASI (CANVAS)
-window.compressImage = function(file, maxWidth = 1200, maxHeight = 1200, quality = 0.7) {
-    return new Promise((resolve, reject) => {
-        if (!file || !file.type.startsWith('image/')) return resolve(file);
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = event => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width; let height = img.height;
-                if (width > height && width > maxWidth) { height = Math.round(height * (maxWidth / width)); width = maxWidth; } 
-                else if (height > maxHeight) { width = Math.round(width * (maxHeight / height)); height = maxHeight; }
-                canvas.width = width; canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                canvas.toBlob(blob => {
-                    if(blob) {
-                        const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp', lastModified: Date.now() });
-                        resolve(compressedFile);
-                    } else { resolve(file); }
-                }, 'image/webp', quality);
-            };
-            img.onerror = error => reject(error);
-        };
-        reader.onerror = error => reject(error);
-    });
-};
+
 
 let currentUser = null; let myUsername = null; let allUsersData = {}; 
 let currentFeedTab = 'discover'; let myFollowingList = []; let myBookmarks = []; let globalPosts = []; 
@@ -215,6 +187,16 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
     
     if(!text && !rawFile && !loc) return; 
 
+    if (text.length > MAX_CHARS) {
+        alert(`Gönderiniz en fazla ${MAX_CHARS} karakter olabilir!`);
+        return;
+    }
+
+    if (window.isActionLocked && window.isActionLocked('submit_post')) {
+        window.showToast?.("Lütfen yeni gönderi için birkaç saniye bekleyin.", "info");
+        return;
+    }
+
     if (rawFile && rawFile.size > 10 * 1024 * 1024) {
         alert("Seçtiğiniz fotoğraf 10 MB'dan büyük olamaz!");
         document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; document.getElementById(btnId).classList.remove('active'); return; 
@@ -224,7 +206,8 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
     
     try {
         if(rawFile) { 
-            file = await window.compressImage(rawFile, 1200, 1200, 0.7); 
+            // Akıllı sıkıştırma: Maks 1200px ve maks 800 KB hedef boyut
+            file = await window.compressImage(rawFile, 1200, 1200, 0.75, 800 * 1024); 
             btn.innerText = "Yükleniyor...";
             const fileName = `posts/${Date.now()}_${file.name}`;
             const storageRef = ref(storage, fileName);
@@ -367,7 +350,7 @@ window.openPostDetail = async function(postId) {
         <div class="comments-wrapper" style="padding: 0 25px;">${buildCommentsTree(postData.comments || [], null, 0, postId, originalAuthor)}</div>
         <div style="position:sticky; bottom:0; background:white; padding:20px 25px; border-top:1px solid #f1f5f9; display:flex; flex-direction:column; gap:10px;">
             <div id="replying-to-info" style="display:none; font-size:13px; color:#64748b;">Yanıtlanıyor: <b id="replying-to-name"></b> <span style="cursor:pointer; color:#ef4444; margin-left:10px;" onclick="window.cancelDetailReply()">İptal</span></div>
-            <div style="display:flex; gap:10px;"><input type="text" id="detail-comment-input" style="flex:1; background:#f8fafc; border:1px solid #e2e8f0; padding:12px 15px; border-radius:8px; outline:none; font-size:15px; color:#0f172a;" placeholder="Görüşünüzü bildirin..."><button onclick="window.sendDetailComment('${postId}', '${originalAuthor}')" style="background:#2c3e50; color:white; border:none; border-radius:8px; padding:0 20px; font-weight:600; cursor:pointer;">Gönder</button></div>
+            <div style="display:flex; gap:10px;"><input type="text" id="detail-comment-input" maxlength="500" style="flex:1; background:#f8fafc; border:1px solid #e2e8f0; padding:12px 15px; border-radius:8px; outline:none; font-size:15px; color:#0f172a;" placeholder="Görüşünüzü bildirin..."><button onclick="window.sendDetailComment('${postId}', '${originalAuthor}')" style="background:#2c3e50; color:white; border:none; border-radius:8px; padding:0 20px; font-weight:600; cursor:pointer;">Gönder</button></div>
         </div>
     `;
     document.getElementById('post-detail-content-box').scrollTop = 0; document.getElementById('post-detail-container').innerHTML = html; document.getElementById('post-detail-modal').style.display = 'flex';
@@ -390,6 +373,11 @@ window.cancelDetailReply = function() { activeReplyParentId = null; document.get
 
 window.sendDetailComment = async function(postId, postAuthor) {
     const input = document.getElementById('detail-comment-input'); const text = input.value.trim(); if (!text) return;
+    if (text.length > 500) { alert("Yorumunuz en fazla 500 karakter olabilir!"); return; }
+    if (window.isActionLocked && window.isActionLocked('comment_' + postId)) {
+        window.showToast?.("Lütfen yeni yorum için birkaç saniye bekleyin.", "info");
+        return;
+    }
     const newComment = { id: generateUniqueId(), text: text, author: myUsername, timestamp: Date.now(), parentId: activeReplyParentId };
     const postObj = globalPosts.find(p => p.id === postId);
     if (postObj) { if (!postObj.data.comments) postObj.data.comments = []; postObj.data.comments.push(newComment); renderFeed(); window.openPostDetail(postId); }

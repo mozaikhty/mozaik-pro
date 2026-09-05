@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // YARDIMCI FONKSİYONLAR
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. KULLANICILAR KOLEKSİYONU
+    // Doküman ID'si kullanıcının 'username' bilgisidir.
+    match /users/{username} {
+      allow read: if isAuthenticated();
+      // Kayıt anında oluşturma veya kendi profilini güncelleme
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+    
+    // 2. GÖNDERİLER (POSTS) KOLEKSİYONU
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      
+      // Gönderi oluştururken içerik karakter sınırı (maksimum 280 karakter)
+      allow create: if isAuthenticated() 
+                    && request.resource.data.content is string
+                    && request.resource.data.content.size() <= 280;
+                    
+      // Beğeni, yorum ekleme veya düzenleme
+      allow update: if isAuthenticated();
+      
+      // Silme
+      allow delete: if isAuthenticated();
+    }
+
+    // 3. ÖZEL SOHBETLER (CHATS)
+    match /chats/{chatId} {
+      allow read, write: if isAuthenticated();
+      
+      // Mesajlar alt koleksiyonu (Maksimum 1000 karakter)
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() 
+                      && (!('text' in request.resource.data) || request.resource.data.text.size() <= 1000);
+        allow update, delete: if isAuthenticated();
+      }
+      
+      // WebRTC Arama Sinyalleri
+      match /calls/{callId} {
+        allow read, write: if isAuthenticated();
+        match /{candidateCollection}/{candidateId} {
+          allow read, write: if isAuthenticated();
+        }
+      }
+    }
+
+    // 4. GRUP SOHBETLERİ (GROUPS)
+    match /groups/{groupId} {
+      allow read, write: if isAuthenticated();
+      
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() 
+                      && (!('text' in request.resource.data) || request.resource.data.text.size() <= 1000);
+        allow update, delete: if isAuthenticated();
+      }
+      
+      match /calls/{callId} {
+        allow read, write: if isAuthenticated();
+        match /{candidateCollection}/{candidateId} {
+          allow read, write: if isAuthenticated();
+        }
+      }
+    }
+
+    // 5. BİLDİRİMLER (NOTIFICATIONS)
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // 6. DESTEK TALEPLERİ (TICKETS)
+    match /tickets/{ticketId} {
+      // Kullanıcılar sadece ticket oluşturabilir, başkalarının taleplerini göremez
+      allow create: if isAuthenticated() 
+                    && request.resource.data.message is string
+                    && request.resource.data.message.size() <= 2000;
+      allow read, update, delete: if isAuthenticated();
+    }
+
+    // 7. YÖNETİCİLER (ADMINS)
+    // Sadece admin UID'leri okunabilir, istemci tarafından asla yazılamaz!
+    match /admins/{adminId} {
+      allow read: if isAuthenticated();
+      allow write: if false; 
+    }
+  }
+}

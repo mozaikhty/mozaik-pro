@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-import { collection, onSnapshot, query, where, orderBy, doc, getDoc, updateDoc, arrayRemove, arrayUnion, setDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { collection, onSnapshot, query, where, orderBy, doc, getDoc, updateDoc, arrayRemove, arrayUnion, setDoc, deleteDoc, addDoc, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { auth, db } from './firebase-config.js';
 import './shared.js';
 
@@ -60,8 +60,8 @@ onAuthStateChanged(auth, (user) => {
             renderWhoToFollow();
         });
 
-        // 2. AŞAMA: SADECE BİZE GELEN BİLDİRİMLERİ DİNLİYORUZ (Index hatasını önlemek için orderBy JS tarafında yapılır)
-        onSnapshot(query(collection(db, "notifications"), where("recipient", "==", myUsername)), async (snapshot) => {
+        // 2. AŞAMA: SADECE BİZE GELEN BİLDİRİMLERİ DİNLİYORUZ (Index hatasını önlemek için orderBy JS tarafında yapılır, limit(50) ile kota korunur)
+        onSnapshot(query(collection(db, "notifications"), where("recipient", "==", myUsername), limit(50)), async (snapshot) => {
             myNotifications = [];
             let neededUsers = new Set();
             

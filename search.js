@@ -197,7 +197,7 @@ function fetchData() {
 
     async function loadTrendingPosts() {
         try {
-            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100));
+            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(25));
             const snapshot = await getDocs(q);
             allPosts = []; 
             let neededUsers = new Set();

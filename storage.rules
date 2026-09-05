@@ -1,0 +1,48 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Yalnızca giriş yapmış kullanıcılar işlem yapabilir
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Yalnızca resim dosyalarına izin ver (image/jpeg, image/png, image/webp vb.)
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // Maksimum dosya boyutu 5 MB (Görsel sıkıştırma sayesinde normalde 300-800 KB olacaktır)
+    function isValidSize() {
+      return request.resource.size <= 5 * 1024 * 1024;
+    }
+
+    // Gönderi fotoğrafları (posts/)
+    match /posts/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isImage() && isValidSize();
+    }
+
+    // Profil ve Kapak fotoğrafları (avatars/, banners/)
+    match /avatars/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isImage() && isValidSize();
+    }
+    match /banners/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isImage() && isValidSize();
+    }
+
+    // Sohbet içi medya (chats/)
+    match /chats/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isImage() && isValidSize();
+    }
+
+    // Hikayeler (stories/)
+    match /stories/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidSize();
+    }
+  }
+}

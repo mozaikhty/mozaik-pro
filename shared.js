@@ -164,3 +164,65 @@ window.quickFollow = async function(targetUser) {
         console.error("Takip etme hatası: ", e);
     }
 };
+
+// =====================================
+// 7. AKILLI GÖRSEL SIKIŞTIRMA (CANVAS API)
+// =====================================
+// Kullanıcı 5 MB - 10 MB fotoğraf seçse dahi çözünürlüğü optimize eder,
+// .webp formatına çevirir ve dosya boyutunu maksimum 800 KB (500 KB - 1 MB) altına indirir.
+
+window.compressImage = function(file, maxWidth = 1200, maxHeight = 1200, quality = 0.75, maxSizeBytes = 800 * 1024) {
+    return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) return resolve(file);
+        
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = event => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                // En boy oranını koruyarak maksimum sınırları uygula
+                if (width > height && width > maxWidth) {
+                    height = Math.round(height * (maxWidth / width));
+                    width = maxWidth;
+                } else if (height > maxHeight) {
+                    width = Math.round(width * (maxHeight / height));
+                    height = maxHeight;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Kademeli sıkıştırma: Dosya hedef boyutu aşarsa kaliteyi düşür
+                const tryCompress = (q) => {
+                    canvas.toBlob(blob => {
+                        if (!blob) return resolve(file);
+                        
+                        // Hedef boyuttan büyükse ve kalite 0.4'ün üzerindeyse kaliteyi azaltıp tekrar dene
+                        if (blob.size > maxSizeBytes && q > 0.4) {
+                            tryCompress(q - 0.15);
+                        } else {
+                            const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+                            const compressedFile = new File([blob], newFileName, {
+                                type: 'image/webp',
+                                lastModified: Date.now()
+                            });
+                            resolve(compressedFile);
+                        }
+                    }, 'image/webp', q);
+                };
+                
+                tryCompress(quality);
+            };
+            img.onerror = error => reject(error);
+        };
+        reader.onerror = error => reject(error);
+    });
+};
+

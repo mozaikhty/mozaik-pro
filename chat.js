@@ -1,6 +1,6 @@
 import './app.js';
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, doc, where, arrayUnion, arrayRemove, deleteDoc, limitToLast } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 import { auth, db, storage } from './firebase-config.js';
 import './shared.js';
@@ -390,7 +390,7 @@ function loadMessages() {
     const collectionName = isGroupChat ? "groups" : "chats";
     const messagesRef = collection(db, collectionName, chatId, "messages");
     
-    unsubscribeMessages = onSnapshot(query(messagesRef, orderBy("createdAt", "asc")), (snapshot) => {
+    unsubscribeMessages = onSnapshot(query(messagesRef, orderBy("createdAt", "asc"), limitToLast(50)), (snapshot) => {
         const messagesContainer = document.getElementById('chat-messages');
         if(!messagesContainer) return;
         
@@ -464,11 +464,23 @@ const msgInput = document.getElementById('msg-input');
 const sendBtn = document.getElementById('send-btn');
 const imgInput = document.getElementById('chat-image-input');
 
+let lastTypingUpdate = 0;
 msgInput?.addEventListener('input', () => {
     if (!chatId) return;
+    const now = Date.now();
     const chatRef = doc(db, isGroupChat ? "groups" : "chats", chatId);
-    updateDoc(chatRef, { [`typing.${myUsername}`]: true }).catch(e=>{});
-    clearTimeout(typingTimeout); typingTimeout = setTimeout(() => { updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{}); }, 1500);
+    
+    // Her tuş vuruşunda değil, en fazla 2 saniyede bir kez Firestore'a yaz (Billing koruması)
+    if (now - lastTypingUpdate > 2000) {
+        lastTypingUpdate = now;
+        updateDoc(chatRef, { [`typing.${myUsername}`]: true }).catch(e=>{});
+    }
+    
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
+        lastTypingUpdate = 0;
+    }, 2000);
 });
 
 async function sendMessage() {
@@ -493,9 +505,11 @@ async function sendMessage() {
     try {
         let imgUrl = null;
         if(file) {
-            const fileName = `chats/${Date.now()}_${file.name}`;
+            // Sohbet fotoğrafını yüklemeden önce sıkıştır (Maks 1200px ve maks 800 KB)
+            const compressedImg = await window.compressImage(file, 1200, 1200, 0.75, 800 * 1024);
+            const fileName = `chats/${Date.now()}_${compressedImg.name}`;
             const storageRef = ref(storage, fileName);
-            await uploadBytes(storageRef, file);
+            await uploadBytes(storageRef, compressedImg);
             imgUrl = await getDownloadURL(storageRef);
         }
         
