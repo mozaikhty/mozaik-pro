@@ -31,7 +31,7 @@ onAuthStateChanged(auth, async (user) => {
             loadActivityStream(); 
             
         } catch (error) {
-            console.error("Yetki kontrolü sırasında hata oluştu:", error);
+            console.error("Yetki kontrolü başarısız:", error.code || "Bilinmeyen hata");
             if (window.showToast) window.showToast("Bağlantı hatası. Yönlendiriliyorsunuz.", "error");
             else alert("Bağlantı hatası veya yetkisiz erişim. Anasayfaya yönlendiriliyorsunuz.");
             setTimeout(() => { window.location.href = "feed.html"; }, 1500);
@@ -74,12 +74,12 @@ function renderUserList(users) {
 
         list.innerHTML += `
             <div class="list-item">
-                <div class="user-info">@${user.id} ${badgesHtml}</div>
+                <div class="user-info">@${window.escapeHtml(user.id)} ${badgesHtml}</div>
                 <div class="action-btns">
-                    <button class="btn-verify" onclick="window.toggleVerify('${user.id}', ${isVerified})">${isVerified ? 'Tiki Al' : 'Tik Ver'}</button>
-                    <button class="${isBanned ? 'btn-unban' : 'btn-ban'}" onclick="window.toggleBan('${user.id}', ${isBanned})">${isBanned ? 'Ban Aç' : 'Banla'}</button>
-                    <button class="btn-posts" onclick="window.viewUserPosts('${user.id}')">Postlar</button>
-                    <button class="btn-delete" onclick="window.deleteUserCompletely('${user.id}')">Sil</button>
+                    <button class="btn-verify" onclick="window.toggleVerify('${window.escapeHtml(user.id)}', ${isVerified})">${isVerified ? 'Tiki Al' : 'Tik Ver'}</button>
+                    <button class="${isBanned ? 'btn-unban' : 'btn-ban'}" onclick="window.toggleBan('${window.escapeHtml(user.id)}', ${isBanned})">${isBanned ? 'Ban Aç' : 'Banla'}</button>
+                    <button class="btn-posts" onclick="window.viewUserPosts('${window.escapeHtml(user.id)}')">Postlar</button>
+                    <button class="btn-delete" onclick="window.deleteUserCompletely('${window.escapeHtml(user.id)}')">Sil</button>
                 </div>
             </div>
         `;
@@ -102,7 +102,7 @@ document.getElementById('admin-user-search')?.addEventListener('input', async (e
             let searchResults = [];
             snap.forEach(d => searchResults.push({ id: d.id, ...d.data() }));
             renderUserList(searchResults);
-        } catch(error) { console.error("Admin arama hatası:", error); }
+        } catch(error) { console.error("Arama hatası:", error.code || "Bilinmeyen hata"); }
     }, 500); 
 });
 
@@ -118,8 +118,8 @@ window.deleteUserCompletely = async function(username) {
             const userSnap = await getDoc(userRef);
             if(userSnap.exists()) {
                 const uData = userSnap.data();
-                if(uData.avatarUrl) await deleteObject(ref(storage, uData.avatarUrl)).catch(()=>console.log("Avatar zaten silinmiş veya bulunamadı."));
-                if(uData.bannerUrl) await deleteObject(ref(storage, uData.bannerUrl)).catch(()=>console.log("Banner zaten silinmiş veya bulunamadı."));
+                if(uData.avatarUrl) await deleteObject(ref(storage, uData.avatarUrl)).catch(()=>{});
+                if(uData.bannerUrl) await deleteObject(ref(storage, uData.bannerUrl)).catch(()=>{});
             }
 
             // 2. Kullanıcının gönderi fotoğraflarını ve postları sil
@@ -128,7 +128,7 @@ window.deleteUserCompletely = async function(username) {
             for (const d of snap.docs) {
                 const postData = d.data();
                 if(postData.imageUrl && !postData.isRepost) {
-                    await deleteObject(ref(storage, postData.imageUrl)).catch(()=>console.log("Post resmi zaten silinmiş veya bulunamadı."));
+                    await deleteObject(ref(storage, postData.imageUrl)).catch(()=>{});
                 }
                 await deleteDoc(doc(db, "posts", d.id));
             }
@@ -139,9 +139,9 @@ window.deleteUserCompletely = async function(username) {
             if(window.showToast) window.showToast("Kullanıcı ve tüm verileri kazındı!", "success");
             else alert("Kullanıcı ve tüm verileri kazındı!");
         } catch(error) {
-            console.error("Kullanıcı silme hatası:", error);
-            if(window.showToast) window.showToast("Silme hatası: " + error.message, "error");
-            else alert("Silme hatası: " + error.message);
+            console.error("Kullanıcı silinemedi:", error.code || "Bilinmeyen hata");
+            if(window.showToast) window.showToast("Kullanıcı silinirken bir hata oluştu.", "error");
+            else alert("Kullanıcı silinirken bir hata oluştu.");
         }
     }
 };
@@ -162,12 +162,12 @@ window.viewUserPosts = async function(username) {
     snap.forEach(d => {
         const data = d.data();
         const cleanContent = DOMPurify.sanitize(data.content || '');
-        const imageHtml = data.imageUrl ? `<img src="${data.imageUrl}" style="max-width:100%; border-radius:5px; margin-bottom:10px; pointer-events:none;">` : '';
+        const imageHtml = data.imageUrl ? `<img src="${window.sanitizeUrl(data.imageUrl)}" style="max-width:100%; border-radius:5px; margin-bottom:10px; pointer-events:none;">` : '';
         html += `
             <div class="admin-post-item" id="admin-post-${d.id}">
                 <div class="admin-post-content">${cleanContent}</div>
                 ${imageHtml}
-                <button class="admin-delete-post-btn" onclick="window.adminDeletePost('${d.id}', '${username}')">🚨 Kurallara Aykırı - Sil ve Bildir</button>
+                <button class="admin-delete-post-btn" onclick="window.adminDeletePost('${d.id}', '${window.escapeHtml(username)}')">🚨 Kurallara Aykırı - Sil ve Bildir</button>
             </div>
         `;
     });
@@ -184,7 +184,7 @@ window.adminDeletePost = async function(postId, author) {
             if(postSnap.exists()) {
                 const postData = postSnap.data();
                 if(postData.imageUrl && !postData.isRepost) {
-                    await deleteObject(ref(storage, postData.imageUrl)).catch(()=>console.log("Resim bulunamadı."));
+                    await deleteObject(ref(storage, postData.imageUrl)).catch(()=>{});
                 }
             }
 
@@ -198,7 +198,7 @@ window.adminDeletePost = async function(postId, author) {
             else alert("Gönderi ve fotoğraf kalıcı olarak silindi!");
             
         } catch(error) {
-            console.error("Gönderi silme hatası:", error);
+            console.error("Gönderi silinemedi:", error.code || "Bilinmeyen hata");
             if(window.showToast) window.showToast("Gönderi silinemedi.", "error");
             else alert("Gönderi silinemedi.");
         }
@@ -257,7 +257,7 @@ actSearchInput?.addEventListener('input', (e) => {
         filtered.forEach(u => {
             const div = document.createElement('div');
             div.className = 'autocomplete-item';
-            div.innerHTML = `👤 <span>@${u.id}</span>`;
+            div.innerHTML = `👤 <span>@${window.escapeHtml(u.id)}</span>`;
             div.onclick = () => {
                 actSearchInput.value = '@' + u.id; 
                 actAutoList.style.display = 'none'; 
@@ -278,11 +278,12 @@ function createLogHtml(log) {
     let timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Az önce';
     if (log._actType === 'post') {
         let contentPreview = log.content ? (log.content.length > 50 ? log.content.substring(0, 50) + '...' : log.content) : '(Sadece Fotoğraf)';
+        let safePreview = DOMPurify.sanitize(contentPreview);
         return `
             <div class="activity-item act-post">
                 <div class="act-icon">📝</div>
                 <div class="act-content">
-                    <b>@${log.author}</b> yeni bir gönderi paylaştı: <i>"${contentPreview}"</i>
+                    <b>@${window.escapeHtml(log.author)}</b> yeni bir gönderi paylaştı: <i>"${safePreview}"</i>
                     <span class="act-time">${timeStr}</span>
                 </div>
             </div>`;
@@ -299,7 +300,7 @@ function createLogHtml(log) {
             <div class="activity-item ${cssClass}">
                 <div class="act-icon">${icon}</div>
                 <div class="act-content">
-                    <b>@${log.sender}</b>, <b>@${log.recipient}</b> adlı kullanıcının ${actionText}
+                    <b>@${window.escapeHtml(log.sender)}</b>, <b>@${window.escapeHtml(log.recipient)}</b> adlı kullanıcının ${actionText}
                     <span class="act-time">${timeStr}</span>
                 </div>
             </div>`;
@@ -370,13 +371,13 @@ function loadTickets() {
             const cleanMsg = DOMPurify.sanitize(data.message || '');
             
             list.innerHTML += `
-                <div class="ticket-item" id="ticket-${docSnap.id}">
+                <div class="ticket-item" id="ticket-${window.escapeHtml(docSnap.id)}">
                     <div class="ticket-header">
-                        <span style="color:#3498db;">Gönderen: <b style="color:white;">@${data.sender || 'Bilinmeyen'}</b></span>
+                        <span style="color:#3498db;">Gönderen: <b style="color:white;">@${window.escapeHtml(data.sender || 'Bilinmeyen')}</b></span>
                         <span>${dateStr}</span>
                     </div>
                     <div class="ticket-msg" style="margin-top:10px; margin-bottom:15px; font-style:italic;">"${cleanMsg}"</div>
-                    <button class="delete-ticket" onclick="window.deleteTicket('${docSnap.id}')">Çözüldü Olarak İşaretle (Sil)</button>
+                    <button class="delete-ticket" onclick="window.deleteTicket('${window.escapeHtml(docSnap.id)}')">Çözüldü Olarak İşaretle (Sil)</button>
                     <div style="clear:both;"></div>
                 </div>
             `;

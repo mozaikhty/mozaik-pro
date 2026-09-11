@@ -152,7 +152,9 @@ window.showToast = function(message, type = 'success') {
     if(type === 'error') icon = '❌';
     if(type === 'info') icon = 'ℹ️';
 
-    toast.innerHTML = '<span>' + icon + '</span> <span>' + message + '</span>';
+    // Güvenlik: Mesajı escape et (XSS önlemi)
+    const safeMessage = window.escapeHtml ? window.escapeHtml(message) : message;
+    toast.innerHTML = '<span>' + icon + '</span> <span>' + safeMessage + '</span>';
     container.appendChild(toast);
 
     setTimeout(() => toast.classList.add('show'), 10);

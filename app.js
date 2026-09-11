@@ -60,7 +60,7 @@ window.logoutUser = function() {
         // Giriş sayfasına yönlendir
         window.location.href = "index.html"; 
     }).catch((error) => {
-        console.error("Çıkış yapılırken hata oluştu:", error);
+        console.error("Çıkış hatası:", error.code || "Bilinmeyen hata");
         alert("Çıkış yapılamadı, lütfen tekrar deneyin.");
     });
 };
@@ -71,14 +71,9 @@ window.logoutUser = function() {
  */
 window.showToast = function(message, type = 'info') {
     if(type === 'error') {
-        console.error(message);
         alert("Hata: " + message);
-    } else if(type === 'success') {
-        console.log("Başarılı: " + message);
-        // alert(message); // Başarılı mesajlarını alert ile bölmemek için yoruma alındı
-    } else {
-        console.log(message);
     }
+    // Başarılı ve bilgi mesajları sessizce işlenir (üretim ortamında konsola log atılmaz)
 };
 
 /**
@@ -88,11 +83,7 @@ window.showToast = function(message, type = 'info') {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then((registration) => {
-        console.log('PWA Service Worker başarıyla kaydedildi! Kapsam:', registration.scope);
-      })
-      .catch((error) => {
-        console.log('PWA Service Worker kaydı başarısız oldu:', error);
-      });
+      .then(() => {})
+      .catch(() => {});
   });
 }

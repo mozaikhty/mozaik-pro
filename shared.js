@@ -8,6 +8,38 @@ import { collection, addDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, serverT
 import { db } from './firebase-config.js';
 
 // =====================================
+// 0. GÜVENLİK YARDIMCI FONKSİYONLARI
+// =====================================
+
+/**
+ * HTML özel karakterlerini escape eder. XSS saldırılarını önler.
+ * Kullanıcı verileri (fullName, location, username vb.) innerHTML'e
+ * yerleştirilmeden ÖNCE bu fonksiyondan geçirilmelidir.
+ */
+window.escapeHtml = function(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/`/g, '&#96;');
+};
+
+/**
+ * URL'lerin güvenli olduğunu doğrular. Yalnızca https:// ile başlayan
+ * URL'leri kabul eder. javascript:, data:, vbscript: gibi tehlikeli
+ * protokolleri engeller. Geçersiz URL'ler için boş string döner.
+ */
+window.sanitizeUrl = function(url) {
+    if (!url || typeof url !== 'string') return '';
+    const trimmed = url.trim();
+    if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) return trimmed;
+    return '';
+};
+
+// =====================================
 // 1. EKSİK KULLANICI VERİLERİNİ ÇEKME
 // =====================================
 // Her sayfa kendi allUsersData nesnesini tutar ve window.allUsersData olarak paylaşır.
@@ -42,11 +74,12 @@ window.showUserList = function(title, userArray) {
         let html = '';
         userArray.forEach(uname => {
             let uData = allUsersData[uname] || {}; 
-            let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; 
+            const safeAvatarUrl = window.sanitizeUrl(uData.avatarUrl);
+            let avatarHtml = safeAvatarUrl ? `<img src="${safeAvatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; 
             let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
-            // DOMPurify varsa sanitize et, yoksa düz metin kullan
-            let safeName = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(uData.fullName || uname) : (uData.fullName || uname);
-            html += `<div onclick="window.location.href='profile.html?user=${uname}'" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${safeName} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
+            let safeName = window.escapeHtml(uData.fullName || uname);
+            const safeUname = window.escapeHtml(uname);
+            html += `<div onclick="window.location.href='profile.html?user=${safeUname}'" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${safeName} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${safeUname}</div></div></div>`;
         });
         container.innerHTML = html;
     }
@@ -99,6 +132,7 @@ window.sendSupportMessage = async function() {
     const message = input ? input.value.trim() : '';
     
     if (!message) { window.showToast?.("Lütfen bir mesaj yazın.", "error") || alert("Lütfen bir mesaj yazın."); return; }
+    if (message.length > 2000) { window.showToast?.("Mesajınız en fazla 2000 karakter olabilir.", "error") || alert("Mesajınız en fazla 2000 karakter olabilir."); return; }
     if(btn) { btn.disabled = true; btn.innerText = "Gönderiliyor..."; }
 
     try {
@@ -115,7 +149,7 @@ window.sendSupportMessage = async function() {
         const modal = document.getElementById('support-modal');
         if(modal) modal.style.display = 'none';
     } catch (error) {
-        console.error("Hata:", error);
+        console.error("Destek bileti gönderilemedi:", error.code || "Bilinmeyen hata");
         alert("Mesaj gönderilirken bir hata oluştu.");
     } finally {
         if(btn) { btn.disabled = false; btn.innerText = "Gönder"; }
@@ -161,7 +195,7 @@ window.quickFollow = async function(targetUser) {
             await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUser, createdAt: serverTimestamp() });
         }
     } catch (e) {
-        console.error("Takip etme hatası: ", e);
+        console.error("Hızlı takip hatası:", e.code || "Bilinmeyen hata");
     }
 };
 

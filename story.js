@@ -112,6 +112,7 @@ setTimeout(() => { makeDraggable('editor-image-preview', 'image'); makeDraggable
 
 document.getElementById('submit-story-btn')?.addEventListener('click', async () => {
     const textVal = document.getElementById('story-text-input').value.trim();
+    if (textVal && textVal.length > 300) { alert("Hikaye metni en fazla 300 karakter olabilir!"); return; }
     let rawFile = document.getElementById('story-image-input').files[0];
     let file = rawFile;
     if(!textVal && !rawFile) return;
@@ -143,7 +144,7 @@ document.getElementById('submit-story-btn')?.addEventListener('click', async () 
 
         await updateDoc(doc(db, "users", window.myUsername), { stories: arrayUnion(newStory) });
         document.getElementById('add-story-modal').style.display = 'none';
-    } catch(e) { console.error("Hikaye yükleme hatası:", e); alert("Hata oluştu."); } 
+    } catch(e) { console.error("Hikaye yükleme hatası:", e.code || "Bilinmeyen hata"); alert("Hata oluştu."); } 
     finally { btn.disabled = false; btn.innerText = "Hikayemi Yayınla"; }
 });
 
@@ -191,10 +192,10 @@ window.renderStories = function() {
     }
 
     window.activeStoryUsers.forEach(uObj => {
-        const uData = window.allUsersData[uObj.username]; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤'; 
+        const uData = window.allUsersData[uObj.username]; const avatar = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}">` : '👤'; 
         const safeName = uObj.username === window.myUsername ? 'Sen' : DOMPurify.sanitize(uData.fullName ? uData.fullName.split(' ')[0] : uObj.username);
         const allRead = uObj.stories.every(s => readStories.includes(s.id)); const ringClass = allRead ? 'read' : 'unread';
-        html += `<div class="story-item" onclick="window.openStoryViewer('${uObj.username}')"><div class="story-avatar-wrapper ${ringClass}"><div class="story-avatar">${avatar}</div></div><div class="story-username">${safeName}</div></div>`;
+        html += `<div class="story-item" onclick="window.openStoryViewer('${window.escapeHtml(uObj.username)}')"><div class="story-avatar-wrapper ${ringClass}"><div class="story-avatar">${avatar}</div></div><div class="story-username">${safeName}</div></div>`;
     });
     container.innerHTML = html;
 }
@@ -250,7 +251,7 @@ function renderCurrentStory() {
     const uData = window.allUsersData[userObj.username];
     const safeFullName = DOMPurify.sanitize(uData.fullName || userObj.username);
 
-    document.getElementById('story-viewer-avatar-container').innerHTML = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
+    document.getElementById('story-viewer-avatar-container').innerHTML = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
     document.getElementById('story-viewer-name').innerHTML = `${safeFullName} ${uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
     const secs = Math.floor((Date.now() - story.createdAt) / 1000); document.getElementById('story-viewer-time').innerText = secs < 60 ? `${secs}s` : (secs < 3600 ? `${Math.floor(secs/60)}d` : `${Math.floor(secs/3600)}sa`);
 
@@ -359,11 +360,12 @@ window.sendQuickReaction = async function(emoji) {
         
         await addDoc(collection(db, "chats", chatId, "messages"), { text: `${storySummary}\n\n${emoji}`, sender: window.myUsername, createdAt: serverTimestamp(), isRead: false, type: 'regular' });
         await setDoc(doc(db, "chats", chatId), { participants: [window.myUsername, targetUser], lastMessage: `${emoji} Hikayeye tepki`, lastSender: window.myUsername, unreadBy: [targetUser], updatedAt: serverTimestamp() }, { merge: true });
-    } catch(e) { console.error("Tepki gönderilemedi:", e); }
+    } catch(e) { console.error("Tepki gönderilemedi:", e.code || "Bilinmeyen hata"); }
 };
 
 window.sendStoryReply = async function() {
     const input = document.getElementById('story-reply-input'); const text = input.value.trim(); if(!text) return;
+    if (text.length > 500) { alert("Yanıtınız en fazla 500 karakter olabilir!"); return; }
     const targetUser = window.activeStoryUsers[window.currentStoryUserIndex].username; if (targetUser === window.myUsername) return; 
     const chatId = [window.myUsername, targetUser].sort().join('_'); const story = window.activeStoryUsers[window.currentStoryUserIndex].stories[window.currentStoryIndex];
     let storySummary = "🖼️ Hikayeye Yanıt: " + (story.mediaType === 'video' ? "(Video)" : (story.imageUrl ? "(Görsel)" : `"${story.text.substring(0, 20)}..."`));
@@ -411,9 +413,9 @@ window.switchStoryDetailsTab = function(tabName) {
         if (listData.length === 0) { container.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Henüz kimse yok.</p>`; return; }
         let html = '';
         listData.forEach(uname => {
-            let uData = window.allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
+            let uData = window.allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}">` : `👤`; let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">☑️</span>' : '';
             const safeName = DOMPurify.sanitize(uData.fullName || uname);
-            html += `<div class="user-row" onclick="window.location.href='profile.html?user=${uname}'"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${safeName} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div></div>`;
+            html += `<div class="user-row" onclick="window.location.href='profile.html?user=${window.escapeHtml(uname)}'"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${safeName} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${window.escapeHtml(uname)}</div></div></div>`;
         });
         container.innerHTML = html;
     } catch(e) {}
@@ -425,9 +427,9 @@ window.openStoryShareModal = function() {
     else {
         let html = '';
         window.myFollowingList.forEach(uname => {
-            let uData = window.allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${uData.avatarUrl}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
+            let uData = window.allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${window.sanitizeUrl(uData.avatarUrl)}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
             const safeName = DOMPurify.sanitize(uData.fullName || uname);
-            html += `<div class=\"user-row\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${safeName} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${uname}</div></div><button onclick=\"window.sendStoryAsMessage('${uname}')\" style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
+            html += `<div class=\"user-row\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${safeName} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${window.escapeHtml(uname)}</div></div><button onclick=\"window.sendStoryAsMessage('${window.escapeHtml(uname)}')\" style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
         });
         container.innerHTML = html;
     }
@@ -471,27 +473,22 @@ window.cleanupExpiredStories = async function() {
 
                 // Eğer süresi dolmuş hikaye varsa temizlik operasyonunu başlat
                 if (expiredStories.length > 0) {
-                    console.log(`${expiredStories.length} adet eski hikaye tespit edildi. Temizleniyor...`);
-
                     // 1. Dosyaları Firebase Storage'dan kalıcı olarak sil
                     for (const story of expiredStories) {
                         if (story.imageUrl) {
                             try {
                                 const fileRef = ref(storage, story.imageUrl);
                                 await deleteObject(fileRef);
-                            } catch(e) { 
-                                console.warn("Storage'dan dosya silinemedi (Belki zaten silinmiş):", e); 
-                            }
+                            } catch(e) {}
                         }
                     }
 
                     // 2. Veritabanını (Firestore) sadece geçerli hikayeler kalacak şekilde güncelle
                     await updateDoc(userRef, { stories: validStories });
-                    console.log("Çöp toplama işlemi tamamlandı. Sunucu maliyetinden tasarruf edildi!");
                 }
             }
         }
     } catch(e) { 
-        console.error("Çöp toplayıcı hatası:", e); 
+        console.error("Hikaye temizleme hatası:", e.code || "Bilinmeyen hata"); 
     }
 };

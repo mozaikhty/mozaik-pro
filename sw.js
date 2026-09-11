@@ -12,7 +12,6 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Dosyalar önbelleğe alındı.');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -25,7 +24,6 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('Eski önbellek temizlendi:', cache);
             return caches.delete(cache);
           }
         })

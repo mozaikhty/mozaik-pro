@@ -135,20 +135,20 @@ function renderWhoToFollow() {
     let html = '';
     eligibleUsers.forEach(uid => {
         const uData = allUsersData[uid];
-        const avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
-        const fullName = uData.fullName || uid;
+        const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+        const fullName = window.escapeHtml(uData.fullName || uid);
         const vHtml = uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
         
         html += `
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${uid}'">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'">
                 <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
                     <div style="width:40px; height:40px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:20px; flex-shrink:0; border: 1px solid #cbd5e1;">${avatarHtml}</div>
                     <div style="overflow:hidden;">
                         <div style="font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f172a;">${fullName} ${vHtml}</div>
-                        <div style="color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${uid}</div>
+                        <div style="color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${window.escapeHtml(uid)}</div>
                     </div>
                 </div>
-                <button onclick="event.stopPropagation(); window.quickFollow('${uid}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;">Ekle</button>
+                <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;">Ekle</button>
             </div>
         `;
     });
@@ -184,7 +184,7 @@ function fetchData() {
             const mobFolersCount = document.getElementById('sidebar-followers-count'); if(mobFolersCount) mobFolersCount.innerText = (u.followers || []).length;
             
             if(u.avatarUrl) {
-                const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                const imgTag = `<img src="${window.sanitizeUrl(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">`;
                 const hAv = document.getElementById('mobile-avatar-header'); if(hAv) hAv.innerHTML = imgTag;
                 const sAv = document.getElementById('sidebar-avatar-mobile'); if(sAv) sAv.innerHTML = imgTag;
                 const dAv = document.getElementById('desktop-sidebar-avatar'); if(dAv) dAv.innerHTML = imgTag;
@@ -213,7 +213,7 @@ function fetchData() {
             const urlParams = new URLSearchParams(window.location.search); 
             if(urlParams.get('tag') && currentTab === 'users') switchTab('tags'); else performSearch();
         } catch(error) {
-            console.error("Gündem yüklenirken hata:", error);
+            console.error("Gündem yükleme hatası:", error.code || "Bilinmeyen hata");
         }
     }
     loadTrendingPosts();
@@ -272,20 +272,20 @@ async function performSearch() {
                 const username = docSnap.id;
                 allUsersData[username] = user; 
                 
-                const avatarHtml = user.avatarUrl ? `<img src="${user.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
-                const fullName = user.fullName || username;
+                const avatarHtml = user.avatarUrl ? `<img src="${window.sanitizeUrl(user.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
+                const fullName = window.escapeHtml(user.fullName || username);
                 const vHtml = user.isVerified ? '<span style="color:#1da1f2; font-size:15px; margin-left:4px;">☑️</span>' : '';
-                html += `<a href="profile.html?user=${username}" class="search-user-item">
+                html += `<a href="profile.html?user=${window.escapeHtml(username)}" class="search-user-item">
                             <div class="search-avatar">${avatarHtml}</div>
                             <div class="search-user-info">
                                 <div class="search-username">${fullName} ${vHtml}</div>
-                                <div class="search-handle">@${username}</div>
+                                <div class="search-handle">@${window.escapeHtml(username)}</div>
                             </div>
                          </a>`;
             });
             resultsContainer.innerHTML = html;
         } catch(e) { 
-            console.error("Arama hatası:", e); 
+            console.error("Arama hatası:", e.code || "Bilinmeyen hata"); 
             resultsContainer.innerHTML = '<div style="color:#ef4444; padding:40px; text-align:center;">Arama yapılamadı.</div>'; 
         }
     } else {
@@ -310,17 +310,17 @@ async function performSearch() {
             const formattedContent = formatHashtags(cleanContent);
             const authorData = allUsersData[post.author] || {};
             const vHtml = authorData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
-            const fullName = authorData.fullName || post.author;
-            const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+            const fullName = window.escapeHtml(authorData.fullName || post.author);
+            const avatarImg = authorData.avatarUrl ? `<img src="${window.sanitizeUrl(authorData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
             
-            let locationHtml = post.location ? `<span style="font-size:13px; color:#3b82f6; margin-left:8px;">📍 ${post.location}</span>` : '';
+            let locationHtml = post.location ? `<span style="font-size:13px; color:#3b82f6; margin-left:8px;">📍 ${window.escapeHtml(post.location)}</span>` : '';
             
             html += `
-                <div class="post" onclick="window.location.href='profile.html?user=${post.author}'">
+                <div class="post" onclick="window.location.href='profile.html?user=${window.escapeHtml(post.author)}'">
                     <div class="post-left"><div class="post-avatar-img">${avatarImg}</div></div>
                     <div class="post-right">
                         <div class="post-header-info">
-                            <div class="author-group"><span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${post.author}</span> ${locationHtml}</div>
+                            <div class="author-group"><span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${window.escapeHtml(post.author)}</span> ${locationHtml}</div>
                         </div>
                         <div class="post-content">${formattedContent}</div>
                     </div>

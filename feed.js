@@ -55,7 +55,7 @@ onAuthStateChanged(auth, async (user) => {
                 document.getElementById('sidebar-name-mobile').innerText = u.fullName || myUsername; document.getElementById('sidebar-handle-mobile').innerText = '@' + myUsername;
                 document.getElementById('sidebar-following-count').innerText = myFollowingList.length; document.getElementById('sidebar-followers-count').innerText = (u.followers || []).length;
                 if(u.avatarUrl) {
-                    const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                    const imgTag = `<img src="${window.sanitizeUrl(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">`;
                     document.getElementById('desktop-input-avatar').innerHTML = imgTag; document.getElementById('mobile-avatar-header').innerHTML = imgTag;
                     document.getElementById('sidebar-avatar-mobile').innerHTML = imgTag; document.getElementById('modal-avatar').innerHTML = imgTag;
                     const deskAvatar = document.getElementById('desktop-sidebar-avatar'); if(deskAvatar) deskAvatar.innerHTML = imgTag;
@@ -124,7 +124,7 @@ async function loadFeedPosts(isLoadMore = false) {
         if (snapshot.docs.length < POSTS_PER_PAGE) { hasMorePosts = false; }
         if(window.currentOpenPostId) { window.openPostDetail(window.currentOpenPostId); }
         renderWhoToFollow(); renderFeed(); 
-    } catch(error) { console.error("Gönderiler yüklenirken hata oluştu:", error); }
+    } catch(error) { console.error("Gönderiler yüklenemedi:", error.code || "Bilinmeyen hata"); }
 }
 
 function renderWhoToFollow() {
@@ -134,9 +134,9 @@ function renderWhoToFollow() {
     if (eligibleUsers.length === 0) { container.innerHTML = '<div style="font-size:14px; color:#64748b; padding: 10px 0;">Şu an için yeni öneri yok.</div>'; return; }
     let html = '';
     eligibleUsers.forEach(uid => {
-        const uData = allUsersData[uid]; const avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
-        const fullName = uData.fullName || uid; const vHtml = uData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
-        html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${uid}'"><div style="display:flex; align-items:center; gap:10px; overflow:hidden;"><div style="width:40px; height:40px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:20px; flex-shrink:0; border: 1px solid #cbd5e1;">${avatarHtml}</div><div style="overflow:hidden;"><div style="font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f172a;">${fullName} ${vHtml}</div><div style="color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${uid}</div></div></div><button onclick="event.stopPropagation(); window.quickFollow('${uid}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;">Ekle</button></div>`;
+        const uData = allUsersData[uid]; const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+        const fullName = window.escapeHtml(uData.fullName || uid); const vHtml = uData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
+        html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'"><div style="display:flex; align-items:center; gap:10px; overflow:hidden;"><div style="width:40px; height:40px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:20px; flex-shrink:0; border: 1px solid #cbd5e1;">${avatarHtml}</div><div style="overflow:hidden;"><div style="font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f172a;">${fullName} ${vHtml}</div><div style="color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${window.escapeHtml(uid)}</div></div></div><button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;">Ekle</button></div>`;
     });
     container.innerHTML = html;
 }
@@ -222,7 +222,7 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         if (isModal) window.closeMainPostModal();
         loadFeedPosts();
         
-    } catch(e) { console.error("Gönderi paylaşılırken hata:", e); alert("Hata oluştu!"); btn.disabled = false; btn.innerText = "Yayınla"; }
+    } catch(e) { console.error("Gönderi paylaşımı başarısız:", e.code || "Bilinmeyen hata"); alert("Hata oluştu!"); btn.disabled = false; btn.innerText = "Yayınla"; }
 }
 
 document.getElementById('share-btn').addEventListener('click', () => submitPost('post-text', 'image-input', 'share-btn', 'image-preview-text', false));
@@ -266,6 +266,7 @@ window.openEditModal = function(postId, currentContent) { currentlyEditingPostId
 
 document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
     if(!currentlyEditingPostId) return; const newContent = document.getElementById('edit-post-input').value.trim(); if(!newContent) return;
+    if (newContent.length > 280) { alert("Gönderi en fazla 280 karakter olabilir!"); return; }
     const postObj = globalPosts.find(p => p.id === currentlyEditingPostId);
     if (postObj) { postObj.data.content = newContent; postObj.data.isEdited = true; renderFeed(); if (window.currentOpenPostId === currentlyEditingPostId) window.openPostDetail(currentlyEditingPostId); }
     document.getElementById('edit-post-modal').style.display = 'none';
@@ -277,8 +278,8 @@ window.openShareModal = function(postId, event) {
     if(myFollowingList.length === 0) { container.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; }
     else {
         myFollowingList.forEach(uname => {
-            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : `👤`; let vHtml = uData.isVerified ? `<span class="verified-badge">☑️</span>` : '';
-            container.innerHTML += `<div class="user-row"><div class="row-avatar">${avatarHtml}</div><div style="flex:1;"><div style="font-weight:700;">${uData.fullName || uname} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${uname}</div></div><button onclick="window.sendPostAsMessage('${uname}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;">Gönder</button></div>`;
+            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}">` : `👤`; let vHtml = uData.isVerified ? `<span class="verified-badge">☑️</span>` : '';
+            container.innerHTML += `<div class="user-row"><div class="row-avatar">${avatarHtml}</div><div style="flex:1;"><div style="font-weight:700;">${window.escapeHtml(uData.fullName || uname)} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${window.escapeHtml(uname)}</div></div><button onclick="window.sendPostAsMessage('${window.escapeHtml(uname)}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;">Gönder</button></div>`;
         });
     }
     document.getElementById('share-dm-modal').style.display = 'flex';
@@ -302,41 +303,43 @@ window.openPostDetail = async function(postId) {
         try {
             const pSnap = await getDoc(doc(db, "posts", postId));
             if (pSnap.exists()) {
-                postObj = { id: pSnap.id, data: pSnap.data() };
+                let pData = pSnap.data();
+                if(pData.content) pData.content = DOMPurify.sanitize(pData.content);
+                postObj = { id: pSnap.id, data: pData };
                 globalPosts.push(postObj);
                 const authorsToFetch = [postObj.data.author];
                 if (postObj.data.originalPostAuthor) authorsToFetch.push(postObj.data.originalPostAuthor);
                 await window.fetchMissingUsers(authorsToFetch);
             }
         } catch (e) {
-            console.error("Gönderi getirilemedi:", e);
+            console.error("Gönderi getirme hatası:", e.code || "Bilinmeyen hata");
         }
     }
     if(!postObj) return; const postData = postObj.data; 
     let originalAuthor = postData.author; if(postData.isRepost) { originalAuthor = postData.originalPostAuthor; }
     const authorData = allUsersData[originalAuthor] || {}; const likesArray = postData.likes || []; const isLiked = likesArray.includes(myUsername);
-    const vHtml = authorData.isVerified ? `<span class="verified-badge">☑️</span>` : ''; const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; const fullName = authorData.fullName || originalAuthor;
+    const vHtml = authorData.isVerified ? `<span class="verified-badge">☑️</span>` : ''; const avatarImg = authorData.avatarUrl ? `<img src="${window.sanitizeUrl(authorData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; const fullName = window.escapeHtml(authorData.fullName || originalAuthor);
     
     let timeString = "";
     if (postData.createdAt) { if (typeof postData.createdAt.toMillis === 'function') { timeString = new Date(postData.createdAt.toMillis()).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}); } else if (postData.createdAt.seconds) { timeString = new Date(postData.createdAt.seconds * 1000).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}); } }
     
-    let locHtml = postData.location ? `<span style="font-size:14px; color:#3b82f6; margin-left:10px;">📍 ${postData.location}</span>` : '';
-    let repostLabel = ""; if(postData.isRepost) { repostLabel = `<div style="color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;">🔁 @${postData.author} ağında paylaştı</div>`; }
+    let locHtml = postData.location ? `<span style="font-size:14px; color:#3b82f6; margin-left:10px;">📍 ${window.escapeHtml(postData.location)}</span>` : '';
+    let repostLabel = ""; if(postData.isRepost) { repostLabel = `<div style="color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;">🔁 @${window.escapeHtml(postData.author)} ağında paylaştı</div>`; }
 
     let html = `
         ${repostLabel}
         <div style="padding: 10px 25px 25px 25px; border-bottom:1px solid #f1f5f9;">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${originalAuthor}'">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
                 <div style="width:48px; height:48px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;">${avatarImg}</div>
                 <div style="flex:1;">
                     <div style="font-weight:700; font-size:16px; color:#0f172a;">${fullName} ${vHtml}</div>
-                    <div style="color:#64748b; font-size:14px;">@${originalAuthor} ${locHtml}</div>
+                    <div style="color:#64748b; font-size:14px;">@${window.escapeHtml(originalAuthor)} ${locHtml}</div>
                 </div>
             </div>
             <div style="font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;">
-                ${(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`)}
+                ${DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`)}
             </div>
-            ${postData.imageUrl ? `<img src="${postData.imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">` : ''}
+            ${postData.imageUrl ? `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">` : ''}
             <div style="color:#94a3b8; font-size:13px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;">${timeString}</div>
             
             <div style="display:flex; justify-content:flex-start; gap:30px; padding:15px 0; color:#64748b;">
@@ -360,11 +363,11 @@ function buildCommentsTree(allComments, parentId, depth = 0, postId = null, post
     if (depth > 15) return ''; let html = ''; const safeParentId = parentId || null;
     const children = allComments.filter(c => (c.parentId || null) === safeParentId).sort((a,b) => a.timestamp - b.timestamp);
     children.forEach(c => {
-        const cUserData = allUsersData[c.author] || {}; const avatarHtml = cUserData.avatarUrl ? `<img src="${cUserData.avatarUrl}">` : `👤`;
+        const cUserData = allUsersData[c.author] || {}; const avatarHtml = cUserData.avatarUrl ? `<img src="${window.sanitizeUrl(cUserData.avatarUrl)}">` : `👤`;
         const vHtml = cUserData.isVerified ? `<span class="verified-badge" style="font-size:12px;">☑️</span>` : '';
         const safeCommentId = c.id || ('legacy_' + Math.random().toString(36).substr(2, 9));
         let deleteBtnHtml = ''; if (myUsername === c.author || myUsername === postAuthor) { deleteBtnHtml = `<div class="comment-action-btn" style="color:#ef4444;" onclick="window.deleteComment('${postId}', '${safeCommentId}')">Sil</div>`; }
-        html += `<div class="comment-node"><div class="comment-header"><div class="comment-avatar" onclick="window.location.href='profile.html?user=${c.author}'" style="cursor:pointer;">${avatarHtml}</div><div class="comment-body"><div><a href="profile.html?user=${c.author}" class="comment-author-name">${cUserData.fullName || c.author}</a> ${vHtml} <span style="color:#64748b; font-size:13px; font-weight:normal;">@${c.author}</span></div><div class="comment-text">${c.text}</div><div class="comment-actions"><div class="comment-action-btn" onclick="window.setDetailReply('${safeCommentId}', '${c.author}')">Yanıtla</div>${deleteBtnHtml}</div></div></div><div class="comment-replies">${buildCommentsTree(allComments, safeCommentId, depth + 1, postId, postAuthor)}</div></div>`;
+        html += `<div class="comment-node"><div class="comment-header"><div class="comment-avatar" onclick="window.location.href='profile.html?user=${window.escapeHtml(c.author)}'" style="cursor:pointer;">${avatarHtml}</div><div class="comment-body"><div><a href="profile.html?user=${window.escapeHtml(c.author)}" class="comment-author-name">${window.escapeHtml(cUserData.fullName || c.author)}</a> ${vHtml} <span style="color:#64748b; font-size:13px; font-weight:normal;">@${window.escapeHtml(c.author)}</span></div><div class="comment-text">${DOMPurify.sanitize(c.text)}</div><div class="comment-actions"><div class="comment-action-btn" onclick="window.setDetailReply('${safeCommentId}', '${window.escapeHtml(c.author)}')">Yanıtla</div>${deleteBtnHtml}</div></div></div><div class="comment-replies">${buildCommentsTree(allComments, safeCommentId, depth + 1, postId, postAuthor)}</div></div>`;
     }); return html;
 }
 
@@ -378,7 +381,7 @@ window.sendDetailComment = async function(postId, postAuthor) {
         window.showToast?.("Lütfen yeni yorum için birkaç saniye bekleyin.", "info");
         return;
     }
-    const newComment = { id: generateUniqueId(), text: text, author: myUsername, timestamp: Date.now(), parentId: activeReplyParentId };
+    const newComment = { id: generateUniqueId(), text: DOMPurify.sanitize(text), author: myUsername, timestamp: Date.now(), parentId: activeReplyParentId };
     const postObj = globalPosts.find(p => p.id === postId);
     if (postObj) { if (!postObj.data.comments) postObj.data.comments = []; postObj.data.comments.push(newComment); renderFeed(); window.openPostDetail(postId); }
     await updateDoc(doc(db, "posts", postId), { comments: arrayUnion(newComment) });
@@ -414,16 +417,16 @@ function renderFeed() {
 
         displayedPosts++;
         const likesArray = postData.likes || []; const isLiked = likesArray.includes(myUsername); const editedHtml = postData.isEdited ? '<span style="font-size:12px; color:#94a3b8; font-style:italic; margin-left:5px;">(düzenlendi)</span>' : '';
-        const authorData = allUsersData[originalAuthor] || {}; const vHtml = authorData.isVerified ? `<span class="verified-badge">☑️</span>` : ''; const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; const fullName = authorData.fullName || originalAuthor;
+        const authorData = allUsersData[originalAuthor] || {}; const vHtml = authorData.isVerified ? `<span class="verified-badge">☑️</span>` : ''; const avatarImg = authorData.avatarUrl ? `<img src="${window.sanitizeUrl(authorData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; const fullName = window.escapeHtml(authorData.fullName || originalAuthor);
         
         let timeAgo = "";
         if(postData.createdAt) { let millis = 0; if (typeof postData.createdAt.toMillis === 'function') millis = postData.createdAt.toMillis(); else if (postData.createdAt.seconds) millis = postData.createdAt.seconds * 1000;
             if(millis > 0) { const secs = Math.floor((Date.now() - millis) / 1000); if(secs < 60) timeAgo = `${secs}s`; else if (secs < 3600) timeAgo = `${Math.floor(secs/60)}d`; else if (secs < 86400) timeAgo = `${Math.floor(secs/3600)}sa`; else timeAgo = `${Math.floor(secs/86400)}g`; } }
         
-        let locationHtml = postData.location ? `<span style="font-size:13px; color:#3b82f6; margin-left:8px;">📍 ${postData.location}</span>` : '';
+        let locationHtml = postData.location ? `<span style="font-size:13px; color:#3b82f6; margin-left:8px;">📍 ${window.escapeHtml(postData.location)}</span>` : '';
         const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
-        let repostHtml = ''; if(postData.isRepost) { const reposterName = postData.author === myUsername ? 'Sen' : (allUsersData[postData.author]?.fullName || postData.author); repostHtml = `<div class="repost-indicator" onclick="event.stopPropagation(); window.location.href='profile.html?user=${postData.author}'">🔁 ${reposterName} ağında paylaştı</div>`; }
+        let repostHtml = ''; if(postData.isRepost) { const reposterName = postData.author === myUsername ? 'Sen' : window.escapeHtml(allUsersData[postData.author]?.fullName || postData.author); repostHtml = `<div class="repost-indicator" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(postData.author)}'">🔁 ${reposterName} ağında paylaştı</div>`; }
 
         const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.onclick = () => window.openPostDetail(post.id); 
 
@@ -431,13 +434,13 @@ function renderFeed() {
             <div style="width:100%; display:flex; flex-direction:column;">
                 ${repostHtml}
                 <div style="display:flex; gap:15px;">
-                    <div class="post-left" onclick="event.stopPropagation(); window.location.href='profile.html?user=${originalAuthor}'">
+                    <div class="post-left" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
                         <div class="post-avatar-img">${avatarImg}</div>
                     </div>
                     <div class="post-right">
                         <div class="post-header-info">
-                            <div class="author-group" onclick="event.stopPropagation(); window.location.href='profile.html?user=${originalAuthor}'">
-                                <span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${originalAuthor}</span> <span class="post-time">· ${timeAgo}</span> ${locationHtml} ${editedHtml}
+                            <div class="author-group" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
+                                <span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${window.escapeHtml(originalAuthor)}</span> <span class="post-time">· ${timeAgo}</span> ${locationHtml} ${editedHtml}
                             </div>
                             <div style="position:relative;">
                                 <button class="post-options-btn" onclick="window.toggleDropdown('${post.id}', event)">•••</button>
@@ -450,8 +453,8 @@ function renderFeed() {
                                 </div>
                             </div>
                         </div>
-                        <div class="post-content">${(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`)}</div>
-                        ${postData.imageUrl ? `<div class="post-image-container" onclick="event.stopPropagation()"><img src="${postData.imageUrl}" class="post-image"></div>` : ''}
+                        <div class="post-content">${DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`)}</div>
+                        ${postData.imageUrl ? `<div class="post-image-container" onclick="event.stopPropagation()"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image"></div>` : ''}
                         <div class="post-footer-actions">
                             <div class="action-item" onclick="event.stopPropagation(); window.openPostDetail('${post.id}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
                             <div class="action-item repost-box" onclick="window.repostPost('${post.id}', '${originalAuthor}', event)" title="Ağınıza Ekle"><span class="action-icon">🔁</span> </div>

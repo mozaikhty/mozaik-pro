@@ -124,7 +124,7 @@ onAuthStateChanged(auth, async (user) => {
                 const mobFolersCount = document.getElementById('sidebar-followers-count'); if(mobFolersCount) mobFolersCount.innerText = (u.followers || []).length;
                 
                 if(u.avatarUrl) {
-                    const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                    const imgTag = `<img src="${window.sanitizeUrl(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">`;
                     const mobAv = document.getElementById('mobile-avatar-header'); if(mobAv) mobAv.innerHTML = imgTag;
                     const sideAv = document.getElementById('sidebar-avatar-mobile'); if(sideAv) sideAv.innerHTML = imgTag;
                     const deskAv = document.getElementById('desktop-sidebar-avatar'); if(deskAv) deskAv.innerHTML = imgTag;
@@ -217,7 +217,7 @@ function updateInboxDisplay() {
                 const otherUser = conv.participants.find(p => p !== myUsername); const uData = allUsersData[otherUser] || {};
                 title = DOMPurify.sanitize(`${uData.fullName || otherUser}`);
                 title += uData.isVerified ? '<span style="color:#3b82f6; font-size:14px; margin-left:4px;">☑️</span>' : '';
-                avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤'; link = `chat.html?user=${otherUser}`;
+                avatar = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}">` : '👤'; link = `chat.html?user=${window.escapeHtml(otherUser)}`;
             } else {
                 title = DOMPurify.sanitize(conv.name); 
                 avatar = `<div style="background:#10b981; color:white; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">👥</div>`; link = `chat.html?group=${conv.id}`;
@@ -243,10 +243,10 @@ document.getElementById('new-chat-search')?.addEventListener('input', debounce((
     const searchResults = Object.keys(allUsersData).filter(uid => uid !== myUsername && uid.toLowerCase().includes(text));
     if (searchResults.length > 0) {
         searchResults.forEach(uid => {
-            const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}">` : '👤';
+            const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}">` : '👤';
             const safeTitle = DOMPurify.sanitize(uData.fullName || uid);
             const title = `${safeTitle} ${uData.isVerified ? '<span style="color:#3b82f6; font-size:14px; margin-left:4px;">☑️</span>' : ''}`;
-            html += `<label class="group-user-label" onclick="window.location.href='chat.html?user=${uid}'"><div style="display:flex; align-items:center; gap:10px;"><div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1;">${avatar}</div>${title}</div></label>`;
+            html += `<label class="group-user-label" onclick="window.location.href='chat.html?user=${window.escapeHtml(uid)}'"><div style="display:flex; align-items:center; gap:10px;"><div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1;">${avatar}</div>${title}</div></label>`;
         });
     }
     container.innerHTML = html;
@@ -261,8 +261,8 @@ if (openGroupModalBtn) {
         let html = '';
         if(myFollowing.length === 0) { listDiv.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;">Önce ağınıza birilerini eklemelisiniz!</div>'; return; }
         myFollowing.forEach(uid => {
-            const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
-            html += `<label class="group-user-label"><div style="display:flex; align-items:center; gap:10px;"><div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1;">${avatar}</div>@${uid}</div><input type="checkbox" class="group-member-checkbox" value="${uid}" style="width:18px; height:18px;"></label>`;
+            const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%; height:100%; object-fit:cover;">` : '👤';
+            html += `<label class="group-user-label"><div style="display:flex; align-items:center; gap:10px;"><div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1;">${avatar}</div>@${window.escapeHtml(uid)}</div><input type="checkbox" class="group-member-checkbox" value="${window.escapeHtml(uid)}" style="width:18px; height:18px;"></label>`;
         });
         listDiv.innerHTML = html;
     });
@@ -271,6 +271,7 @@ if (openGroupModalBtn) {
 document.getElementById('create-group-btn')?.addEventListener('click', async () => {
     const groupNameInp = document.getElementById('group-name-input');
     const groupName = groupNameInp ? groupNameInp.value.trim() : '';
+    if (groupName.length > 50) { alert("Grup adı en fazla 50 karakter olabilir!"); return; }
     const selectedCheckboxes = document.querySelectorAll('.group-member-checkbox:checked');
     if(!groupName || selectedCheckboxes.length === 0) return alert("İsim ve en az 1 kişi gerekli!");
     const members = [myUsername, ...Array.from(selectedCheckboxes).map(cb => cb.value)]; 
@@ -302,7 +303,7 @@ async function setupActiveChat() {
                 const safeName = DOMPurify.sanitize(data.fullName || targetUsername);
                 const uText = document.getElementById('chat-username-text'); if(uText) uText.innerHTML = `${safeName} ${data.isVerified ? '<span style="color:#3b82f6; font-size:16px;">☑️</span>' : ''}`;
                 const cSub = document.getElementById('chat-subtitle'); if(cSub) cSub.innerText = `@${targetUsername}`;
-                const cAv = document.getElementById('chat-avatar'); if (data.avatarUrl && cAv) cAv.innerHTML = `<img src="${data.avatarUrl}">`; 
+                const cAv = document.getElementById('chat-avatar'); if (data.avatarUrl && cAv) cAv.innerHTML = `<img src="${window.sanitizeUrl(data.avatarUrl)}">`; 
             }
         } catch(e) {}
     } else if (targetGroupId) {
@@ -335,7 +336,7 @@ async function setupActiveChat() {
                 if(subtitle) subtitle.style.display = 'none'; 
                 if(indicator) {
                     indicator.style.display = 'flex'; 
-                    indicator.innerHTML = `<span>${isGroupChat ? typingUsers.join(', ') + ' yazıyor...' : 'yazıyor...'}</span>`;
+                    indicator.innerHTML = `<span>${isGroupChat ? window.escapeHtml(typingUsers.join(', ')) + ' yazıyor...' : 'yazıyor...'}</span>`;
                 } 
             } 
             else { 
@@ -381,6 +382,7 @@ window.editMessage = async function(msgId, oldText, timeMillis) {
     if (now - timeMillis > 900000) { alert("Sadece son 15 dakika içinde gönderilen mesajları düzenleyebilirsiniz!"); return; }
     const newText = prompt("Düzenleyin:", oldText);
     if (newText !== null && newText.trim() !== "" && newText !== oldText) { 
+        if (newText.trim().length > 1000) { alert("Mesaj en fazla 1000 karakter olabilir!"); return; }
         const colName = isGroupChat ? "groups" : "chats";
         await updateDoc(doc(db, colName, chatId, "messages", msgId), { text: newText.trim(), isEdited: true }); 
     }
@@ -418,7 +420,7 @@ function loadMessages() {
                 updateDoc(doc(db, collectionName, chatId, "messages", docSnap.id), { isRead: true }).catch(e=>{}); 
             }
 
-            let senderNameHtml = ''; if (isGroupChat && !isMe) senderNameHtml = `<div class="msg-sender-name">@${data.sender}</div>`;
+            let senderNameHtml = ''; if (isGroupChat && !isMe) senderNameHtml = `<div class="msg-sender-name">@${window.escapeHtml(data.sender)}</div>`;
 
             let tickHtml = '';
             if (isMe) {
@@ -426,8 +428,8 @@ function loadMessages() {
                 tickHtml = `<span class="msg-tick" style="color:${isRead ? '#6ee7b7' : 'rgba(255,255,255,0.6)'};" title="${isRead ? 'Görüldü' : 'İletildi'}">${isRead ? '✓✓' : '✓'}</span>`;
             }
 
-            let replyHtml = ''; if (data.replyTo) replyHtml = `<div class="quoted-msg"><b>@${data.replyTo.sender}</b>: ${data.replyTo.text}</div>`;
-            let imageHtml = ''; if (data.imageUrl) imageHtml = `<img src="${data.imageUrl}" class="msg-image">`;
+            let replyHtml = ''; if (data.replyTo) replyHtml = `<div class="quoted-msg"><b>@${window.escapeHtml(data.replyTo.sender)}</b>: ${data.replyTo.text}</div>`;
+            let imageHtml = ''; if (data.imageUrl) imageHtml = `<img src="${window.sanitizeUrl(data.imageUrl)}" class="msg-image">`;
             const safeText = data.text ? data.text.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
             
             let actionsHtml = `<div class="msg-actions">`;
@@ -515,7 +517,7 @@ async function sendMessage() {
         
         await sendActualMessage(text, imgUrl);
     } catch(e) {
-        console.error("Mesaj gönderim hatası:", e);
+        console.error("Mesaj gönderim hatası:", e.code || "Bilinmeyen hata");
         alert("Mesaj gönderilirken hata oluştu!");
     }
     
@@ -551,6 +553,7 @@ async function sendActualMessage(text, imgUrl) {
     const updateData = { lastMessage: summary, lastSender: myUsername, unreadBy: unreadList, updatedAt: serverTimestamp() };
 
     try {
+        if (text.length > 1000) { alert("Mesaj en fazla 1000 karakter olabilir!"); return; }
         if (!isGroupChat) {
             await setDoc(chatRef, { participants: [myUsername, targetUsername], ...updateData }, { merge: true });
         } else {
@@ -560,7 +563,6 @@ async function sendActualMessage(text, imgUrl) {
         await addDoc(messagesRef, msgData);
         await updateDoc(chatRef, { [`typing.${myUsername}`]: false }).catch(e=>{});
     } catch (error) {
-        console.error("Mesaj gönderilirken hata oluştu:", error);
         throw error;
     }
 }
@@ -711,7 +713,7 @@ document.getElementById('add-member-search')?.addEventListener('input', debounce
     if (searchResults.length > 0) {
         searchResults.forEach(uid => {
             const uData = allUsersData[uid] || {};
-            const avatar = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
+            const avatar = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
             const safeTitle = DOMPurify.sanitize(uData.fullName || uid);
             
             html += `
@@ -720,10 +722,10 @@ document.getElementById('add-member-search')?.addEventListener('input', debounce
                         <div style="width:36px; height:36px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1; display:flex; justify-content:center; align-items:center;">${avatar}</div>
                         <div>
                             <div style="font-weight:700; font-size:14px; color:#0f172a;">${safeTitle}</div>
-                            <div style="font-size:12px; color:#64748b;">@${uid}</div>
+                            <div style="font-size:12px; color:#64748b;">@${window.escapeHtml(uid)}</div>
                         </div>
                     </div>
-                    <button onclick="window.addMemberToGroup('${uid}')" style="background:#3b82f6; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600; transition:0.2s;">Ekle</button>
+                    <button onclick="window.addMemberToGroup('${window.escapeHtml(uid)}')" style="background:#3b82f6; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600; transition:0.2s;">Ekle</button>
                 </div>
             `;
         });
@@ -752,7 +754,7 @@ window.addMemberToGroup = async function(uid) {
         const modal = document.getElementById('add-member-modal'); if(modal) modal.style.display = 'none';
         
     } catch (error) {
-        console.error("Gruba kişi ekleme hatası:", error);
+        console.error("Gruba kişi eklenemedi:", error.code || "Bilinmeyen hata");
         window.showToast?.("Kişi eklenirken bir hata oluştu.", "error") || alert("Hata oluştu.");
     }
 };

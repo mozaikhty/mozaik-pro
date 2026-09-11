@@ -69,6 +69,9 @@ document.getElementById('register-btn').onclick = async function(e) {
         return showError("Lütfen tüm bilgileri eksiksiz doldurun.");
     }
     if(username.includes(' ')) return showError("Kullanıcı adında boşluk olamaz.");
+    if(!/^[a-zA-Z0-9._]{3,30}$/.test(username)) return showError("Kullanıcı adı 3-30 karakter olmalı ve sadece harf, rakam, nokta ve alt çizgi içerebilir.");
+    if(fullName.length > 50) return showError("İsim en fazla 50 karakter olabilir.");
+    if(location.length > 50) return showError("Konum en fazla 50 karakter olabilir.");
     if(pass.length < 6) return showError("Şifre en az 6 karakter olmalıdır.");
     if(pass !== passConfirm) return showError("Şifreler birbiriyle eşleşmiyor!");
     if(!/\d/.test(pass) || !/[a-zA-Z]/.test(pass)) return showError("Şifreniz en az bir harf ve bir rakam içermelidir.");
@@ -96,11 +99,11 @@ document.getElementById('register-btn').onclick = async function(e) {
             await updateProfile(user, { displayName: username });
             await user.getIdToken(true); 
         } catch (authError) {
-            console.error("Auth Kayıt Hatası:", authError);
+            console.error("Kayıt hatası kodu:", authError.code || "Bilinmeyen hata");
             window.kayitIslemiDevamEdiyor = false;
             btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl";
             if(authError.code === 'auth/email-already-in-use') return showError("Bu e-posta adresi zaten kullanılıyor.");
-            return showError("Hata: " + authError.message);
+            return showError("Kayıt sırasında bir hata oluştu. Lütfen bilgilerinizi kontrol edin.");
         }
 
         // Veritabanı Kaydı
@@ -115,17 +118,17 @@ document.getElementById('register-btn').onclick = async function(e) {
             localStorage.setItem('mozaik_username', username);
             
         } catch (firestoreError) {
-            console.error("Firestore Yazma Hatası:", firestoreError);
+            console.error("Kullanıcı veri kaydı hatası:", firestoreError.code || "Bilinmeyen hata");
             window.kayitIslemiDevamEdiyor = false;
             btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl";
-            return showError("Veritabanına yazılamadı! Lütfen konsolu kontrol edin.");
+            return showError("Hesap oluşturuldu ancak profil kaydedilemedi. Lütfen tekrar deneyin.");
         }
         
         // Başarılı giriş
         window.location.href = "feed.html"; 
         
     } catch (error) { 
-        console.error("Beklenmeyen Hata:", error); 
+        console.error("Beklenmeyen kayıt hatası:", error.code || "Bilinmeyen hata"); 
         window.kayitIslemiDevamEdiyor = false; 
         showError("Sistemde beklenmeyen bir hata oluştu.");
         btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl"; 
@@ -143,7 +146,12 @@ document.getElementById('send-reset-btn').addEventListener('click', async () => 
     try {
         await sendPasswordResetEmail(auth, email);
         forgotModal.style.display = 'none';
-        showSuccess("Şifre sıfırlama linki e-postanıza gönderildi!");
-    } catch(error) { alert("Hata: " + error.message); } 
+        showSuccess("Eğer bu e-posta sistemde kayıtlıysa, şifre sıfırlama linki gönderilmiştir.");
+    } catch(error) { 
+        console.error("Şifre sıfırlama hatası:", error.code || "Bilinmeyen hata");
+        // Güvenlik: Hangi e-postanın kayıtlı olduğunu ifşa etmemek için aynı mesajı göster
+        forgotModal.style.display = 'none';
+        showSuccess("Eğer bu e-posta sistemde kayıtlıysa, şifre sıfırlama linki gönderilmiştir.");
+    } 
     finally { btn.disabled = false; btn.innerText = "Sıfırlama Linki Gönder"; document.getElementById('forgot-email').value = ''; }
 });

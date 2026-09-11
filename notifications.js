@@ -46,7 +46,7 @@ onAuthStateChanged(auth, (user) => {
                 const mobFolersCount = document.getElementById('sidebar-followers-count'); if(mobFolersCount) mobFolersCount.innerText = (u.followers || []).length;
                 
                 if(u.avatarUrl) {
-                    const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                    const imgTag = `<img src="${window.sanitizeUrl(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">`;
                     const hAv = document.getElementById('mobile-avatar-header'); if(hAv) hAv.innerHTML = imgTag;
                     const sAv = document.getElementById('sidebar-avatar-mobile'); if(sAv) sAv.innerHTML = imgTag;
                     const dAv = document.getElementById('desktop-sidebar-avatar'); if(dAv) dAv.innerHTML = imgTag;
@@ -81,7 +81,7 @@ onAuthStateChanged(auth, (user) => {
             await window.fetchMissingUsers(Array.from(neededUsers));
             renderNotifications();
         }, (err) => {
-            console.error("Bildirimler dinlenirken hata oluştu:", err);
+            console.error("Bildirim akışı hatası:", err.code || "Bilinmeyen hata");
         });
 
     } else { window.location.href = "index.html"; }
@@ -106,20 +106,20 @@ function renderWhoToFollow() {
     let html = '';
     eligibleUsers.forEach(uid => {
         const uData = allUsersData[uid];
-        const avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
-        const fullName = uData.fullName || uid;
+        const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+        const fullName = window.escapeHtml(uData.fullName || uid);
         const vHtml = uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
         
         html += `
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${uid}'">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'">
                 <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
                     <div style="width:40px; height:40px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:20px; flex-shrink:0; border: 1px solid #cbd5e1;">${avatarHtml}</div>
                     <div style="overflow:hidden;">
                         <div style="font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f172a;">${fullName} ${vHtml}</div>
-                        <div style="color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${uid}</div>
+                        <div style="color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${window.escapeHtml(uid)}</div>
                     </div>
                 </div>
-                <button onclick="event.stopPropagation(); window.quickFollow('${uid}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;">Ekle</button>
+                <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;">Ekle</button>
             </div>
         `;
     });
@@ -137,7 +137,7 @@ window.deleteNotification = async function(notifId, event) {
             await deleteDoc(doc(db, "notifications", notifId));
             window.showToast?.("Bildirim silindi.", "info");
         } catch(e) {
-            console.error("Bildirim silinirken hata:", e);
+            console.error("Bildirim silme hatası:", e.code || "Bilinmeyen hata");
         }
     }
 };
@@ -152,15 +152,15 @@ function renderNotifications() {
         let html = '';
         myRequests.forEach(reqUser => {
             const uData = allUsersData[reqUser] || {};
-            const avatarHtml = uData.avatarUrl ? `<img src="${uData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+            const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
             html += `
                 <div class="notif-card" style="cursor:default;">
                     <div class="notif-avatar" style="width:44px; height:44px; font-size:22px; display:flex; justify-content:center; align-items:center;">${avatarHtml}</div>
                     <div class="notif-body">
-                        <div class="notif-text"><b>@${reqUser}</b> sizi ağına eklemek istiyor.</div>
+                        <div class="notif-text"><b>@${window.escapeHtml(reqUser)}</b> sizi ağına eklemek istiyor.</div>
                         <div class="btn-group">
-                            <button class="req-btn btn-accept" onclick="window.acceptRequest('${reqUser}')">Kabul Et</button>
-                            <button class="req-btn btn-reject" onclick="window.rejectRequest('${reqUser}')">Reddet</button>
+                            <button class="req-btn btn-accept" onclick="window.acceptRequest('${window.escapeHtml(reqUser)}')">Kabul Et</button>
+                            <button class="req-btn btn-reject" onclick="window.rejectRequest('${window.escapeHtml(reqUser)}')">Reddet</button>
                         </div>
                     </div>
                 </div>
@@ -172,12 +172,12 @@ function renderNotifications() {
         let html = '';
         myNotifications.forEach(notif => {
             const senderData = allUsersData[notif.sender] || {};
-            const avatarHtml = senderData.avatarUrl ? `<img src="${senderData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+            const avatarHtml = senderData.avatarUrl ? `<img src="${window.sanitizeUrl(senderData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
             
             let icon = ''; let text = ''; let link = '#';
-            if(notif.type === 'like') { icon = '❤️'; text = `<b>@${notif.sender}</b> içeriğinizi beğendi.`; link = `profile.html?post=${notif.postId}`; }
-            else if(notif.type === 'comment') { icon = '💬'; text = `<b>@${notif.sender}</b> içeriğinize yanıt verdi.`; link = `profile.html?post=${notif.postId}`; }
-            else if(notif.type === 'follow') { icon = '🤝'; text = `<b>@${notif.sender}</b> sizi ağına ekledi.`; link = `profile.html?user=${notif.sender}`; }
+            if(notif.type === 'like') { icon = '❤️'; text = `<b>@${window.escapeHtml(notif.sender)}</b> içeriğinizi beğendi.`; link = `profile.html?post=${notif.postId}`; }
+            else if(notif.type === 'comment') { icon = '💬'; text = `<b>@${window.escapeHtml(notif.sender)}</b> içeriğinize yanıt verdi.`; link = `profile.html?post=${notif.postId}`; }
+            else if(notif.type === 'follow') { icon = '🤝'; text = `<b>@${window.escapeHtml(notif.sender)}</b> sizi ağına ekledi.`; link = `profile.html?user=${window.escapeHtml(notif.sender)}`; }
             else if(notif.type === 'admin_delete') { icon = '⚠️'; text = `Bir gönderiniz kurallara uymadığı gerekçesiyle yönetici tarafından kaldırıldı.`; link = '#'; }
             
             let timeAgo = "";
@@ -217,12 +217,12 @@ window.acceptRequest = async function(reqUser) {
         await updateDoc(targetRef, { following: arrayUnion(myUsername) }); 
         await addDoc(collection(db, "notifications"), { type: 'follow', sender: reqUser, recipient: myUsername, createdAt: serverTimestamp() });
         window.showToast?.("Bağlantı isteği kabul edildi.", "success");
-    } catch(e) { console.error(e); } 
+    } catch(e) { console.error("İstek işleme hatası:", e.code || "Bilinmeyen hata"); } 
 };
 
 window.rejectRequest = async function(reqUser) { 
     try { 
         await updateDoc(doc(db, "users", myUsername), { followRequests: arrayRemove(reqUser) }); 
         window.showToast?.("Bağlantı isteği reddedildi.", "info");
-    } catch(e) { console.error(e); } 
+    } catch(e) { console.error("İstek işleme hatası:", e.code || "Bilinmeyen hata"); } 
 };

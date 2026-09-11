@@ -85,7 +85,7 @@ onAuthStateChanged(auth, async (user) => {
                 const folersCount = document.getElementById('sidebar-followers-count'); if(folersCount) folersCount.innerText = (u.followers || []).length;
                 
                 if(u.avatarUrl) {
-                    const imgTag = `<img src="${u.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                    const imgTag = `<img src="${window.sanitizeUrl(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">`;
                     const a1 = document.getElementById('mobile-avatar-header'); if(a1) a1.innerHTML = imgTag;
                     const a2 = document.getElementById('sidebar-avatar-mobile'); if(a2) a2.innerHTML = imgTag;
                 }
@@ -162,8 +162,8 @@ window.deletePost = async function(postId) {
             }
             await deleteDoc(doc(db, "posts", postId)); 
         } catch(e) {
-            console.error("Firebase Silme Hatası:", e);
-            alert("SİSTEM HATASI: " + e.message); 
+            console.error("Silme hatası:", e.code || "Bilinmeyen hata");
+            alert("İçerik silinirken bir hata oluştu."); 
         }
     } 
 };
@@ -176,7 +176,7 @@ window.repostPost = async function(postId, originalAuthor, event) {
             await addDoc(collection(db, "posts"), { isRepost: true, originalPostId: postId, originalPostAuthor: originalAuthor, content: originalPost.data.content || '', imageUrl: originalPost.data.imageUrl || null, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [] });
             alert("Ağınıza eklendi! 🔁");
             loadUserPosts(); 
-        } catch (error) { console.error("Hata: ", error); }
+        } catch (error) { console.error("Yeniden paylaşım hatası:", error.code || "Bilinmeyen hata"); }
     }
 };
 
@@ -191,6 +191,7 @@ window.openEditModal = function(postId, currentContent) { currentlyEditingPostId
 
 document.getElementById('save-edited-post-btn')?.addEventListener('click', async () => {
     if(!currentlyEditingPostId) return; const newContent = document.getElementById('edit-post-input').value.trim(); if(!newContent) return;
+    if (newContent.length > 280) { alert("Gönderi en fazla 280 karakter olabilir!"); return; }
     
     const postObj = globalPosts.find(p => p.id === currentlyEditingPostId);
     if (postObj) {
@@ -208,8 +209,8 @@ window.openShareModal = function(postId, event) {
     if(myFollowingList.length === 0) { container.innerHTML = '<div style=\"padding:20px; text-align:center; color:#64748b;\">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; }
     else {
         myFollowingList.forEach(uname => {
-            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${uData.avatarUrl}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
-            container.innerHTML += `<div class=\"user-row\" onclick=\"window.sendPostAsMessage('${uname}')\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${uData.fullName || uname} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${uname}</div></div><button style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
+            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${window.sanitizeUrl(uData.avatarUrl)}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
+            container.innerHTML += `<div class=\"user-row\" onclick=\"window.sendPostAsMessage('${window.escapeHtml(uname)}')\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${window.escapeHtml(uData.fullName || uname)} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${window.escapeHtml(uname)}</div></div><button style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
         });
     }
     document.getElementById('share-dm-modal').style.display = 'flex';
@@ -239,22 +240,24 @@ window.openPostDetail = async function(postId) {
         try {
             const pSnap = await getDoc(doc(db, "posts", postId));
             if (pSnap.exists()) {
-                postObj = { id: pSnap.id, data: pSnap.data() };
+                let pData = pSnap.data();
+                if (pData.content) pData.content = DOMPurify.sanitize(pData.content);
+                postObj = { id: pSnap.id, data: pData };
                 globalPosts.push(postObj);
                 const authorsToFetch = [postObj.data.author];
                 if (postObj.data.originalPostAuthor) authorsToFetch.push(postObj.data.originalPostAuthor);
                 await window.fetchMissingUsers(authorsToFetch);
             }
         } catch (e) {
-            console.error("Gönderi getirilemedi:", e);
+            console.error("Gönderi detayı getirilemedi:", e.code || "Bilinmeyen hata");
         }
     }
     if(!postObj) return; const postData = postObj.data; 
     
     let originalAuthor = postData.author; if(postData.isRepost) { originalAuthor = postData.originalPostAuthor; }
     const authorData = allUsersData[originalAuthor] || {}; const likesArray = postData.likes || []; const isLiked = likesArray.includes(myUsername);
-    const vHtml = authorData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : ''; const avatarImg = authorData.avatarUrl ? `<img src=\"${authorData.avatarUrl}\" style=\"width:100%;height:100%;object-fit:cover;\">` : `👤`;
-    const fullName = authorData.fullName || originalAuthor;
+    const vHtml = authorData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : ''; const avatarImg = authorData.avatarUrl ? `<img src=\"${window.sanitizeUrl(authorData.avatarUrl)}\" style=\"width:100%;height:100%;object-fit:cover;\">` : `👤`;
+    const fullName = window.escapeHtml(authorData.fullName || originalAuthor);
     
     let timeString = "";
     if (postData.createdAt) {
@@ -262,7 +265,7 @@ window.openPostDetail = async function(postId) {
         else if (postData.createdAt.seconds) { timeString = new Date(postData.createdAt.seconds * 1000).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
     }
     
-    let locHtml = postData.location ? `<span style="font-size:14px; color:#3b82f6; margin-left:10px;">📍 ${postData.location}</span>` : '';
+    let locHtml = postData.location ? `<span style="font-size:14px; color:#3b82f6; margin-left:10px;">📍 ${window.escapeHtml(postData.location)}</span>` : '';
     let repostLabel = "";
     if(postData.isRepost) { repostLabel = `<div style=\"color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;\">🔁 @${postData.author} ağında paylaştı</div>`; }
 
@@ -277,9 +280,9 @@ window.openPostDetail = async function(postId) {
                 </div>
             </div>
             <div style=\"font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;\">
-                ${postData.content ? postData.content.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href=\"search.html?tag=$1\" style=\"color:#3b82f6; font-weight:500; text-decoration:none;\">#$1</a>`) : ''}
+                ${postData.content ? DOMPurify.sanitize(postData.content).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href=\"search.html?tag=$1\" style=\"color:#3b82f6; font-weight:500; text-decoration:none;\">#$1</a>`) : ''}
             </div>
-            ${postData.imageUrl ? `<img src=\"${postData.imageUrl}\" style=\"width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;\">` : ''}
+            ${postData.imageUrl ? `<img src=\"${window.sanitizeUrl(postData.imageUrl)}\" style=\"width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;\">` : ''}
             <div style=\"color:#94a3b8; font-size:13px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;\">${timeString}</div>
             
             <div style=\"display:flex; justify-content:flex-start; gap:30px; padding:15px 0; color:#64748b;\">
@@ -317,7 +320,7 @@ function buildCommentsTree(allComments, parentId, depth = 0, postId = null, post
     const children = allComments.filter(c => (c.parentId || null) === safeParentId).sort((a,b) => a.timestamp - b.timestamp);
     
     children.forEach(c => {
-        const cUserData = allUsersData[c.author] || {}; const avatarHtml = cUserData.avatarUrl ? `<img src=\"${cUserData.avatarUrl}\">` : `👤`;
+        const cUserData = allUsersData[c.author] || {}; const avatarHtml = cUserData.avatarUrl ? `<img src=\"${window.sanitizeUrl(cUserData.avatarUrl)}\">` : `👤`;
         const vHtml = cUserData.isVerified ? `<span class=\"verified-badge\" style=\"font-size:12px;\">☑️</span>` : '';
         const safeCommentId = c.id || ('legacy_' + Math.random().toString(36).substr(2, 9));
 
@@ -329,8 +332,8 @@ function buildCommentsTree(allComments, parentId, depth = 0, postId = null, post
                 <div class=\"comment-header\">
                     <div class=\"comment-avatar\" onclick=\"window.location.href='profile.html?user=${c.author}'\" style=\"cursor:pointer;\">${avatarHtml}</div>
                     <div class=\"comment-body\">
-                        <div><a href=\"profile.html?user=${c.author}\" class=\"comment-author-name\">${cUserData.fullName || c.author}</a> ${vHtml} <span style=\"color:#64748b; font-size:13px; font-weight:normal;\">@${c.author}</span></div>
-                        <div class=\"comment-text\">${c.text}</div>
+                        <div><a href=\"profile.html?user=${window.escapeHtml(c.author)}\" class=\"comment-author-name\">${window.escapeHtml(cUserData.fullName || c.author)}</a> ${vHtml} <span style=\"color:#64748b; font-size:13px; font-weight:normal;\">@${window.escapeHtml(c.author)}</span></div>
+                        <div class=\"comment-text\">${DOMPurify.sanitize(c.text)}</div>
                         <div class=\"comment-actions\">
                             <div class=\"comment-action-btn\" onclick=\"window.setDetailReply('${safeCommentId}', '${c.author}')\">Yanıtla</div>
                             ${deleteBtnHtml}
@@ -396,7 +399,7 @@ window.deleteComment = async function(postId, commentId) {
                 const updatedComments = postData.comments.filter(c => c.id !== commentId && c.parentId !== commentId);
                 await updateDoc(postRef, { comments: updatedComments }); 
             }
-        } catch(e) { console.error("Yorum silinemedi:", e); alert("Yorum silinirken bir hata oluştu."); }
+        } catch(e) { console.error("Yorum silinemedi:", e.code || "Bilinmeyen hata"); alert("Yorum silinirken bir hata oluştu."); }
     }
 };
 
@@ -408,13 +411,13 @@ function loadUserProfileData() {
             const isInfoHidden = data.hideInfo || false;
 
             const hName = document.getElementById('header-name'); if(hName) hName.innerText = data.fullName || targetUsername;
-            const dFullName = document.getElementById('display-fullname'); if(dFullName) dFullName.innerHTML = `${data.fullName || targetUsername} ${data.isVerified ? '<span class="verified-badge">☑️</span>' : ''}`;
+            const dFullName = document.getElementById('display-fullname'); if(dFullName) dFullName.innerHTML = `${window.escapeHtml(data.fullName || targetUsername)} ${data.isVerified ? '<span class="verified-badge">☑️</span>' : ''}`;
             const dUsername = document.getElementById('display-username'); if(dUsername) dUsername.innerText = `@${targetUsername}`;
             
             let detailsHtml = '';
             if (!isInfoHidden || isMe) {
-                if(data.location) detailsHtml += `<span>📍 ${data.location}</span>`;
-                if(data.birthDate) detailsHtml += `<span>🎈 Doğum tarihi: ${new Date(data.birthDate).toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'})}</span>`;
+                if(data.location) detailsHtml += `<span>📍 ${window.escapeHtml(data.location)}</span>`;
+                if(data.birthDate) detailsHtml += `<span>🎈 Doğum tarihi: ${window.escapeHtml(new Date(data.birthDate).toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'}))}</span>`;
                 if(data.createdAt) detailsHtml += `<span>🗓️ ${data.createdAt.toDate().toLocaleDateString('tr-TR', {month:'long',year:'numeric'})} tarihinde katıldı</span>`;
             }
             const dDetails = document.getElementById('display-details'); if(dDetails) dDetails.innerHTML = detailsHtml;
@@ -422,11 +425,11 @@ function loadUserProfileData() {
                 const dBio = document.getElementById('display-bio'); if(dBio) dBio.innerText = data.bio;
             }
             
-            if (data.avatarUrl) { document.getElementById('profile-avatar').innerHTML = `<img src="${data.avatarUrl}">`; }
+            if (data.avatarUrl) { document.getElementById('profile-avatar').innerHTML = `<img src="${window.sanitizeUrl(data.avatarUrl)}">`; }
             else { document.getElementById('profile-avatar').innerHTML = `👤`; }
 
             const bannerDiv = document.getElementById('profile-banner');
-            if (data.bannerUrl) { bannerDiv.innerHTML = `<img src="${data.bannerUrl}">`; }
+            if (data.bannerUrl) { bannerDiv.innerHTML = `<img src="${window.sanitizeUrl(data.bannerUrl)}">`; }
             else { bannerDiv.innerHTML = ``; }
             
             currentProfileFollowers = data.followers || []; currentProfileFollowing = data.following || [];
@@ -509,6 +512,9 @@ document.getElementById('save-edit-btn')?.addEventListener('click', async () => 
     let rawBannerFile = document.getElementById('edit-banner-input').files[0]; 
 
     if(!newFullName) { alert("İsim zorunludur!"); return; }
+    if (newFullName.length > 50) { alert("İsim en fazla 50 karakter olabilir!"); return; }
+    if (newBio.length > 250) { alert("Biyografi en fazla 250 karakter olabilir!"); return; }
+    if (newLocation.length > 50) { alert("Konum en fazla 50 karakter olabilir!"); return; }
 
     if (rawAvatarFile && rawAvatarFile.size > 10 * 1024 * 1024) { alert("Profil fotoğrafı 10 MB'dan büyük olamaz!"); return; }
     if (rawBannerFile && rawBannerFile.size > 10 * 1024 * 1024) { alert("Kapak fotoğrafı 10 MB'dan büyük olamaz!"); return; }
@@ -545,7 +551,7 @@ document.getElementById('save-edit-btn')?.addEventListener('click', async () => 
         }, { merge: true });
         
         document.getElementById('edit-modal').style.display = 'none';
-    } catch (e) { alert("Yükleme sırasında hata oluştu!"); console.error(e); } 
+    } catch (e) { alert("Yükleme sırasında hata oluştu!"); console.error("Profil güncelleme hatası:", e.code || "Bilinmeyen hata"); } 
     finally { saveBtn.innerText = "Güncelle"; saveBtn.disabled = false; }
 });
 
@@ -583,7 +589,7 @@ document.getElementById('trigger-delete-account-btn')?.addEventListener('click',
         setTimeout(() => { window.location.href = "index.html"; }, 1500);
 
     } catch (error) {
-        console.error("Hesap silinirken hata:", error);
+        console.error("Hesap silinemedi:", error.code || "Bilinmeyen hata");
         if(error.code === 'auth/requires-recent-login') {
             if(window.showToast) window.showToast("Güvenlik nedeniyle çıkış yapıp tekrar giriş yapmalısınız.", "error");
         } else {
@@ -630,8 +636,8 @@ window.toggleFollow = async function() {
         }
         updateFollowButtonUI();
     } catch (error) {
-        console.error("Takip hatası:", error);
-        alert("Takip işlemi başarısız oldu. Lütfen sayfayı yenileyip tekrar deneyin. (Hata: " + error.code + ")");
+        console.error("Takip hatası:", error.code || "Bilinmeyen hata");
+        alert("Takip işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyin.");
     }
     btn.disabled = false;
 };
@@ -696,8 +702,8 @@ async function loadUserPosts(isLoadMore = false) {
         window.renderProfileFeed();
 
     } catch (error) {
-        console.error("Gönderiler yüklenirken hata:", error);
-        if(feedContainer && !isLoadMore) feedContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Gönderiler yüklenemedi. (Konsolda belirtilen Firebase Index ayarını yapmanız gerekebilir).</div>';
+        console.error("Kullanıcı gönderileri yüklenemedi:", error.code || "Bilinmeyen hata");
+        if(feedContainer && !isLoadMore) feedContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Gönderiler yüklenemedi. Lütfen daha sonra tekrar deneyin.</div>';
     }
 }
 
@@ -735,8 +741,8 @@ window.renderProfileFeed = function() {
                 
                 const authorData = allUsersData[postData.author] || {};
                 const vHtml = authorData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
-                const avatarImg = authorData.avatarUrl ? `<img src="${authorData.avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
-                const fullName = authorData.fullName || postData.author;
+                const avatarImg = authorData.avatarUrl ? `<img src="${window.sanitizeUrl(authorData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+                const fullName = window.escapeHtml(authorData.fullName || postData.author);
                 
                 let timeAgo = "";
                 if(postData.createdAt) {
@@ -750,7 +756,7 @@ window.renderProfileFeed = function() {
                     }
                 }
                 
-                let locationHtml = postData.location ? `<span style="font-size:13px; color:#3b82f6; margin-left:8px;">📍 ${postData.location}</span>` : '';
+                let locationHtml = postData.location ? `<span style="font-size:13px; color:#3b82f6; margin-left:8px;">📍 ${window.escapeHtml(postData.location)}</span>` : '';
                 const safeContentForEdit = postData.content ? postData.content.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
                 let pinHtml = '';
@@ -786,11 +792,11 @@ window.renderProfileFeed = function() {
                                     </div>
                                 </div>
                                 
-                                <div class="post-content">${postData.content ? postData.content.replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<span style="color:#3b82f6;">#$1</span>`) : ''}</div>
+                                <div class="post-content">${postData.content ? DOMPurify.sanitize(postData.content).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<span style="color:#3b82f6;">#$1</span>`) : ''}</div>
                                 
                                 ${postData.imageUrl ? `
                                 <div class="post-image-container" onclick="event.stopPropagation()">
-                                    <img src="${postData.imageUrl}" class="post-image">
+                                    <img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image">
                                 </div>` : ''}
                                 
                                 <div class="post-footer-actions">
