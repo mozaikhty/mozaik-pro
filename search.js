@@ -5,12 +5,8 @@ import './shared.js';
 
 let allUsers = []; let allPosts = []; let allUsersData = {}; let trendingTags = []; let currentTab = 'users'; let myUsername = null; let myFollowing = [];
 
-// GLOBAL ÇAĞRI DİNLEYİCİ DEĞİŞKENLERİ
+// GLOBAL ÇAĞRI DİNLEYİCİ — webrtc.js merkezi modülü kullanılır
 let activeChats = [];
-let callListeners = {};
-let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
-const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
-const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
 
 const tabUsers = document.getElementById('tab-users'); const tabTags = document.getElementById('tab-tags');
 const searchInput = document.getElementById('search-input'); const resultsContainer = document.getElementById('search-results');
@@ -49,73 +45,8 @@ onAuthStateChanged(auth, (user) => {
     } else { window.location.href = "index.html"; }
 });
 
+// Arama kabul/ret/temizleme → webrtc.js merkezi modülü tarafından yönetilir.
 
-document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
-    document.getElementById('accept-call-btn').style.display = 'none'; 
-    document.getElementById('call-status-text').innerText = "Bağlanıyor...";
-    const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); 
-    const callData = (await getDoc(callDocRef)).data();
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
-        if(isCallVideo && localVideo) localVideo.srcObject = localStream;
-        peerConnection = new RTCPeerConnection(servers);
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-        remoteStream = new MediaStream(); if(remoteVideo) remoteVideo.srcObject = remoteStream;
-        peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-        
-        peerConnection.onicecandidate = event => { 
-            if(event.candidate) { 
-                addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); 
-            } 
-        };
-        
-        const offerDescription = callData.offer; 
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
-        const answerDescription = await peerConnection.createAnswer(); 
-        await peerConnection.setLocalDescription(answerDescription);
-        
-        await updateDoc(callDocRef, { answer: { type: answerDescription.type, sdp: answerDescription.sdp }, status: 'answered' });
-        
-        onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { 
-            snapshot.docChanges().forEach((change) => { 
-                if(change.type === 'added') { 
-                    const candidate = new RTCIceCandidate(change.doc.data()); 
-                    peerConnection.addIceCandidate(candidate); 
-                } 
-            }); 
-        });
-        const cText = document.getElementById('call-status-text'); if(cText) cText.innerText = "Bağlandı";
-    } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
-});
-
-document.getElementById('end-call-btn')?.addEventListener('click', async () => { 
-    if(currentCallDocId && currentCallCollection && currentCallChatId) { 
-        const callRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId);
-        const callSnap = await getDoc(callRef);
-        if(callSnap.exists()) {
-            const callData = callSnap.data();
-            if(callData.status === 'ringing') {
-                await updateDoc(callRef, { status: 'missed' });
-                await addDoc(collection(db, currentCallCollection, currentCallChatId, "messages"), {
-                    type: 'system', text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama', sender: myUsername, createdAt: serverTimestamp()
-                });
-            } else {
-                await updateDoc(callRef, { status: 'ended' });
-            }
-        }
-    } 
-    endCallUI(); 
-});
-
-function endCallUI() { 
-    if (callOverlay) callOverlay.style.display = 'none'; 
-    if(localStream) { localStream.getTracks().forEach(track => track.stop()); } 
-    if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } 
-    if(peerConnection) { peerConnection.close(); } 
-    localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; currentCallChatId = null; currentCallCollection = null;
-    if (localVideo) localVideo.srcObject = null; 
-    if (remoteVideo) remoteVideo.srcObject = null; 
-}
 
 function renderWhoToFollow() {
     const container = document.getElementById('who-to-follow-list');

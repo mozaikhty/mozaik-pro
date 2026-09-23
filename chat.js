@@ -14,19 +14,6 @@ let currentInboxTab = 'all';
 let unsubscribeMessages = null;
 let unsubscribeChatMeta = null;
 
-let callListeners = {};
-let peerConnection; let localStream; let remoteStream; let currentCallDocId = null; let currentCallChatId = null; let currentCallCollection = null; let isCallVideo = false;
-const callOverlay = document.getElementById('call-overlay'); const localVideo = document.getElementById('local-video'); const remoteVideo = document.getElementById('remote-video');
-
-const servers = { 
-    iceServers: [
-        { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
-        { urls: "turn:a.relay.metered.ca:80", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" },
-        { urls: "turn:a.relay.metered.ca:443", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" },
-        { urls: "turn:a.relay.metered.ca:443?transport=tcp", username: "5e02baae988ebf25bd9eec65", credential: "q/9eO+rV0H/sA75Q" }
-    ] 
-};
-
 const urlParams = new URLSearchParams(window.location.search);
 const targetUsername = urlParams.get('user');
 const targetGroupId = urlParams.get('group');
@@ -570,117 +557,15 @@ async function sendActualMessage(text, imgUrl) {
 sendBtn?.addEventListener('click', sendMessage);
 msgInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-document.getElementById('video-call-btn')?.addEventListener('click', () => startCall(true));
-document.getElementById('audio-call-btn')?.addEventListener('click', () => startCall(false));
-
-async function startCall(isVideo) {
-    isCallVideo = isVideo; 
-    const callStatus = document.getElementById('call-status-text'); if(callStatus) callStatus.innerText = "Aranıyor..."; 
-    const acceptBtn = document.getElementById('accept-call-btn'); if(acceptBtn) acceptBtn.style.display = 'none'; 
-    if(callOverlay) callOverlay.style.display = 'flex';
-    const vCont = document.getElementById('video-container'); if(vCont) vCont.style.display = isVideo ? 'flex' : 'none'; 
-    
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-        if(isVideo && localVideo) localVideo.srcObject = localStream;
-        peerConnection = new RTCPeerConnection(servers);
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-        remoteStream = new MediaStream(); if(remoteVideo) remoteVideo.srcObject = remoteStream;
-        peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-        
-        currentCallCollection = isGroupChat ? "groups" : "chats";
-        currentCallChatId = chatId;
-        const callDocRef = doc(collection(db, currentCallCollection, chatId, "calls")); 
-        currentCallDocId = callDocRef.id;
-
-        peerConnection.onicecandidate = event => { 
-            if(event.candidate) { 
-                addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), event.candidate.toJSON()); 
-            } 
-        };
-        
-        const offerDescription = await peerConnection.createOffer(); 
-        await peerConnection.setLocalDescription(offerDescription);
-        
-        await setDoc(callDocRef, { offer: { type: offerDescription.type, sdp: offerDescription.sdp }, caller: myUsername, type: isVideo ? 'video' : 'audio', status: 'ringing', createdAt: serverTimestamp() });
-        
-        onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), (snapshot) => { 
-            snapshot.docChanges().forEach((change) => { 
-                if(change.type === 'added') { 
-                    const candidate = new RTCIceCandidate(change.doc.data()); 
-                    peerConnection.addIceCandidate(candidate); 
-                } 
-            }); 
-        });
-    } catch(e) { alert("Erişim reddedildi!"); endCallUI(); }
-}
-
-document.getElementById('accept-call-btn')?.addEventListener('click', async () => {
-    document.getElementById('accept-call-btn').style.display = 'none'; 
-    const callStatus = document.getElementById('call-status-text'); if(callStatus) callStatus.innerText = "Bağlanıyor...";
-    const callDocRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId); 
-    const callData = (await getDoc(callDocRef)).data();
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: isCallVideo, audio: true });
-        if(isCallVideo && localVideo) localVideo.srcObject = localStream;
-        peerConnection = new RTCPeerConnection(servers);
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-        remoteStream = new MediaStream(); if(remoteVideo) remoteVideo.srcObject = remoteStream;
-        peerConnection.ontrack = event => { event.streams[0].getTracks().forEach(track => { remoteStream.addTrack(track); }); };
-        
-        peerConnection.onicecandidate = event => { 
-            if(event.candidate) { 
-                addDoc(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "calleeCandidates"), event.candidate.toJSON()); 
-            } 
-        };
-        
-        const offerDescription = callData.offer; 
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
-        const answerDescription = await peerConnection.createAnswer(); 
-        await peerConnection.setLocalDescription(answerDescription);
-        
-        await updateDoc(callDocRef, { answer: { type: answerDescription.type, sdp: answerDescription.sdp }, status: 'answered' });
-        
-        onSnapshot(collection(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId, "callerCandidates"), (snapshot) => { 
-            snapshot.docChanges().forEach((change) => { 
-                if(change.type === 'added') { 
-                    const candidate = new RTCIceCandidate(change.doc.data()); 
-                    peerConnection.addIceCandidate(candidate); 
-                } 
-            }); 
-        });
-        const cText = document.getElementById('call-status-text'); if(cText) cText.innerText = "Bağlandı";
-    } catch(e) { alert("Erişim reddedildi!"); updateDoc(callDocRef, { status: 'ended' }); endCallUI(); }
+document.getElementById('video-call-btn')?.addEventListener('click', () => {
+    const colName = isGroupChat ? "groups" : "chats";
+    if (window.startCall) window.startCall(chatId, colName, true, myUsername);
+});
+document.getElementById('audio-call-btn')?.addEventListener('click', () => {
+    const colName = isGroupChat ? "groups" : "chats";
+    if (window.startCall) window.startCall(chatId, colName, false, myUsername);
 });
 
-document.getElementById('end-call-btn')?.addEventListener('click', async () => { 
-    if(currentCallDocId && currentCallCollection && currentCallChatId) { 
-        const callRef = doc(db, currentCallCollection, currentCallChatId, "calls", currentCallDocId);
-        const callSnap = await getDoc(callRef);
-        if(callSnap.exists()) {
-            const callData = callSnap.data();
-            if(callData.status === 'ringing') {
-                await updateDoc(callRef, { status: 'missed' });
-                await addDoc(collection(db, currentCallCollection, currentCallChatId, "messages"), {
-                    type: 'system', text: callData.type === 'video' ? 'Cevapsız görüntülü arama' : 'Cevapsız sesli arama', sender: myUsername, createdAt: serverTimestamp()
-                });
-            } else {
-                await updateDoc(callRef, { status: 'ended' });
-            }
-        }
-    } 
-    endCallUI(); 
-});
-
-function endCallUI() { 
-    if (callOverlay) callOverlay.style.display = 'none'; 
-    if(localStream) { localStream.getTracks().forEach(track => track.stop()); } 
-    if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); } 
-    if(peerConnection) { peerConnection.close(); } 
-    localStream = null; remoteStream = null; peerConnection = null; currentCallDocId = null; currentCallChatId = null; currentCallCollection = null;
-    if (localVideo) localVideo.srcObject = null; 
-    if (remoteVideo) remoteVideo.srcObject = null; 
-}
 
 document.getElementById('add-member-btn')?.addEventListener('click', () => {
     const modal = document.getElementById('add-member-modal'); if(modal) modal.style.display = 'flex';
