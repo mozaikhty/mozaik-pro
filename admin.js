@@ -24,6 +24,11 @@ let recentPostsLog = [];
 let recentNotifsLog = [];
 let deleteTargetUser = null;
 
+let allAdminLogs = [];
+let filteredAdminLogs = [];
+let currentLogPage = 1;
+const LOG_PAGE_SIZE = 20;
+
 // =====================================
 // 2. YETKİLENDİRME
 // =====================================
@@ -192,6 +197,17 @@ function setupSearch() {
             currentPage = 1;
             applyUserFilter();
         }
+    });
+
+    // Log Arama
+    document.getElementById('log-search')?.addEventListener('input', () => {
+        currentLogPage = 1;
+        applyLogsFilter();
+    });
+
+    document.getElementById('log-type-filter')?.addEventListener('change', () => {
+        currentLogPage = 1;
+        applyLogsFilter();
     });
 
     // Arşiv arama
@@ -713,6 +729,7 @@ window.sendTicketReply = async function() {
                 sender: adminUsername,
                 recipient: ticket.sender,
                 text: replyText,
+                ticketId: ticketId,
                 createdAt: serverTimestamp()
             });
         }
@@ -764,31 +781,57 @@ async function logAdminAction(action, target, details) {
 }
 
 function loadAdminLogs() {
-    const q = query(collection(db, "admin_logs"), orderBy("createdAt", "desc"), limit(100));
+    const q = query(collection(db, "admin_logs"), orderBy("createdAt", "desc"), limit(500));
     onSnapshot(q, (snapshot) => {
-        const logs = [];
-        snapshot.forEach(docSnap => { logs.push({ id: docSnap.id, ...docSnap.data() }); });
-        renderAdminLogs(logs);
-        renderRecentAdminLogs(logs.slice(0, 8));
+        allAdminLogs = [];
+        snapshot.forEach(docSnap => { allAdminLogs.push({ id: docSnap.id, ...docSnap.data() }); });
+        applyLogsFilter();
+        renderRecentAdminLogs(allAdminLogs.slice(0, 8));
     }, (error) => {
         console.error("Admin logları yüklenirken hata:", error);
     });
 }
 
-function renderAdminLogs(logs) {
+function applyLogsFilter() {
+    const typeFilter = document.getElementById('log-type-filter')?.value || 'all';
+    const searchText = (document.getElementById('log-search')?.value || '').toLowerCase().trim();
+
+    filteredAdminLogs = allAdminLogs.filter(log => {
+        if (typeFilter !== 'all' && log.action !== typeFilter) return false;
+        
+        if (searchText) {
+            const adminMatch = (log.admin || '').toLowerCase().includes(searchText);
+            const targetMatch = (log.target || '').toLowerCase().includes(searchText);
+            const detailsMatch = (log.details || '').toLowerCase().includes(searchText);
+            if (!adminMatch && !targetMatch && !detailsMatch) return false;
+        }
+        return true;
+    });
+
+    renderAdminLogs();
+}
+
+function renderAdminLogs() {
     const container = document.getElementById('admin-logs-container');
     if (!container) return;
-    if (logs.length === 0) {
-        container.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><p>Henüz admin işlemi yok.</p></div>';
+    
+    if (filteredAdminLogs.length === 0) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><p>Henüz admin işlemi yok veya kritere uygun sonuç bulunamadı.</p></div>';
+        document.getElementById('logs-pagination').innerHTML = '';
         return;
     }
+
+    const totalPages = Math.ceil(filteredAdminLogs.length / LOG_PAGE_SIZE);
+    if (currentLogPage > totalPages) currentLogPage = totalPages;
+    const start = (currentLogPage - 1) * LOG_PAGE_SIZE;
+    const pageLogs = filteredAdminLogs.slice(start, start + LOG_PAGE_SIZE);
 
     const actionIcons = {
         verify: '✅', ban: '🔒', delete_user: '🗑️', edit_user: '✏️',
         delete_post: '🚨', reply_ticket: '💬', update_ticket: '🔄', delete_ticket: '🗑️'
     };
 
-    container.innerHTML = logs.map(log => {
+    container.innerHTML = pageLogs.map(log => {
         const timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
         const icon = actionIcons[log.action] || '📋';
         return `<div class="log-item">
@@ -799,7 +842,35 @@ function renderAdminLogs(logs) {
             </div>
         </div>`;
     }).join('');
+
+    renderLogsPagination(totalPages);
 }
+
+function renderLogsPagination(totalPages) {
+    const pagEl = document.getElementById('logs-pagination');
+    if (!pagEl || totalPages <= 1) { if (pagEl) pagEl.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" onclick="goToLogPage(${currentLogPage - 1})" ${currentLogPage === 1 ? 'disabled' : ''}>‹</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+        if (i <= 3 || i > totalPages - 2 || Math.abs(i - currentLogPage) <= 1) {
+            html += `<button class="page-btn ${i === currentLogPage ? 'active' : ''}" onclick="goToLogPage(${i})">${i}</button>`;
+        } else if (i === 4 && currentLogPage > 5) {
+            html += '<span class="page-info">…</span>';
+        } else if (i === totalPages - 2 && currentLogPage < totalPages - 4) {
+            html += '<span class="page-info">…</span>';
+        }
+    }
+    html += `<button class="page-btn" onclick="goToLogPage(${currentLogPage + 1})" ${currentLogPage === totalPages ? 'disabled' : ''}>›</button>`;
+    html += `<span class="page-info">${filteredAdminLogs.length} sonuç</span>`;
+    pagEl.innerHTML = html;
+}
+
+window.goToLogPage = function(p) {
+    const totalPages = Math.ceil(filteredAdminLogs.length / LOG_PAGE_SIZE);
+    if (p < 1 || p > totalPages) return;
+    currentLogPage = p;
+    renderAdminLogs();
+};
 
 function renderRecentAdminLogs(logs) {
     const container = document.getElementById('recent-admin-logs');

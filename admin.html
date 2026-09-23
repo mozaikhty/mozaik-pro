@@ -396,9 +396,21 @@
     <div class="admin-page" id="page-logs">
         <div class="section-card">
             <div class="section-header"><h3>🔐 Admin İşlem Geçmişi</h3></div>
+            <div class="filter-bar">
+                <select class="filter-search" id="log-type-filter" style="width:160px; flex:none;">
+                    <option value="all">Tüm İşlemler</option>
+                    <option value="ban">Ban / Ban Açma</option>
+                    <option value="verify">VIP Verme / Alma</option>
+                    <option value="delete_user">Kullanıcı Silme</option>
+                    <option value="delete_post">Gönderi Silme</option>
+                    <option value="reply_ticket">Destek Yanıtlama</option>
+                </select>
+                <input type="text" class="filter-search" id="log-search" placeholder="Yönetici veya hedef kullanıcı ara..." autocomplete="off">
+            </div>
             <div class="section-body" id="admin-logs-container" style="max-height:600px;overflow-y:auto">
                 <div class="loading-row"><div class="loading-skeleton" style="width:80%"></div></div>
             </div>
+            <div class="pagination" id="logs-pagination"></div>
         </div>
     </div>
 </div>

@@ -142,6 +142,47 @@ window.deleteNotification = async function(notifId, event) {
     }
 };
 
+window.viewTicket = async function(ticketId) {
+    const modal = document.getElementById('ticket-modal');
+    const content = document.getElementById('ticket-modal-content');
+    if(!modal || !content) return;
+    
+    modal.style.display = 'flex';
+    content.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">Yükleniyor...</div>';
+    
+    try {
+        const ticketSnap = await getDoc(doc(db, "tickets", ticketId));
+        if(!ticketSnap.exists()) {
+            content.innerHTML = '<div style="color:#ef4444; padding:10px;">Bu destek talebi bulunamadı veya silinmiş.</div>';
+            return;
+        }
+        
+        const data = ticketSnap.data();
+        const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString('tr-TR') : '';
+        const replyDateStr = data.repliedAt ? data.repliedAt.toDate().toLocaleString('tr-TR') : '';
+        
+        let html = `
+            <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-bottom:15px;">
+                <div style="font-size:12px; color:#64748b; margin-bottom:5px;">Sizin Mesajınız (${dateStr})</div>
+                <div style="font-size:14px; color:#0f172a; line-height:1.5;">${window.escapeHtml(data.message || '')}</div>
+            </div>
+        `;
+        
+        if (data.adminReply) {
+            html += `
+                <div style="background:#eff6ff; border-left:4px solid #3b82f6; padding:15px; border-radius:8px;">
+                    <div style="font-size:12px; color:#3b82f6; font-weight:600; margin-bottom:5px;">Yönetici Yanıtı (${replyDateStr})</div>
+                    <div style="font-size:14px; color:#0f172a; line-height:1.5;">${window.escapeHtml(data.adminReply)}</div>
+                </div>
+            `;
+        }
+        
+        content.innerHTML = html;
+    } catch (e) {
+        content.innerHTML = '<div style="color:#ef4444; padding:10px;">Talep yüklenirken bir hata oluştu.</div>';
+    }
+};
+
 function renderNotifications() {
     const container = document.getElementById('notifications-list'); 
     if(!container) return;
@@ -183,7 +224,7 @@ function renderNotifications() {
                 icon = '💬'; 
                 let safeReply = notif.text ? window.escapeHtml(notif.text) : 'Yanıt eklendi.';
                 text = `Destek talebiniz <b>@${window.escapeHtml(notif.sender)}</b> tarafından yanıtlandı:<br><i style="color:#64748b; font-size:12px; margin-top:4px; display:block;">"${safeReply}"</i>`; 
-                link = '#'; 
+                link = notif.ticketId ? `javascript:window.viewTicket('${notif.ticketId}')` : '#'; 
             }
             
             let timeAgo = "";

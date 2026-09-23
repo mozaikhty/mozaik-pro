@@ -97,6 +97,18 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="ticket-modal" style="z-index: 5000; display:none;">
+        <div class="modal-content" style="padding:0;">
+            <div class="modal-header" style="padding: 20px; margin:0;">
+                <h3 style="margin:0; font-size:16px;">Destek Talebi Detayı</h3>
+                <button class="close-btn" onclick="document.getElementById('ticket-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding: 20px;" id="ticket-modal-content">
+                Yükleniyor...
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="app.js"></script>
     <script type="module" src="notifications.js"></script>
     <script src="ui.js"></script>
