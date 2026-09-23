@@ -29,6 +29,10 @@ let filteredAdminLogs = [];
 let currentLogPage = 1;
 const LOG_PAGE_SIZE = 20;
 
+let filteredBans = [];
+let currentBanPage = 1;
+let currentBanFilter = 'all';
+
 // =====================================
 // 2. YETKİLENDİRME
 // =====================================
@@ -90,7 +94,7 @@ window.switchPage = function(page) {
     const targetLink = document.querySelector(`.nav-link[data-page="${page}"]`);
     if (targetPage) targetPage.classList.add('active');
     if (targetLink) targetLink.classList.add('active');
-    const titles = { dashboard: 'Genel Bakış', users: 'Kullanıcı Yönetimi', archive: 'Kişi Arşivi', tickets: 'Destek Talepleri', logs: 'İşlem Geçmişi' };
+    const titles = { dashboard: 'Genel Bakış', users: 'Kullanıcı Yönetimi', bans: 'Ban Yönetimi', archive: 'Kişi Arşivi', tickets: 'Destek Talepleri', logs: 'İşlem Geçmişi' };
     const titleEl = document.getElementById('page-title');
     if (titleEl) titleEl.textContent = titles[page] || '';
     // Mobilde sidebar kapat
@@ -151,6 +155,7 @@ function loadUsers() {
         snapshot.forEach(docSnap => { allUsers.push({ id: docSnap.id, ...docSnap.data() }); });
         updateDashboardFromUsers();
         applyUserFilter();
+        applyBanFilter();
     });
 }
 
@@ -163,6 +168,16 @@ function setupFilters() {
             currentFilter = btn.dataset.filter;
             currentPage = 1;
             applyUserFilter();
+        });
+    });
+    // Ban filtreleri
+    document.querySelectorAll('[data-ban-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-ban-filter]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentBanFilter = btn.dataset.banFilter;
+            currentBanPage = 1;
+            applyBanFilter();
         });
     });
     // Ticket filtreleri
@@ -184,6 +199,16 @@ function setupSearch() {
         searchTimeout = setTimeout(() => {
             currentPage = 1;
             applyUserFilter();
+        }, 300);
+    });
+
+    // Ban arama
+    let banSearchTimeout = null;
+    document.getElementById('ban-search')?.addEventListener('input', (e) => {
+        clearTimeout(banSearchTimeout);
+        banSearchTimeout = setTimeout(() => {
+            currentBanPage = 1;
+            applyBanFilter();
         }, 300);
     });
 
@@ -323,6 +348,132 @@ window.goToPage = function(p) {
 };
 
 // =====================================
+// 7.5. BAN YÖNETİMİ
+// =====================================
+function applyBanFilter() {
+    const searchText = (document.getElementById('ban-search')?.value || '').toLowerCase().trim();
+    const now = Date.now();
+    
+    filteredBans = allUsers.filter(u => {
+        if (!u.isBanned) return false;
+        
+        const banType = u.banData?.type || 'permanent';
+        const isExpired = u.banData?.expiresAt && u.banData.expiresAt.toMillis() < now;
+        
+        if (currentBanFilter === 'permanent' && banType !== 'permanent') return false;
+        if (currentBanFilter === 'temporary' && banType !== 'temporary') return false;
+        if (currentBanFilter === 'expired' && !isExpired) return false;
+        if (currentBanFilter === 'all' && isExpired) return false; // Defaultta süresi dolanları gizle
+        
+        if (searchText) {
+            const matchId = u.id.toLowerCase().includes(searchText);
+            const matchAdmin = (u.banData?.bannedBy || '').toLowerCase().includes(searchText);
+            if (!matchId && !matchAdmin) return false;
+        }
+        return true;
+    });
+    
+    // Sort by ban date desc
+    filteredBans.sort((a, b) => {
+        const tA = a.banData?.bannedAt?.toMillis() || 0;
+        const tB = b.banData?.bannedAt?.toMillis() || 0;
+        return tB - tA;
+    });
+    
+    renderBansTable();
+}
+
+function renderBansTable() {
+    const container = document.getElementById('bans-table-container');
+    if (!container) return;
+
+    if (filteredBans.length === 0) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">⚖️</span><p>Kritere uygun banlı kullanıcı bulunamadı.</p></div>';
+        document.getElementById('bans-pagination').innerHTML = '';
+        return;
+    }
+
+    const totalPages = Math.ceil(filteredBans.length / PAGE_SIZE);
+    if (currentBanPage > totalPages) currentBanPage = totalPages;
+    const start = (currentBanPage - 1) * PAGE_SIZE;
+    const pageBans = filteredBans.slice(start, start + PAGE_SIZE);
+    const now = Date.now();
+
+    let html = `<table class="data-table">
+        <thead><tr>
+            <th>Kullanıcı</th>
+            <th>Ban Bilgisi</th>
+            <th>Tarih / Süre</th>
+            <th style="text-align:right">İşlem</th>
+        </tr></thead><tbody>`;
+
+    pageBans.forEach(user => {
+        const avatarHtml = user.avatarUrl ? `<img src="${escHtml(user.avatarUrl)}" alt="">` : '👤';
+        const banData = user.banData || {};
+        const adminName = banData.bannedBy || 'Bilinmiyor';
+        const reason = banData.reason || 'Neden belirtilmemiş';
+        const isExpired = banData.expiresAt && banData.expiresAt.toMillis() < now;
+        
+        let typeBadge = '';
+        if (isExpired) typeBadge = '<span class="badge-sm badge-green">Süresi Doldu</span>';
+        else if (banData.type === 'temporary') typeBadge = '<span class="badge-sm badge-yellow">Geçici</span>';
+        else typeBadge = '<span class="badge-sm status-banned">Kalıcı</span>';
+
+        let dateInfo = '';
+        if (banData.bannedAt) {
+            dateInfo += `<b>Atıldı:</b> ${banData.bannedAt.toDate().toLocaleDateString('tr-TR')}<br>`;
+        }
+        if (banData.expiresAt) {
+            dateInfo += `<b>Bitiş:</b> ${banData.expiresAt.toDate().toLocaleDateString('tr-TR')}`;
+        }
+
+        html += `<tr>
+            <td><div class="user-cell">
+                <div class="user-avatar">${avatarHtml}</div>
+                <div><div class="user-name">@${escHtml(user.id)}</div><div class="user-sub">${typeBadge}</div></div>
+            </div></td>
+            <td>
+                <div style="font-size:12px;color:#94a3b8"><b>Admin:</b> @${escHtml(adminName)}</div>
+                <div style="font-size:13px;color:#cbd5e1;margin-top:4px;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(reason)}">"${escHtml(reason)}"</div>
+            </td>
+            <td style="font-size:12px;color:#94a3b8">${dateInfo || '—'}</td>
+            <td style="text-align:right">
+                <button class="btn-primary" style="padding:6px 12px;font-size:12px" onclick="openUnbanModal('${escHtml(user.id)}')">🔓 Ban Kaldır</button>
+            </td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    renderBansPagination(totalPages);
+}
+
+function renderBansPagination(totalPages) {
+    const pagEl = document.getElementById('bans-pagination');
+    if (!pagEl || totalPages <= 1) { if (pagEl) pagEl.innerHTML = ''; return; }
+    let html = `<button class="page-btn" onclick="goToBanPage(${currentBanPage - 1})" ${currentBanPage === 1 ? 'disabled' : ''}>‹</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+        if (i <= 3 || i > totalPages - 2 || Math.abs(i - currentBanPage) <= 1) {
+            html += `<button class="page-btn ${i === currentBanPage ? 'active' : ''}" onclick="goToBanPage(${i})">${i}</button>`;
+        } else if (i === 4 && currentBanPage > 5) {
+            html += '<span class="page-info">…</span>';
+        } else if (i === totalPages - 2 && currentBanPage < totalPages - 4) {
+            html += '<span class="page-info">…</span>';
+        }
+    }
+    html += `<button class="page-btn" onclick="goToBanPage(${currentBanPage + 1})" ${currentBanPage === totalPages ? 'disabled' : ''}>›</button>`;
+    html += `<span class="page-info">${filteredBans.length} sonuç</span>`;
+    pagEl.innerHTML = html;
+}
+
+window.goToBanPage = function(p) {
+    const totalPages = Math.ceil(filteredBans.length / PAGE_SIZE);
+    if (p < 1 || p > totalPages) return;
+    currentBanPage = p;
+    renderBansTable();
+};
+
+// =====================================
 // 8. İŞLEM DROPDOWN
 // =====================================
 window.toggleActionMenu = function(event, userId) {
@@ -349,14 +500,103 @@ window.toggleVerify = async function(username, status) {
     }
 };
 
-window.toggleBan = async function(username, status) {
-    try {
-        await updateDoc(doc(db, "users", username), { isBanned: !status });
-        await logAdminAction('ban', username, status ? 'Ban kaldırıldı' : 'Banlandı');
-        showAdminToast(status ? "Ban kaldırıldı." : "Kullanıcı banlandı.", "success");
-    } catch (e) {
-        showAdminToast("İşlem başarısız.", "error");
+window.toggleBan = function(username, isBanned) {
+    if (isBanned) {
+        openUnbanModal(username);
+    } else {
+        document.getElementById('ban-target-user').value = username;
+        document.getElementById('ban-target-username').value = '@' + username;
+        document.getElementById('ban-reason').value = '';
+        document.getElementById('ban-type').value = 'permanent';
+        document.getElementById('ban-duration-group').style.display = 'none';
+        document.getElementById('ban-duration').value = '';
+        openModal('modal-ban-user');
     }
+};
+
+window.executeBanUser = async function() {
+    const username = document.getElementById('ban-target-user').value;
+    const type = document.getElementById('ban-type').value;
+    const durationStr = document.getElementById('ban-duration').value;
+    const reason = document.getElementById('ban-reason').value.trim();
+    
+    if (!username) return;
+    if (type === 'temporary' && (!durationStr || isNaN(durationStr) || durationStr < 1)) {
+        showAdminToast("Lütfen geçerli bir gün sayısı girin.", "error"); return;
+    }
+    
+    let expiresAt = null;
+    if (type === 'temporary') {
+        const d = new Date();
+        d.setDate(d.getDate() + parseInt(durationStr));
+        expiresAt = d; // Firestore will convert JS Date to Timestamp in updateDoc automatically
+    }
+
+    const btn = document.getElementById('execute-ban-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Banlanıyor...'; }
+
+    try {
+        await updateDoc(doc(db, "users", username), { 
+            isBanned: true,
+            banData: {
+                bannedAt: serverTimestamp(),
+                bannedBy: adminUsername,
+                reason: reason || 'Neden belirtilmedi',
+                type: type,
+                expiresAt: expiresAt
+            }
+        });
+        await logAdminAction('ban', username, `Kullanıcı banlandı (${type === 'permanent' ? 'Kalıcı' : durationStr + ' Gün'}). Neden: ${reason}`);
+        showAdminToast("Kullanıcı başarıyla banlandı.", "success");
+        closeModal('modal-ban-user');
+    } catch (e) {
+        console.error(e);
+        showAdminToast("Banlama işlemi başarısız.", "error");
+    }
+    if (btn) { btn.disabled = false; btn.textContent = '🔒 Banla'; }
+};
+
+window.openUnbanModal = function(username) {
+    document.getElementById('unban-target-user').textContent = '@' + username;
+    openModal('modal-unban-user');
+};
+
+window.executeUnbanUser = async function() {
+    const username = document.getElementById('unban-target-user').textContent.replace('@', '');
+    if (!username || username === '—') return;
+    
+    const btn = document.getElementById('execute-unban-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Kaldırılıyor...'; }
+
+    try {
+        const userRef = doc(db, "users", username);
+        const userSnap = await getDoc(userRef);
+        let banHistory = [];
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            banHistory = data.banHistory || [];
+            if (data.banData) {
+                const oldBan = data.banData;
+                oldBan.unbannedAt = new Date(); // local date before save
+                oldBan.unbannedBy = adminUsername;
+                banHistory.push(oldBan);
+            }
+        }
+
+        await updateDoc(userRef, { 
+            isBanned: false,
+            banData: null,
+            banHistory: banHistory
+        });
+        
+        await logAdminAction('unban', username, 'Kullanıcı banı kaldırıldı');
+        showAdminToast("Kullanıcının banı kaldırıldı.", "success");
+        closeModal('modal-unban-user');
+    } catch (e) {
+        console.error(e);
+        showAdminToast("Ban kaldırma başarısız.", "error");
+    }
+    if (btn) { btn.disabled = false; btn.textContent = '🔓 Banı Kaldır'; }
 };
 
 window.confirmDeleteUser = function(username) {
@@ -892,6 +1132,8 @@ function setupModals() {
     document.getElementById('save-edit-btn')?.addEventListener('click', saveEditUser);
     document.getElementById('confirm-delete-btn')?.addEventListener('click', executeDeleteUser);
     document.getElementById('send-reply-btn')?.addEventListener('click', sendTicketReply);
+    document.getElementById('execute-ban-btn')?.addEventListener('click', executeBanUser);
+    document.getElementById('execute-unban-btn')?.addEventListener('click', executeUnbanUser);
 
     // Overlay tıklamasıyla kapatma
     document.querySelectorAll('.modal-overlay').forEach(modal => {

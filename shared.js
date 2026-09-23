@@ -4,8 +4,40 @@
 // Bu dosya, birden fazla sayfa dosyasında (feed, chat, profile, notifications, search)
 // tekrar eden fonksiyonları tek bir yerde toplar. Her sayfa dosyası bu modülü import eder.
 
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { collection, addDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { db } from './firebase-config.js';
+import { auth, db } from './firebase-config.js';
+
+// =====================================
+// GLOBAL BAN CHECK
+// =====================================
+onAuthStateChanged(auth, async (user) => {
+    if (user && !window.location.href.includes('admin.html')) {
+        const myUsername = user.displayName || user.email.split('@')[0];
+        const checkMyBan = await getDoc(doc(db, "users", myUsername));
+        if (checkMyBan.exists()) {
+            const data = checkMyBan.data();
+            if (data.isBanned === true) {
+                let stillBanned = true;
+                if (data.banData && data.banData.expiresAt) {
+                    if (data.banData.expiresAt.toMillis() < Date.now()) {
+                        // Süresi dolmuş! Otomatik kaldır
+                        stillBanned = false;
+                        let banHistory = data.banHistory || [];
+                        const oldBan = data.banData;
+                        oldBan.unbannedAt = new Date();
+                        oldBan.unbannedBy = "System (Auto Expire)";
+                        banHistory.push(oldBan);
+                        await updateDoc(doc(db, "users", myUsername), { isBanned: false, banData: null, banHistory: banHistory });
+                    }
+                }
+                if (stillBanned) {
+                    signOut(auth).then(() => { window.location.href = "index.html"; });
+                }
+            }
+        }
+    }
+});
 
 // =====================================
 // 0. GÜVENLİK YARDIMCI FONKSİYONLARI

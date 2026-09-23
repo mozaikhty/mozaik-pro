@@ -245,6 +245,7 @@
     <nav class="sidebar-nav">
         <div class="nav-link active" data-page="dashboard"><span class="icon">📊</span>Genel Bakış</div>
         <div class="nav-link" data-page="users"><span class="icon">👥</span>Kullanıcı Yönetimi</div>
+        <div class="nav-link" data-page="bans"><span class="icon">⚖️</span>Ban Yönetimi</div>
         <div class="nav-link" data-page="archive"><span class="icon">📋</span>Kişi Arşivi</div>
         <div class="nav-link" data-page="tickets"><span class="icon">📬</span>Destek Talepleri</div>
         <div class="nav-link" data-page="logs"><span class="icon">🔐</span>İşlem Geçmişi</div>
@@ -358,6 +359,23 @@
                 <div class="loading-row"><div class="loading-circle"></div><div style="flex:1"><div class="loading-skeleton" style="width:65%"></div><div class="loading-skeleton" style="width:45%"></div></div></div>
             </div>
             <div class="pagination" id="users-pagination"></div>
+        </div>
+    </div>
+    <!-- ==================== PAGE: BANS ==================== -->
+    <div class="admin-page" id="page-bans">
+        <div class="section-card">
+            <div class="section-header"><h3>⚖️ Banlı Kullanıcılar</h3></div>
+            <div class="filter-bar">
+                <button class="filter-btn active" data-ban-filter="all">Tümü</button>
+                <button class="filter-btn" data-ban-filter="permanent">Kalıcı</button>
+                <button class="filter-btn" data-ban-filter="temporary">Geçici</button>
+                <button class="filter-btn" data-ban-filter="expired">Süresi Dolanlar</button>
+                <input type="text" class="filter-search" id="ban-search" placeholder="Kullanıcı veya Admin ara..." autocomplete="off">
+            </div>
+            <div class="section-body" id="bans-table-container">
+                <div class="loading-row"><div class="loading-circle"></div><div style="flex:1"><div class="loading-skeleton" style="width:60%"></div><div class="loading-skeleton" style="width:40%"></div></div></div>
+            </div>
+            <div class="pagination" id="bans-pagination"></div>
         </div>
     </div>
 
@@ -480,6 +498,51 @@
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeModal('modal-ticket-reply')">İptal</button>
             <button class="btn-primary" id="send-reply-btn">📤 Yanıt Gönder</button>
+        </div>
+    </div>
+</div>
+
+<!-- Ban User Modal -->
+<div class="modal-overlay" id="modal-ban-user">
+    <div class="modal-box" style="max-width:500px">
+        <div class="modal-head"><h3>🔒 Kullanıcıyı Banla</h3><button class="modal-close" onclick="closeModal('modal-ban-user')">✕</button></div>
+        <div class="modal-body">
+            <input type="hidden" id="ban-target-user">
+            <div class="form-group"><label class="form-label">Hedef Kullanıcı</label><input type="text" class="form-input" id="ban-target-username" disabled></div>
+            <div class="form-group">
+                <label class="form-label">Ban Türü</label>
+                <select class="form-input" id="ban-type" onchange="document.getElementById('ban-duration-group').style.display = this.value === 'temporary' ? 'block' : 'none'">
+                    <option value="permanent">Kalıcı Ban (Süresiz)</option>
+                    <option value="temporary">Geçici Ban</option>
+                </select>
+            </div>
+            <div class="form-group" id="ban-duration-group" style="display:none">
+                <label class="form-label">Süre (Gün)</label>
+                <input type="number" class="form-input" id="ban-duration" placeholder="Örn: 7" min="1" max="365">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Ban Nedeni (Kullanıcı Tarafından Görülebilir)</label>
+                <textarea class="form-textarea" id="ban-reason" placeholder="Kuralları ihlal ettiniz..." style="min-height:80px" maxlength="500"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('modal-ban-user')">İptal</button>
+            <button class="btn-danger" id="execute-ban-btn">🔒 Banla</button>
+        </div>
+    </div>
+</div>
+
+<!-- Unban Confirm Modal -->
+<div class="modal-overlay" id="modal-unban-user">
+    <div class="modal-box" style="max-width:420px">
+        <div class="modal-head"><h3>🔓 Ban Kaldırma Onayı</h3><button class="modal-close" onclick="closeModal('modal-unban-user')">✕</button></div>
+        <div class="modal-body">
+            <p style="margin-bottom:12px">Bu kullanıcının banını kaldırmak istediğinize emin misiniz?</p>
+            <p>Hedef Kullanıcı: <b id="unban-target-user" style="color:#10b981">—</b></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('modal-unban-user')">Vazgeç</button>
+            <button class="btn-primary" style="background:#10b981;border-color:#10b981" id="execute-unban-btn">🔓 Banı Kaldır</button>
         </div>
     </div>
 </div>
