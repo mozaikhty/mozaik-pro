@@ -1,393 +1,863 @@
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+// ==========================================
+// MOZAİK — ADMIN PANELİ (admin.js)
+// ==========================================
+// Tüm admin işlemleri: Dashboard, Kullanıcı CRUD, Arşiv, Destek, Loglar.
+// Firebase Firestore serverless mimarisi kullanılır.
+
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc, startAt, endAt, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 import { auth, db, storage } from './firebase-config.js';
 
-const ADMIN_USERNAME = "mozaik"; 
-let allUsers = []; 
+// =====================================
+// 1. DURUM DEĞİŞKENLERİ
+// =====================================
+let adminUsername = '';
+let allUsers = [];
+let filteredUsers = [];
+let currentPage = 1;
+const PAGE_SIZE = 20;
+let currentFilter = 'all';
+let allTickets = [];
+let currentTicketFilter = 'all';
 let recentPostsLog = [];
 let recentNotifsLog = [];
+let deleteTargetUser = null;
 
+// =====================================
+// 2. YETKİLENDİRME
+// =====================================
 onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        try {
-            // --- GÜVENLİK KONTROLÜ ---
-            const adminDocRef = doc(db, "admins", user.uid);
-            const adminDoc = await getDoc(adminDocRef);
-
-            if (!adminDoc.exists()) { 
-                if (window.showToast) window.showToast("Yönetici yetkiniz bulunmamaktadır!", "error");
-                else alert("Sistem Yönetimi sayfasına giriş yetkiniz bulunmamaktadır!");
-                setTimeout(() => { window.location.href = "feed.html"; }, 1500);
-                return; 
-            }
-            
-            const myUsername = user.displayName || user.email.split('@')[0];
-            const profileLink = document.getElementById('my-profile-link');
-            if(profileLink) profileLink.href = `profile.html?user=${myUsername}`;
-            
-            loadUsers(); 
-            loadTickets();
-            loadActivityStream(); 
-            
-        } catch (error) {
-            console.error("Yetki kontrolü başarısız:", error.code || "Bilinmeyen hata");
-            if (window.showToast) window.showToast("Bağlantı hatası. Yönlendiriliyorsunuz.", "error");
-            else alert("Bağlantı hatası veya yetkisiz erişim. Anasayfaya yönlendiriliyorsunuz.");
+    if (!user) { window.location.href = "index.html"; return; }
+    try {
+        const adminDoc = await getDoc(doc(db, "admins", user.uid));
+        if (!adminDoc.exists()) {
+            showAdminToast("Yönetici yetkiniz bulunmamaktadır!", "error");
             setTimeout(() => { window.location.href = "feed.html"; }, 1500);
+            return;
         }
-    } else { 
-        window.location.href = "index.html"; 
+        adminUsername = user.displayName || user.email.split('@')[0];
+        const nameEl = document.getElementById('admin-name');
+        if (nameEl) nameEl.textContent = '@' + adminUsername;
+        initPanel();
+    } catch (e) {
+        showAdminToast("Bağlantı hatası. Yönlendiriliyorsunuz.", "error");
+        setTimeout(() => { window.location.href = "feed.html"; }, 1500);
     }
 });
 
-const secUsers = document.getElementById('users-section');
-const secActivity = document.getElementById('activity-section');
-const secTickets = document.getElementById('tickets-section');
-const btnUsers = document.getElementById('tab-users-btn');
-const btnActivity = document.getElementById('tab-activity-btn');
-const btnTickets = document.getElementById('tab-tickets-btn');
+window.logoutUser = function() {
+    signOut(auth).then(() => { window.location.href = "index.html"; });
+};
 
-btnUsers?.addEventListener('click', () => { if(secUsers) secUsers.style.display='block'; if(secActivity) secActivity.style.display='none'; if(secTickets) secTickets.style.display='none'; btnUsers.classList.add('active'); btnActivity?.classList.remove('active'); btnTickets?.classList.remove('active'); });
-btnActivity?.addEventListener('click', () => { if(secUsers) secUsers.style.display='none'; if(secActivity) secActivity.style.display='block'; if(secTickets) secTickets.style.display='none'; btnActivity.classList.add('active'); btnUsers?.classList.remove('active'); btnTickets?.classList.remove('active'); });
-btnTickets?.addEventListener('click', () => { if(secUsers) secUsers.style.display='none'; if(secActivity) secActivity.style.display='none'; if(secTickets) secTickets.style.display='block'; btnTickets.classList.add('active'); btnUsers?.classList.remove('active'); btnActivity?.classList.remove('active'); });
+// =====================================
+// 3. PANEL BAŞLATMA
+// =====================================
+function initPanel() {
+    loadUsers();
+    loadTickets();
+    loadActivityStream();
+    loadAdminLogs();
+    loadDashboardStats();
+    setupNavigation();
+    setupFilters();
+    setupSearch();
+    setupModals();
+    setupMobileMenu();
+}
 
+// =====================================
+// 4. SAYFA NAVİGASYONU
+// =====================================
+function setupNavigation() {
+    document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+        link.addEventListener('click', () => {
+            const page = link.dataset.page;
+            switchPage(page);
+        });
+    });
+}
+
+window.switchPage = function(page) {
+    document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link[data-page]').forEach(l => l.classList.remove('active'));
+    const targetPage = document.getElementById('page-' + page);
+    const targetLink = document.querySelector(`.nav-link[data-page="${page}"]`);
+    if (targetPage) targetPage.classList.add('active');
+    if (targetLink) targetLink.classList.add('active');
+    const titles = { dashboard: 'Genel Bakış', users: 'Kullanıcı Yönetimi', archive: 'Kişi Arşivi', tickets: 'Destek Talepleri', logs: 'İşlem Geçmişi' };
+    const titleEl = document.getElementById('page-title');
+    if (titleEl) titleEl.textContent = titles[page] || '';
+    // Mobilde sidebar kapat
+    document.getElementById('admin-sidebar')?.classList.remove('open');
+    document.getElementById('sidebar-overlay')?.classList.remove('show');
+};
+
+// =====================================
+// 5. MOBİL MENÜ
+// =====================================
+function setupMobileMenu() {
+    document.getElementById('hamburger-btn')?.addEventListener('click', () => {
+        document.getElementById('admin-sidebar')?.classList.toggle('open');
+        document.getElementById('sidebar-overlay')?.classList.toggle('show');
+    });
+    document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
+        document.getElementById('admin-sidebar')?.classList.remove('open');
+        document.getElementById('sidebar-overlay')?.classList.remove('show');
+    });
+}
+
+// =====================================
+// 6. DASHBOARD İSTATİSTİKLERİ
+// =====================================
+async function loadDashboardStats() {
+    try {
+        // Kullanıcı istatistikleri (allUsers yüklendikten sonra güncellenir)
+        // Gönderi sayısı
+        const postsSnap = await getCountFromServer(collection(db, "posts"));
+        const postCount = postsSnap.data().count;
+        setText('stat-total-posts', postCount);
+    } catch (e) {
+        // getCountFromServer desteklenmiyorsa
+    }
+}
+
+function updateDashboardFromUsers() {
+    setText('stat-total-users', allUsers.length);
+    const active = allUsers.filter(u => !u.isBanned).length;
+    const banned = allUsers.filter(u => u.isBanned).length;
+    setText('stat-active-users', active);
+    setText('stat-banned-users', banned);
+}
+
+function updateDashboardFromTickets() {
+    setText('stat-total-tickets', allTickets.length);
+    const pending = allTickets.filter(t => !t.status || t.status === 'Yeni').length;
+    setText('stat-pending-tickets', pending);
+}
+
+// =====================================
+// 7. KULLANICI YÖNETİMİ
+// =====================================
 function loadUsers() {
-    const q = query(collection(db, "users"), limit(50));
+    const q = query(collection(db, "users"), limit(500));
     onSnapshot(q, (snapshot) => {
         allUsers = [];
         snapshot.forEach(docSnap => { allUsers.push({ id: docSnap.id, ...docSnap.data() }); });
-        renderUserList(allUsers);
+        updateDashboardFromUsers();
+        applyUserFilter();
     });
 }
 
-function renderUserList(users) {
-    const list = document.getElementById('users-list'); 
-    if(!list) return;
-    list.innerHTML = '';
-    
-    if(users.length === 0) { list.innerHTML = '<p style="color:#aaa; text-align:center;">Kullanıcı bulunamadı.</p>'; return; }
-    
-    users.forEach(user => {
-        const isVerified = user.isVerified || false; const isBanned = user.isBanned || false;
-        let badgesHtml = ''; if (isVerified) badgesHtml += '<span class="badge bg-blue">VIP</span>'; if (isBanned) badgesHtml += '<span class="badge bg-red">BANLI</span>';
+function setupFilters() {
+    // Kullanıcı filtreleri
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            currentPage = 1;
+            applyUserFilter();
+        });
+    });
+    // Ticket filtreleri
+    document.querySelectorAll('[data-ticket-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-ticket-filter]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTicketFilter = btn.dataset.ticketFilter;
+            renderTickets();
+        });
+    });
+}
 
-        list.innerHTML += `
-            <div class="list-item">
-                <div class="user-info">@${window.escapeHtml(user.id)} ${badgesHtml}</div>
-                <div class="action-btns">
-                    <button class="btn-verify" onclick="window.toggleVerify('${window.escapeHtml(user.id)}', ${isVerified})">${isVerified ? 'Tiki Al' : 'Tik Ver'}</button>
-                    <button class="${isBanned ? 'btn-unban' : 'btn-ban'}" onclick="window.toggleBan('${window.escapeHtml(user.id)}', ${isBanned})">${isBanned ? 'Ban Aç' : 'Banla'}</button>
-                    <button class="btn-posts" onclick="window.viewUserPosts('${window.escapeHtml(user.id)}')">Postlar</button>
-                    <button class="btn-delete" onclick="window.deleteUserCompletely('${window.escapeHtml(user.id)}')">Sil</button>
+function setupSearch() {
+    // Kullanıcı arama
+    let searchTimeout = null;
+    document.getElementById('user-search')?.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentPage = 1;
+            applyUserFilter();
+        }, 300);
+    });
+
+    // Global arama (topbar)
+    document.getElementById('global-search')?.addEventListener('input', (e) => {
+        const text = e.target.value.trim();
+        if (text.length > 0) {
+            switchPage('users');
+            const userSearch = document.getElementById('user-search');
+            if (userSearch) userSearch.value = text;
+            currentPage = 1;
+            applyUserFilter();
+        }
+    });
+
+    // Arşiv arama
+    setupArchiveSearch();
+}
+
+function applyUserFilter() {
+    const searchText = (document.getElementById('user-search')?.value || '').toLowerCase().trim();
+    filteredUsers = allUsers.filter(u => {
+        // Metin filtresi
+        if (searchText && !u.id.toLowerCase().includes(searchText)) return false;
+        // Durum filtresi
+        if (currentFilter === 'active' && u.isBanned) return false;
+        if (currentFilter === 'banned' && !u.isBanned) return false;
+        if (currentFilter === 'verified' && !u.isVerified) return false;
+        return true;
+    });
+    renderUsersTable();
+}
+
+function renderUsersTable() {
+    const container = document.getElementById('users-table-container');
+    if (!container) return;
+
+    if (filteredUsers.length === 0) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">👤</span><p>Sonuç bulunamadı.</p></div>';
+        document.getElementById('users-pagination').innerHTML = '';
+        return;
+    }
+
+    // Sayfalama
+    const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageUsers = filteredUsers.slice(start, start + PAGE_SIZE);
+
+    let html = `<table class="data-table">
+        <thead><tr>
+            <th>Kullanıcı</th>
+            <th>Durum</th>
+            <th>Kayıt</th>
+            <th style="text-align:right">İşlem</th>
+        </tr></thead><tbody>`;
+
+    pageUsers.forEach(user => {
+        const isVerified = user.isVerified || false;
+        const isBanned = user.isBanned || false;
+        const avatarHtml = user.avatarUrl
+            ? `<img src="${escHtml(user.avatarUrl)}" alt="">`
+            : '👤';
+        const regDate = user.createdAt
+            ? user.createdAt.toDate().toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })
+            : '—';
+
+        let statusBadges = '';
+        if (isBanned) statusBadges += '<span class="badge-sm status-banned">Banlı</span> ';
+        else statusBadges += '<span class="badge-sm status-active">Aktif</span> ';
+        if (isVerified) statusBadges += '<span class="badge-sm status-verified">VIP</span>';
+
+        html += `<tr>
+            <td><div class="user-cell">
+                <div class="user-avatar">${avatarHtml}</div>
+                <div><div class="user-name">@${escHtml(user.id)}</div><div class="user-sub">${escHtml(user.fullName || '')}</div></div>
+            </div></td>
+            <td>${statusBadges}</td>
+            <td style="font-size:12px;color:#94a3b8">${regDate}</td>
+            <td style="text-align:right">
+                <div class="action-menu">
+                    <button class="action-trigger" onclick="toggleActionMenu(event, '${escHtml(user.id)}')">⋯</button>
+                    <div class="action-dropdown" id="actions-${escHtml(user.id)}">
+                        <button onclick="openEditModal('${escHtml(user.id)}')">✏️ Düzenle</button>
+                        <button onclick="toggleVerify('${escHtml(user.id)}', ${isVerified})">${isVerified ? '❌ VIP Kaldır' : '✅ VIP Yap'}</button>
+                        <button onclick="toggleBan('${escHtml(user.id)}', ${isBanned})">${isBanned ? '🔓 Ban Aç' : '🔒 Banla'}</button>
+                        <button onclick="viewUserPosts('${escHtml(user.id)}')">📝 Gönderiler</button>
+                        <button class="danger" onclick="confirmDeleteUser('${escHtml(user.id)}')">🗑️ Sil</button>
+                    </div>
                 </div>
-            </div>
-        `;
+            </td>
+        </tr>`;
     });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    // Sayfalama
+    renderPagination(totalPages);
 }
 
-let searchTimeoutAdmin = null;
-document.getElementById('admin-user-search')?.addEventListener('input', async (e) => {
-    const text = e.target.value.toLowerCase().trim();
-    clearTimeout(searchTimeoutAdmin);
-    
-    if (!text) { renderUserList(allUsers); return; } 
+function renderPagination(totalPages) {
+    const pagEl = document.getElementById('users-pagination');
+    if (!pagEl || totalPages <= 1) { if (pagEl) pagEl.innerHTML = ''; return; }
 
-    searchTimeoutAdmin = setTimeout(async () => {
-        const list = document.getElementById('users-list');
-        if(list) list.innerHTML = '<p style="color:#aaa; text-align:center;">Aranıyor... 🔍</p>';
-        try {
-            const q = query(collection(db, "users"), orderBy("__name__"), startAt(text), endAt(text + '\uf8ff'), limit(20));
-            const snap = await getDocs(q);
-            let searchResults = [];
-            snap.forEach(d => searchResults.push({ id: d.id, ...d.data() }));
-            renderUserList(searchResults);
-        } catch(error) { console.error("Arama hatası:", error.code || "Bilinmeyen hata"); }
-    }, 500); 
+    let html = `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+        if (i <= 3 || i > totalPages - 2 || Math.abs(i - currentPage) <= 1) {
+            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+        } else if (i === 4 && currentPage > 5) {
+            html += '<span class="page-info">…</span>';
+        } else if (i === totalPages - 2 && currentPage < totalPages - 4) {
+            html += '<span class="page-info">…</span>';
+        }
+    }
+    html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+    html += `<span class="page-info">${filteredUsers.length} sonuç</span>`;
+    pagEl.innerHTML = html;
+}
+
+window.goToPage = function(p) {
+    const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    renderUsersTable();
+};
+
+// =====================================
+// 8. İŞLEM DROPDOWN
+// =====================================
+window.toggleActionMenu = function(event, userId) {
+    event.stopPropagation();
+    document.querySelectorAll('.action-dropdown.show').forEach(d => d.classList.remove('show'));
+    const dropdown = document.getElementById('actions-' + userId);
+    if (dropdown) dropdown.classList.toggle('show');
+};
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.action-dropdown.show').forEach(d => d.classList.remove('show'));
 });
 
-window.toggleVerify = async function(username, status) { if(confirm("Emin misin?")) await updateDoc(doc(db, "users", username), { isVerified: !status }); };
-window.toggleBan = async function(username, status) { if(confirm("Emin misin?")) await updateDoc(doc(db, "users", username), { isBanned: !status }); };
-
-// --- STORAGE (KOTA) KORUMALI KULLANICI SİLME İŞLEMİ ---
-window.deleteUserCompletely = async function(username) {
-    if(confirm(`DİKKAT! @${username} adlı kullanıcıyı ve TÜM fotoğraflarını sistemden tamamen silmek istediğinize emin misiniz?`)) {
-        try {
-            // 1. Kullanıcının profil ve kapak fotoğraflarını sil
-            const userRef = doc(db, "users", username);
-            const userSnap = await getDoc(userRef);
-            if(userSnap.exists()) {
-                const uData = userSnap.data();
-                if(uData.avatarUrl) await deleteObject(ref(storage, uData.avatarUrl)).catch(()=>{});
-                if(uData.bannerUrl) await deleteObject(ref(storage, uData.bannerUrl)).catch(()=>{});
-            }
-
-            // 2. Kullanıcının gönderi fotoğraflarını ve postları sil
-            const q = query(collection(db, "posts"), where("author", "==", username));
-            const snap = await getDocs(q);
-            for (const d of snap.docs) {
-                const postData = d.data();
-                if(postData.imageUrl && !postData.isRepost) {
-                    await deleteObject(ref(storage, postData.imageUrl)).catch(()=>{});
-                }
-                await deleteDoc(doc(db, "posts", d.id));
-            }
-
-            // 3. Kullanıcı belgesini sil
-            await deleteDoc(userRef);
-            
-            if(window.showToast) window.showToast("Kullanıcı ve tüm verileri kazındı!", "success");
-            else alert("Kullanıcı ve tüm verileri kazındı!");
-        } catch(error) {
-            console.error("Kullanıcı silinemedi:", error.code || "Bilinmeyen hata");
-            if(window.showToast) window.showToast("Kullanıcı silinirken bir hata oluştu.", "error");
-            else alert("Kullanıcı silinirken bir hata oluştu.");
-        }
+// =====================================
+// 9. KULLANICI İŞLEMLERİ
+// =====================================
+window.toggleVerify = async function(username, status) {
+    try {
+        await updateDoc(doc(db, "users", username), { isVerified: !status });
+        await logAdminAction('verify', username, status ? 'VIP kaldırıldı' : 'VIP yapıldı');
+        showAdminToast(status ? "VIP rozeti kaldırıldı." : "VIP rozeti verildi.", "success");
+    } catch (e) {
+        showAdminToast("İşlem başarısız.", "error");
     }
 };
 
+window.toggleBan = async function(username, status) {
+    try {
+        await updateDoc(doc(db, "users", username), { isBanned: !status });
+        await logAdminAction('ban', username, status ? 'Ban kaldırıldı' : 'Banlandı');
+        showAdminToast(status ? "Ban kaldırıldı." : "Kullanıcı banlandı.", "success");
+    } catch (e) {
+        showAdminToast("İşlem başarısız.", "error");
+    }
+};
+
+window.confirmDeleteUser = function(username) {
+    deleteTargetUser = username;
+    document.getElementById('delete-target-user').textContent = '@' + username;
+    openModal('modal-confirm-delete');
+};
+
+window.executeDeleteUser = async function() {
+    if (!deleteTargetUser) return;
+    const username = deleteTargetUser;
+    const btn = document.getElementById('confirm-delete-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Siliniyor...'; }
+
+    try {
+        // 1. Kullanıcının fotoğraflarını sil
+        const userRef = doc(db, "users", username);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const uData = userSnap.data();
+            if (uData.avatarUrl) await deleteObject(ref(storage, uData.avatarUrl)).catch(() => {});
+            if (uData.bannerUrl) await deleteObject(ref(storage, uData.bannerUrl)).catch(() => {});
+        }
+
+        // 2. Kullanıcının postlarını ve fotoğraflarını sil
+        const q = query(collection(db, "posts"), where("author", "==", username));
+        const snap = await getDocs(q);
+        for (const d of snap.docs) {
+            const postData = d.data();
+            if (postData.imageUrl && !postData.isRepost) {
+                await deleteObject(ref(storage, postData.imageUrl)).catch(() => {});
+            }
+            await deleteDoc(doc(db, "posts", d.id));
+        }
+
+        // 3. Kullanıcı belgesini sil
+        await deleteDoc(userRef);
+        await logAdminAction('delete_user', username, 'Kullanıcı ve tüm verileri silindi');
+        showAdminToast("Kullanıcı ve tüm verileri silindi.", "success");
+    } catch (e) {
+        showAdminToast("Silme işlemi başarısız.", "error");
+    }
+
+    deleteTargetUser = null;
+    closeModal('modal-confirm-delete');
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Kalıcı Olarak Sil'; }
+};
+
+// =====================================
+// 10. KULLANICI DÜZENLEME
+// =====================================
+window.openEditModal = function(username) {
+    const user = allUsers.find(u => u.id === username);
+    if (!user) return;
+    document.getElementById('edit-user-id').value = username;
+    document.getElementById('edit-username').value = '@' + username;
+    document.getElementById('edit-fullname').value = user.fullName || '';
+    document.getElementById('edit-bio').value = user.bio || '';
+    document.getElementById('edit-location').value = user.location || '';
+    openModal('modal-edit-user');
+};
+
+window.saveEditUser = async function() {
+    const username = document.getElementById('edit-user-id').value;
+    const fullName = document.getElementById('edit-fullname').value.trim();
+    const bio = document.getElementById('edit-bio').value.trim();
+    const location = document.getElementById('edit-location').value.trim();
+
+    if (!username) return;
+    if (fullName.length > 50) { showAdminToast("Ad soyad 50 karakteri aşamaz.", "error"); return; }
+    if (bio.length > 250) { showAdminToast("Biyografi 250 karakteri aşamaz.", "error"); return; }
+    if (location.length > 50) { showAdminToast("Konum 50 karakteri aşamaz.", "error"); return; }
+
+    const btn = document.getElementById('save-edit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Kaydediliyor...'; }
+
+    try {
+        await updateDoc(doc(db, "users", username), { fullName, bio, location });
+        await logAdminAction('edit_user', username, 'Profil bilgileri güncellendi');
+        showAdminToast("Kullanıcı bilgileri güncellendi.", "success");
+        closeModal('modal-edit-user');
+    } catch (e) {
+        showAdminToast("Güncelleme başarısız.", "error");
+    }
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Kaydet'; }
+};
+
+// =====================================
+// 11. KULLANICI GÖNDERİLERİ
+// =====================================
 window.viewUserPosts = async function(username) {
-    const modal = document.getElementById('admin-posts-modal');
-    if(modal) modal.style.display = 'flex';
-    const list = document.getElementById('admin-posts-list');
-    if(!list) return;
-    list.innerHTML = 'Gönderiler aranıyor...';
-    
-    const q = query(collection(db, "posts"), where("author", "==", username));
-    const snap = await getDocs(q);
-    
-    if(snap.empty) { list.innerHTML = '<p style="color:#aaa;">Bu kullanıcının hiç gönderisi yok.</p>'; return; }
-    
-    let html = '';
-    snap.forEach(d => {
-        const data = d.data();
-        const cleanContent = DOMPurify.sanitize(data.content || '');
-        const imageHtml = data.imageUrl ? `<img src="${window.sanitizeUrl(data.imageUrl)}" style="max-width:100%; border-radius:5px; margin-bottom:10px; pointer-events:none;">` : '';
-        html += `
-            <div class="admin-post-item" id="admin-post-${d.id}">
-                <div class="admin-post-content">${cleanContent}</div>
-                ${imageHtml}
-                <button class="admin-delete-post-btn" onclick="window.adminDeletePost('${d.id}', '${window.escapeHtml(username)}')">🚨 Kurallara Aykırı - Sil ve Bildir</button>
-            </div>
-        `;
-    });
-    list.innerHTML = html;
-};
+    const title = document.getElementById('posts-modal-title');
+    if (title) title.textContent = '@' + username + ' Gönderileri';
+    const list = document.getElementById('user-posts-list');
+    if (!list) return;
+    list.innerHTML = '<div class="empty-state"><p>Yükleniyor...</p></div>';
+    openModal('modal-user-posts');
 
-// --- STORAGE (KOTA) KORUMALI GÖNDERİ SİLME İŞLEMİ ---
-window.adminDeletePost = async function(postId, author) {
-    if(confirm("Gönderi kalıcı silinecek, fotoğrafı depodan yok edilecek ve kullanıcıya ceza bildirimi gidecek. Emin misiniz?")) {
-        try {
-            const postRef = doc(db, "posts", postId);
-            const postSnap = await getDoc(postRef);
-            
-            if(postSnap.exists()) {
-                const postData = postSnap.data();
-                if(postData.imageUrl && !postData.isRepost) {
-                    await deleteObject(ref(storage, postData.imageUrl)).catch(()=>{});
-                }
-            }
+    try {
+        const q = query(collection(db, "posts"), where("author", "==", username), orderBy("createdAt", "desc"));
+        const snap = await getDocs(q);
+        if (snap.empty) { list.innerHTML = '<div class="empty-state"><span class="empty-icon">📭</span><p>Gönderi bulunamadı.</p></div>'; return; }
 
-            await deleteDoc(postRef);
-            await addDoc(collection(db, "notifications"), { type: 'admin_delete', sender: ADMIN_USERNAME, recipient: author, createdAt: serverTimestamp() });
-            
-            // DOM'dan doğrudan temizle
-            document.getElementById(`admin-post-${postId}`)?.remove();
-            
-            if(window.showToast) window.showToast("Gönderi ve fotoğraf kalıcı olarak silindi!", "success");
-            else alert("Gönderi ve fotoğraf kalıcı olarak silindi!");
-            
-        } catch(error) {
-            console.error("Gönderi silinemedi:", error.code || "Bilinmeyen hata");
-            if(window.showToast) window.showToast("Gönderi silinemedi.", "error");
-            else alert("Gönderi silinemedi.");
-        }
+        let html = '';
+        snap.forEach(d => {
+            const data = d.data();
+            const content = DOMPurify.sanitize(data.content || '');
+            const date = data.createdAt ? data.createdAt.toDate().toLocaleDateString('tr-TR') : '';
+            const imgHtml = data.imageUrl ? `<img src="${escHtml(data.imageUrl)}" style="max-width:100%;border-radius:8px;margin:8px 0;pointer-events:none">` : '';
+            html += `<div style="padding:12px;border:1px solid #334155;border-radius:8px;margin-bottom:10px;background:#0f172a" id="post-${d.id}">
+                <div style="font-size:13px;color:#cbd5e1;margin-bottom:6px">${content}</div>
+                ${imgHtml}
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                    <span style="font-size:11px;color:#64748b">${date}</span>
+                    <button class="btn-danger" style="padding:5px 10px;font-size:11px" onclick="adminDeletePost('${d.id}','${escHtml(username)}')">🚨 Sil</button>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    } catch (e) {
+        list.innerHTML = '<div class="empty-state"><p style="color:#ef4444">Yükleme hatası.</p></div>';
     }
 };
 
+window.adminDeletePost = async function(postId, author) {
+    if (!confirm("Bu gönderiyi kalıcı olarak silmek istiyor musunuz?")) return;
+    try {
+        const postRef = doc(db, "posts", postId);
+        const postSnap = await getDoc(postRef);
+        if (postSnap.exists()) {
+            const postData = postSnap.data();
+            if (postData.imageUrl && !postData.isRepost) {
+                await deleteObject(ref(storage, postData.imageUrl)).catch(() => {});
+            }
+        }
+        await deleteDoc(postRef);
+        await addDoc(collection(db, "notifications"), { type: 'admin_delete', sender: adminUsername, recipient: author, createdAt: serverTimestamp() });
+        await logAdminAction('delete_post', author, 'Gönderi silindi: ' + postId);
+        document.getElementById('post-' + postId)?.remove();
+        showAdminToast("Gönderi silindi.", "success");
+    } catch (e) {
+        showAdminToast("Gönderi silinemedi.", "error");
+    }
+};
+
+// =====================================
+// 12. KİŞİ ARŞİVİ (LOGLAR)
+// =====================================
 function loadActivityStream() {
     const qPosts = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(300));
     onSnapshot(qPosts, (snapshot) => {
         recentPostsLog = [];
         snapshot.forEach(docSnap => { recentPostsLog.push({ id: docSnap.id, _actType: 'post', ...docSnap.data() }); });
-        const searchInp = document.getElementById('activity-search-input');
-        if(searchInp && searchInp.value.startsWith('@')) {
-            const currentUsername = searchInp.value.replace('@','');
-            renderUserFolders(currentUsername);
-        }
     });
 
     const qNotifs = query(collection(db, "notifications"), orderBy("createdAt", "desc"), limit(400));
     onSnapshot(qNotifs, (snapshot) => {
         recentNotifsLog = [];
         snapshot.forEach(docSnap => { recentNotifsLog.push({ id: docSnap.id, _actType: 'notif', ...docSnap.data() }); });
-        const searchInp = document.getElementById('activity-search-input');
-        if(searchInp && searchInp.value.startsWith('@')) {
-            const currentUsername = searchInp.value.replace('@','');
-            renderUserFolders(currentUsername);
+        // Dashboard son aktiviteler
+        renderRecentActivities();
+    });
+}
+
+function renderRecentActivities() {
+    const container = document.getElementById('recent-activities');
+    if (!container) return;
+    const logs = [...recentPostsLog, ...recentNotifsLog]
+        .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
+        .slice(0, 8);
+    if (logs.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">📭</span><p>Aktivite yok.</p></div>'; return; }
+    container.innerHTML = logs.map(l => createLogHtml(l)).filter(Boolean).join('');
+}
+
+function setupArchiveSearch() {
+    const input = document.getElementById('archive-search');
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+        let text = input.value.toLowerCase().trim();
+        const autoEl = document.getElementById('archive-autocomplete');
+        if (!text) {
+            if (autoEl) autoEl.innerHTML = '';
+            const content = document.getElementById('archive-content');
+            if (content) content.innerHTML = '<div class="empty-state"><span class="empty-icon">🕵️</span><p>Arşivini incelemek istediğiniz kişiyi arayın.</p></div>';
+            return;
+        }
+        if (text.startsWith('@')) text = text.substring(1);
+        const filtered = allUsers.filter(u => u.id.toLowerCase().includes(text)).slice(0, 8);
+        if (filtered.length === 0 || !autoEl) { if (autoEl) autoEl.innerHTML = ''; return; }
+
+        let html = '<div style="position:absolute;top:0;left:20px;right:20px;background:#1e293b;border:1px solid #334155;border-radius:8px;max-height:200px;overflow-y:auto;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.4)">';
+        filtered.forEach(u => {
+            html += `<div style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;transition:.15s;color:#e2e8f0" 
+                onmouseenter="this.style.background='#334155'" onmouseleave="this.style.background=''" 
+                onclick="selectArchiveUser('${escHtml(u.id)}')">👤 @${escHtml(u.id)}</div>`;
+        });
+        html += '</div>';
+        autoEl.innerHTML = html;
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target)) {
+            const autoEl = document.getElementById('archive-autocomplete');
+            if (autoEl) autoEl.innerHTML = '';
         }
     });
 }
 
-const actSearchInput = document.getElementById('activity-search-input');
-const actAutoList = document.getElementById('activity-autocomplete-list');
+window.selectArchiveUser = function(username) {
+    const input = document.getElementById('archive-search');
+    if (input) input.value = '@' + username;
+    const autoEl = document.getElementById('archive-autocomplete');
+    if (autoEl) autoEl.innerHTML = '';
+    renderArchiveFolders(username);
+};
 
-actSearchInput?.addEventListener('input', (e) => {
-    let text = e.target.value.toLowerCase().trim();
-    if(actAutoList) actAutoList.innerHTML = '';
-    
-    if(!text) { 
-        if(actAutoList) actAutoList.style.display = 'none'; 
-        const actList = document.getElementById('activity-list'); if(actList) actList.innerHTML = '';
-        const actInfo = document.getElementById('activity-info-text'); if(actInfo) actInfo.style.display = 'block';
-        return; 
-    }
-    
-    if(text.startsWith('@')) text = text.substring(1);
-    
-    const filtered = allUsers.filter(u => u.id.toLowerCase().includes(text));
-    
-    if(filtered.length === 0) { 
-        if(actAutoList) actAutoList.style.display = 'none'; 
-        return; 
-    }
-    
-    if(actAutoList) {
-        actAutoList.style.display = 'block';
-        filtered.forEach(u => {
-            const div = document.createElement('div');
-            div.className = 'autocomplete-item';
-            div.innerHTML = `👤 <span>@${window.escapeHtml(u.id)}</span>`;
-            div.onclick = () => {
-                actSearchInput.value = '@' + u.id; 
-                actAutoList.style.display = 'none'; 
-                renderUserFolders(u.id); 
-            };
-            actAutoList.appendChild(div);
-        });
-    }
-});
+function renderArchiveFolders(username) {
+    const container = document.getElementById('archive-content');
+    if (!container) return;
 
-document.addEventListener('click', function(event) {
-    if (actSearchInput && actAutoList && !actSearchInput.contains(event.target) && !actAutoList.contains(event.target)) {
-        actAutoList.style.display = 'none';
-    }
-});
-
-function createLogHtml(log) {
-    let timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'Az önce';
-    if (log._actType === 'post') {
-        let contentPreview = log.content ? (log.content.length > 50 ? log.content.substring(0, 50) + '...' : log.content) : '(Sadece Fotoğraf)';
-        let safePreview = DOMPurify.sanitize(contentPreview);
-        return `
-            <div class="activity-item act-post">
-                <div class="act-icon">📝</div>
-                <div class="act-content">
-                    <b>@${window.escapeHtml(log.author)}</b> yeni bir gönderi paylaştı: <i>"${safePreview}"</i>
-                    <span class="act-time">${timeStr}</span>
-                </div>
-            </div>`;
-    } else {
-        let icon = '🔔'; let actionText = ''; let cssClass = '';
-        if (log.type === 'like') { icon = '❤️'; actionText = 'gönderisini beğendi.'; cssClass = 'act-like'; }
-        else if (log.type === 'comment') { icon = '💬'; actionText = 'gönderisine yorum yaptı.'; cssClass = 'act-comment'; }
-        else if (log.type === 'follow') { icon = '🤝'; actionText = 'takip etmeye başladı.'; cssClass = 'act-follow'; }
-        else if (log.type === 'admin_delete') { return ''; } 
-
-        if(log.sender === log.recipient) return ''; 
-
-        return `
-            <div class="activity-item ${cssClass}">
-                <div class="act-icon">${icon}</div>
-                <div class="act-content">
-                    <b>@${window.escapeHtml(log.sender)}</b>, <b>@${window.escapeHtml(log.recipient)}</b> adlı kullanıcının ${actionText}
-                    <span class="act-time">${timeStr}</span>
-                </div>
-            </div>`;
-    }
-}
-
-function renderUserFolders(username) {
-    const actInfo = document.getElementById('activity-info-text'); if(actInfo) actInfo.style.display = 'none';
-    const listDiv = document.getElementById('activity-list'); if(!listDiv) return;
-    
-    let combinedLogs = [...recentPostsLog, ...recentNotifsLog];
-    
-    let filteredLogs = combinedLogs.filter(log => {
-        let u1 = log.author ? log.author.toLowerCase() : "";
-        let u2 = log.sender ? log.sender.toLowerCase() : "";
-        let u3 = log.recipient ? log.recipient.toLowerCase() : "";
-        return (u1 === username || u2 === username || u3 === username);
+    const combined = [...recentPostsLog, ...recentNotifsLog];
+    const filtered = combined.filter(log => {
+        const u1 = (log.author || '').toLowerCase();
+        const u2 = (log.sender || '').toLowerCase();
+        const u3 = (log.recipient || '').toLowerCase();
+        return u1 === username.toLowerCase() || u2 === username.toLowerCase() || u3 === username.toLowerCase();
     });
+    filtered.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
 
-    filteredLogs.sort((a, b) => {
-        let timeA = a.createdAt ? a.createdAt.toMillis() : 0;
-        let timeB = b.createdAt ? b.createdAt.toMillis() : 0;
-        return timeB - timeA;
-    });
-
-    if(filteredLogs.length === 0) {
-        listDiv.innerHTML = `<p style="color:#aaa; text-align:center; padding:20px; background:#2c3e50; border-radius:8px;"><b>@${username}</b> adlı kullanıcıya ait son dönemde hiçbir kayıt bulunamadı.</p>`;
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">📭</span><p>@${escHtml(username)} için kayıt bulunamadı.</p></div>`;
         return;
     }
 
-    let catPosts = filteredLogs.filter(l => l._actType === 'post');
-    let catLikes = filteredLogs.filter(l => l._actType === 'notif' && l.type === 'like');
-    let catComments = filteredLogs.filter(l => l._actType === 'notif' && l.type === 'comment');
-    let catFollows = filteredLogs.filter(l => l._actType === 'notif' && l.type === 'follow');
-    
-    let finalHtml = `<div style="margin-bottom:15px; font-size:15px;"><b>@${username}</b> adlı kişinin arşiv dosyaları:</div>`;
+    const catPosts = filtered.filter(l => l._actType === 'post');
+    const catLikes = filtered.filter(l => l._actType === 'notif' && l.type === 'like');
+    const catComments = filtered.filter(l => l._actType === 'notif' && l.type === 'comment');
+    const catFollows = filtered.filter(l => l._actType === 'notif' && l.type === 'follow');
 
-    function buildFolder(title, color, items) {
-        if(items.length === 0) return '';
-        let html = `<details class="log-folder" style="border-left-color:${color};"><summary>📁 ${title} (${items.length})</summary><div class="folder-content">`;
-        items.forEach(l => html += createLogHtml(l));
-        html += `</div></details>`;
-        return html;
+    let html = `<div style="padding:16px 20px;font-size:14px;color:#94a3b8;border-bottom:1px solid #334155">
+        <b style="color:#f1f5f9">@${escHtml(username)}</b> arşiv dosyaları (${filtered.length} kayıt)
+    </div>`;
+
+    function buildFolder(title, icon, color, items) {
+        if (items.length === 0) return '';
+        let h = `<details class="archive-folder"><summary>${icon} ${title} <span style="font-size:12px;color:#64748b;margin-left:auto">(${items.length})</span></summary><div class="folder-body">`;
+        items.forEach(l => { const logH = createLogHtml(l); if (logH) h += logH; });
+        h += '</div></details>';
+        return h;
     }
 
-    finalHtml += buildFolder("Paylaşılan Gönderiler", "#3498db", catPosts);
-    finalHtml += buildFolder("Beğeni Hareketleri", "#e74c3c", catLikes);
-    finalHtml += buildFolder("Yorum Hareketleri", "#2ecc71", catComments);
-    finalHtml += buildFolder("Takip Hareketleri", "#9b59b6", catFollows);
+    html += buildFolder('Paylaşılan Gönderiler', '📝', '#3b82f6', catPosts);
+    html += buildFolder('Beğeni Hareketleri', '❤️', '#ef4444', catLikes);
+    html += buildFolder('Yorum Hareketleri', '💬', '#22c55e', catComments);
+    html += buildFolder('Takip Hareketleri', '🤝', '#8b5cf6', catFollows);
 
-    listDiv.innerHTML = finalHtml;
+    container.innerHTML = html;
 }
 
+function createLogHtml(log) {
+    let timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
+    if (log._actType === 'post') {
+        let preview = log.content ? (log.content.length > 60 ? log.content.substring(0, 60) + '...' : log.content) : '(Fotoğraf)';
+        return `<div class="log-item"><div class="log-icon blue">📝</div><div class="log-text"><b>@${escHtml(log.author || '')}</b> gönderi paylaştı: <i>"${escHtml(preview)}"</i><span class="log-time">${timeStr}</span></div></div>`;
+    } else {
+        if (log.type === 'admin_delete' || log.sender === log.recipient) return '';
+        let icon = '🔔', text = '', cls = '';
+        if (log.type === 'like') { icon = '❤️'; text = 'gönderisini beğendi.'; cls = 'red'; }
+        else if (log.type === 'comment') { icon = '💬'; text = 'gönderisine yorum yaptı.'; cls = 'green'; }
+        else if (log.type === 'follow') { icon = '🤝'; text = 'takip etmeye başladı.'; cls = 'purple'; }
+        else return '';
+        return `<div class="log-item"><div class="log-icon ${cls}">${icon}</div><div class="log-text"><b>@${escHtml(log.sender || '')}</b>, <b>@${escHtml(log.recipient || '')}</b> ${text}<span class="log-time">${timeStr}</span></div></div>`;
+    }
+}
+
+// =====================================
+// 13. DESTEK TALEPLERİ
+// =====================================
 function loadTickets() {
     onSnapshot(query(collection(db, "tickets"), orderBy("createdAt", "desc")), (snapshot) => {
-        const list = document.getElementById('tickets-list'); if(!list) return;
-        list.innerHTML = '';
-        
-        if(snapshot.empty) { 
-            list.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">Bekleyen destek veya şikayet talebi yok. Her şey yolunda! 🎉</p>'; 
-            return; 
+        allTickets = [];
+        snapshot.forEach(docSnap => { allTickets.push({ id: docSnap.id, ...docSnap.data() }); });
+        updateDashboardFromTickets();
+        renderTickets();
+    });
+}
+
+function renderTickets() {
+    const container = document.getElementById('tickets-container');
+    if (!container) return;
+
+    let display = allTickets;
+    if (currentTicketFilter !== 'all') {
+        display = allTickets.filter(t => {
+            const status = t.status || 'Yeni';
+            return status === currentTicketFilter;
+        });
+    }
+
+    if (display.length === 0) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">🎉</span><p>' + (currentTicketFilter === 'all' ? 'Bekleyen destek talebi yok.' : 'Bu filtreye uygun talep yok.') + '</p></div>';
+        return;
+    }
+
+    container.innerHTML = display.map(ticket => {
+        const dateStr = ticket.createdAt ? ticket.createdAt.toDate().toLocaleString('tr-TR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
+        const status = ticket.status || 'Yeni';
+        const statusClass = status === 'Çözüldü' ? 'badge-green' : status === 'İnceleniyor' ? 'badge-yellow' : 'badge-blue';
+        const cleanMsg = DOMPurify.sanitize(ticket.message || '');
+
+        let replyHtml = '';
+        if (ticket.adminReply) {
+            const replyDate = ticket.repliedAt ? ticket.repliedAt.toDate().toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+            replyHtml = `<div style="background:#0f172a;padding:10px 12px;border-radius:6px;margin-top:10px;border-left:3px solid #6366f1">
+                <div style="font-size:11px;color:#6366f1;margin-bottom:4px">Yönetici yanıtı ${ticket.repliedBy ? '(@' + escHtml(ticket.repliedBy) + ')' : ''} · ${replyDate}</div>
+                <div style="font-size:13px;color:#cbd5e1">${DOMPurify.sanitize(ticket.adminReply)}</div>
+            </div>`;
         }
-        
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data(); 
-            let dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString('tr-TR', { day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit'}) : "Az önce";
-            
-            const cleanMsg = DOMPurify.sanitize(data.message || '');
-            
-            list.innerHTML += `
-                <div class="ticket-item" id="ticket-${window.escapeHtml(docSnap.id)}">
-                    <div class="ticket-header">
-                        <span style="color:#3498db;">Gönderen: <b style="color:white;">@${window.escapeHtml(data.sender || 'Bilinmeyen')}</b></span>
-                        <span>${dateStr}</span>
-                    </div>
-                    <div class="ticket-msg" style="margin-top:10px; margin-bottom:15px; font-style:italic;">"${cleanMsg}"</div>
-                    <button class="delete-ticket" onclick="window.deleteTicket('${window.escapeHtml(docSnap.id)}')">Çözüldü Olarak İşaretle (Sil)</button>
-                    <div style="clear:both;"></div>
-                </div>
-            `;
+
+        return `<div class="ticket-card" id="ticket-${escHtml(ticket.id)}">
+            <div class="ticket-top">
+                <div><span class="ticket-sender">@${escHtml(ticket.sender || 'Bilinmeyen')}</span></div>
+                <div style="display:flex;align-items:center;gap:8px"><span class="ticket-status ${statusClass}">${status}</span><span class="ticket-date">${dateStr}</span></div>
+            </div>
+            <div class="ticket-msg">"${cleanMsg}"</div>
+            ${replyHtml}
+            <div class="ticket-actions">
+                <button class="btn-primary" style="padding:5px 12px;font-size:12px" onclick="openTicketReply('${escHtml(ticket.id)}')">💬 Yanıtla</button>
+                <button class="btn-secondary" style="padding:5px 12px;font-size:12px" onclick="updateTicketStatus('${escHtml(ticket.id)}','İnceleniyor')">🔄 İncele</button>
+                <button style="padding:5px 12px;font-size:12px;background:#16a34a;color:#fff;border-radius:6px" onclick="updateTicketStatus('${escHtml(ticket.id)}','Çözüldü')">✅ Çözüldü</button>
+                <button style="padding:5px 12px;font-size:12px;background:#dc2626;color:#fff;border-radius:6px" onclick="deleteTicket('${escHtml(ticket.id)}')">🗑️ Sil</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.openTicketReply = function(ticketId) {
+    const ticket = allTickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+    document.getElementById('reply-ticket-id').value = ticketId;
+    document.getElementById('reply-ticket-sender').textContent = '@' + (ticket.sender || 'Bilinmeyen');
+    document.getElementById('reply-ticket-message').textContent = ticket.message || '';
+    document.getElementById('reply-text').value = '';
+    openModal('modal-ticket-reply');
+};
+
+window.sendTicketReply = async function() {
+    const ticketId = document.getElementById('reply-ticket-id').value;
+    const replyText = document.getElementById('reply-text').value.trim();
+    const newStatus = document.getElementById('reply-status').value;
+    if (!ticketId || !replyText) { showAdminToast("Yanıt alanı boş bırakılamaz.", "error"); return; }
+    if (replyText.length > 2000) { showAdminToast("Yanıt 2000 karakteri aşamaz.", "error"); return; }
+
+    const btn = document.getElementById('send-reply-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Gönderiliyor...'; }
+
+    try {
+        const ticket = allTickets.find(t => t.id === ticketId);
+        await updateDoc(doc(db, "tickets", ticketId), {
+            adminReply: replyText,
+            repliedAt: serverTimestamp(),
+            repliedBy: adminUsername,
+            status: newStatus
+        });
+        // Kullanıcıya bildirim gönder
+        if (ticket && ticket.sender) {
+            await addDoc(collection(db, "notifications"), {
+                type: 'support_reply',
+                sender: adminUsername,
+                recipient: ticket.sender,
+                text: 'Destek talebiniz yanıtlandı.',
+                createdAt: serverTimestamp()
+            });
+        }
+        await logAdminAction('reply_ticket', ticket?.sender || ticketId, 'Destek talebine yanıt verildi');
+        showAdminToast("Yanıt gönderildi.", "success");
+        closeModal('modal-ticket-reply');
+    } catch (e) {
+        showAdminToast("Yanıt gönderilemedi.", "error");
+    }
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Yanıt Gönder'; }
+};
+
+window.updateTicketStatus = async function(ticketId, status) {
+    try {
+        await updateDoc(doc(db, "tickets", ticketId), { status });
+        await logAdminAction('update_ticket', ticketId, 'Durum: ' + status);
+        showAdminToast("Talep durumu güncellendi.", "success");
+    } catch (e) {
+        showAdminToast("Güncelleme başarısız.", "error");
+    }
+};
+
+window.deleteTicket = async function(ticketId) {
+    if (!confirm("Bu destek talebini silmek istiyor musunuz?")) return;
+    try {
+        await deleteDoc(doc(db, "tickets", ticketId));
+        await logAdminAction('delete_ticket', ticketId, 'Destek talebi silindi');
+        showAdminToast("Talep silindi.", "success");
+    } catch (e) {
+        showAdminToast("Silme başarısız.", "error");
+    }
+};
+
+// =====================================
+// 14. ADMİN İŞLEM LOGLARI
+// =====================================
+async function logAdminAction(action, target, details) {
+    try {
+        await addDoc(collection(db, "admin_logs"), {
+            action,
+            admin: adminUsername,
+            target,
+            details,
+            createdAt: serverTimestamp()
+        });
+    } catch (e) { /* sessiz hata */ }
+}
+
+function loadAdminLogs() {
+    const q = query(collection(db, "admin_logs"), orderBy("createdAt", "desc"), limit(100));
+    onSnapshot(q, (snapshot) => {
+        const logs = [];
+        snapshot.forEach(docSnap => { logs.push({ id: docSnap.id, ...docSnap.data() }); });
+        renderAdminLogs(logs);
+        renderRecentAdminLogs(logs.slice(0, 8));
+    });
+}
+
+function renderAdminLogs(logs) {
+    const container = document.getElementById('admin-logs-container');
+    if (!container) return;
+    if (logs.length === 0) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><p>Henüz admin işlemi yok.</p></div>';
+        return;
+    }
+
+    const actionIcons = {
+        verify: '✅', ban: '🔒', delete_user: '🗑️', edit_user: '✏️',
+        delete_post: '🚨', reply_ticket: '💬', update_ticket: '🔄', delete_ticket: '🗑️'
+    };
+
+    container.innerHTML = logs.map(log => {
+        const timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
+        const icon = actionIcons[log.action] || '📋';
+        return `<div class="log-item">
+            <div class="log-icon yellow">${icon}</div>
+            <div class="log-text">
+                <b>@${escHtml(log.admin || '')}</b> → <b>@${escHtml(log.target || '')}</b>: ${escHtml(log.details || '')}
+                <span class="log-time">${timeStr}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderRecentAdminLogs(logs) {
+    const container = document.getElementById('recent-admin-logs');
+    if (!container) return;
+    if (logs.length === 0) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><p>Henüz işlem yok.</p></div>';
+        return;
+    }
+    container.innerHTML = logs.map(log => {
+        const timeStr = log.createdAt ? log.createdAt.toDate().toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
+        return `<div class="log-item"><div class="log-icon yellow">📋</div><div class="log-text"><b>@${escHtml(log.admin || '')}</b> → ${escHtml(log.details || '')}<span class="log-time">${timeStr}</span></div></div>`;
+    }).join('');
+}
+
+// =====================================
+// 15. MODAL YÖNETİMİ
+// =====================================
+function setupModals() {
+    document.getElementById('save-edit-btn')?.addEventListener('click', saveEditUser);
+    document.getElementById('confirm-delete-btn')?.addEventListener('click', executeDeleteUser);
+    document.getElementById('send-reply-btn')?.addEventListener('click', sendTicketReply);
+
+    // Overlay tıklamasıyla kapatma
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(modal.id);
         });
     });
 }
 
-window.deleteTicket = async function(id) { 
-    if(confirm("Bu destek talebini çözüldü olarak işaretleyip listeden silmek istiyor musunuz?")) { 
-        await deleteDoc(doc(db, "tickets", id)); 
-        document.getElementById(`ticket-${id}`)?.remove();
-    } 
+window.openModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.add('show');
 };
+
+window.closeModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.remove('show');
+};
+
+// =====================================
+// 16. TOAST BİLDİRİM
+// =====================================
+function showAdminToast(msg, type) {
+    const existing = document.querySelector('.admin-toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.className = 'admin-toast ' + (type || 'info');
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+}
+
+// =====================================
+// 17. YARDIMCI FONKSİYONLAR
+// =====================================
+function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}

@@ -16,6 +16,11 @@ service cloud.firestore {
       return isAuthenticated() && resource.data.email == request.auth.token.email;
     }
 
+    // Admin yetki kontrolü (admins koleksiyonunda UID kaydı aranır)
+    function isAdmin() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
     // 1. KULLANICILAR KOLEKSİYONU
     // Doküman ID'si kullanıcının 'username' bilgisidir.
     match /users/{username} {
@@ -27,16 +32,17 @@ service cloud.firestore {
                     && request.resource.data.fullName is string
                     && request.resource.data.fullName.size() <= 50;
       
-      // Güncelleme: Sadece kendi profilini güncelleyebilir
-      // resource.data.email mevcut dokümanın email'i, request.auth.token.email ise giriş yapan kişi
-      allow update: if isAuthenticated() 
+      // Güncelleme: Kendi profilini veya admin günceller
+      allow update: if (isAuthenticated() 
                     && resource.data.email == request.auth.token.email
                     && (!('fullName' in request.resource.data) || request.resource.data.fullName.size() <= 50)
                     && (!('bio' in request.resource.data) || request.resource.data.bio.size() <= 250)
-                    && (!('location' in request.resource.data) || request.resource.data.location.size() <= 50);
+                    && (!('location' in request.resource.data) || request.resource.data.location.size() <= 50))
+                    || isAdmin();
       
-      // Silme: Sadece kendi hesabını silebilir
-      allow delete: if isAuthenticated() && resource.data.email == request.auth.token.email;
+      // Silme: Kendi hesabını veya admin siler
+      allow delete: if (isAuthenticated() && resource.data.email == request.auth.token.email)
+                    || isAdmin();
     }
     
     // 2. GÖNDERİLER (POSTS) KOLEKSİYONU
@@ -53,9 +59,10 @@ service cloud.firestore {
       allow update: if isAuthenticated()
                     && (!('content' in request.resource.data) || request.resource.data.content.size() <= 280);
       
-      // Silme: Sadece gönderi sahibi silebilir
-      allow delete: if isAuthenticated() 
-                    && resource.data.authorEmail == request.auth.token.email;
+      // Silme: Gönderi sahibi veya admin silebilir
+      allow delete: if (isAuthenticated() 
+                    && resource.data.authorEmail == request.auth.token.email)
+                    || isAdmin();
     }
 
     // 3. ÖZEL SOHBETLER (CHATS)
@@ -136,6 +143,14 @@ service cloud.firestore {
     match /admins/{adminId} {
       allow read: if isAuthenticated();
       allow write: if false; 
+    }
+
+    // 8. ADMİN İŞLEM LOGLARI
+    // Sadece adminler log oluşturabilir, okuyabilir. Silme ve güncelleme yasak.
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
     }
   }
 }
