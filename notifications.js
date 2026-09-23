@@ -179,6 +179,12 @@ function renderNotifications() {
             else if(notif.type === 'comment') { icon = '💬'; text = `<b>@${window.escapeHtml(notif.sender)}</b> içeriğinize yanıt verdi.`; link = `profile.html?post=${notif.postId}`; }
             else if(notif.type === 'follow') { icon = '🤝'; text = `<b>@${window.escapeHtml(notif.sender)}</b> sizi ağına ekledi.`; link = `profile.html?user=${window.escapeHtml(notif.sender)}`; }
             else if(notif.type === 'admin_delete') { icon = '⚠️'; text = `Bir gönderiniz kurallara uymadığı gerekçesiyle yönetici tarafından kaldırıldı.`; link = '#'; }
+            else if(notif.type === 'support_reply') { 
+                icon = '💬'; 
+                let safeReply = notif.text ? window.escapeHtml(notif.text) : 'Yanıt eklendi.';
+                text = `Destek talebiniz <b>@${window.escapeHtml(notif.sender)}</b> tarafından yanıtlandı:<br><i style="color:#64748b; font-size:12px; margin-top:4px; display:block;">"${safeReply}"</i>`; 
+                link = '#'; 
+            }
             
             let timeAgo = "";
             if(notif.createdAt) {

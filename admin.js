@@ -712,7 +712,7 @@ window.sendTicketReply = async function() {
                 type: 'support_reply',
                 sender: adminUsername,
                 recipient: ticket.sender,
-                text: 'Destek talebiniz yanıtlandı.',
+                text: replyText,
                 createdAt: serverTimestamp()
             });
         }
@@ -758,7 +758,9 @@ async function logAdminAction(action, target, details) {
             details,
             createdAt: serverTimestamp()
         });
-    } catch (e) { /* sessiz hata */ }
+    } catch (e) {
+        console.error("Admin log kaydedilemedi:", e);
+    }
 }
 
 function loadAdminLogs() {
@@ -768,6 +770,8 @@ function loadAdminLogs() {
         snapshot.forEach(docSnap => { logs.push({ id: docSnap.id, ...docSnap.data() }); });
         renderAdminLogs(logs);
         renderRecentAdminLogs(logs.slice(0, 8));
+    }, (error) => {
+        console.error("Admin logları yüklenirken hata:", error);
     });
 }
 
