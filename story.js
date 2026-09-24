@@ -1,6 +1,7 @@
 import { collection, addDoc, doc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, query, where, orderBy, limit, deleteDoc, serverTimestamp, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
-import { db, storage } from './firebase-config.js';
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+import { auth, db, storage } from './firebase-config.js';
+window.auth = auth;
 
 // =====================================
 // GLOBAL HİKÂYE DEĞİŞKENLERİ
@@ -271,7 +272,7 @@ document.getElementById('submit-story-btn')?.addEventListener('click', async () 
     if(rawFile && rawFile.type.startsWith('video/')) {
         mediaType = 'video';
         
-        if (!rawFile.type.match(/^video\/(mp4|webm)$/)) { alert("Sadece MP4 ve WEBM video formatları yüklenebilir."); return; }
+        if (!rawFile.type.match(/^video\/(mp4|webm|quicktime)$/)) { alert("Sadece MP4, WEBM ve MOV video formatları yüklenebilir."); return; }
         if (rawFile.size > 20 * 1024 * 1024) {
  alert("Video 25 MB'dan büyük olamaz!"); return; }
     
@@ -290,9 +291,24 @@ document.getElementById('submit-story-btn')?.addEventListener('click', async () 
             if(mediaType === 'image' && window.compressImage) file = await window.compressImage(rawFile, 1080, 1920, 0.7);
             
             btn.innerText = "Yükleniyor...";
-            storagePath = `stories/${Date.now()}_${file.name}`;
+            
+            const uid = (window.auth && window.auth.currentUser) ? window.auth.currentUser.uid : 'anon';
+            storagePath = `${mediaType === 'video' ? 'story_videos' : 'stories'}/${uid}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+
             const storageRef = ref(storage, storagePath);
-            await uploadBytes(storageRef, file);
+            
+            await new Promise((resolve, reject) => {
+                const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        btn.innerText = "Yükleniyor... %" + Math.round(progress);
+                    },
+                    (error) => reject(error),
+                    () => resolve()
+                );
+            });
+
             imgUrl = await getDownloadURL(storageRef);
         }
         const finalLayout = JSON.parse(JSON.stringify(window.editorState));

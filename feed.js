@@ -1,7 +1,7 @@
 // feed.js
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDoc, getDocs, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
 import { auth, db, storage } from './firebase-config.js';
 import './shared.js';
@@ -244,8 +244,8 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
 
     for (let file of files) {
         
-        if (!file.type.match(/^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm))$/)) {
-            alert("Sadece güvenli fotoğraf (JPEG, PNG, WEBP, GIF) ve video (MP4, WEBM) formatları yüklenebilir.");
+        if (!file.type.match(/^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm|quicktime))$/)) {
+            alert("Sadece güvenli fotoğraf (JPEG, PNG, WEBP, GIF) ve video (MP4, WEBM, MOV) formatları yüklenebilir.");
             return;
         }
         if (file.type.startsWith('image/') && file.size > 5 * 1024 * 1024) {
@@ -277,8 +277,20 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
                 }
                 const fileName = `posts/${auth.currentUser.uid}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
                 const storageRef = ref(storage, fileName);
-                await uploadBytes(storageRef, file);
+                
+                await new Promise((resolve, reject) => {
+                    const uploadTask = uploadBytesResumable(storageRef, file, { contentType: file.type });
+                    uploadTask.on('state_changed', 
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            btn.innerText = "Yükleniyor... %" + Math.round(progress);
+                        },
+                        (error) => reject(error),
+                        () => resolve()
+                    );
+                });
                 const url = await getDownloadURL(storageRef);
+
                 mediaArray.push({ url, type: isVideo ? 'video' : 'image', storagePath: fileName });
             }
         }
@@ -303,7 +315,28 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         if (isModal) window.closeMainPostModal();
         loadFeedPosts();
         
-    } catch(e) { console.error("Gönderi paylaşımı başarısız:", e.code || "Bilinmeyen hata"); alert("Hata oluştu!"); btn.disabled = false; btn.innerText = "Yayınla"; }
+    } catch(e) { 
+        console.error("Gönderi paylaşımı başarısız:", e);
+        
+        // Yarım kalan yüklemeleri (orphan files) Storage'dan temizle
+        if (mediaArray && mediaArray.length > 0) {
+            for (const m of mediaArray) {
+                if (m.storagePath) {
+                    try { await deleteObject(ref(storage, m.storagePath)); } catch(delErr) {}
+                }
+            }
+        }
+        
+        btn.disabled = false; btn.innerText = "Yayınla"; 
+        
+        // Hata kodlarına göre anlaşılır mesajlar
+        let errMsg = "Video yüklenirken bir hata oluştu. Lütfen tekrar deneyin.";
+        if (e.code === 'storage/unauthorized') errMsg = "Video yükleme yetkiniz bulunmuyor veya dosya sınırları aştı (maks 20MB video, 5MB fotoğraf).";
+        else if (e.code === 'storage/canceled') errMsg = "Yükleme iptal edildi.";
+        else if (e.code === 'storage/retry-limit-exceeded' || e.message?.includes('network')) errMsg = "Video yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.";
+        
+        alert(errMsg);
+    }
 }
 
 document.getElementById('share-btn').addEventListener('click', () => submitPost('post-text', 'image-input', 'share-btn', 'image-preview-text', false));

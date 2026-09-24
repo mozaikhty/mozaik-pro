@@ -20,7 +20,7 @@ service firebase.storage {
     // Resim veya video dosyalarına izin ver
     function isMedia() {
       return request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
-          || request.resource.contentType.matches('video/(mp4|webm)');
+          || request.resource.contentType.matches('video/(mp4|webm|quicktime)');
     }
     
     // Gönderi ve sohbet medyası (Sıkıştırıldıktan sonra çok daha küçük, güvenlik için maks 20MB video, 5MB resim için ortalama bir limit koyuyoruz)
@@ -72,7 +72,7 @@ service firebase.storage {
     }
     match /story_videos/{fileName} {
       allow read: if isAuthenticated();
-      allow create, update: if isAuthenticated() && isOwner(fileName) && request.resource.contentType.matches('video/(mp4|webm)') && isStorySize();
+      allow create, update: if isAuthenticated() && isOwner(fileName) && request.resource.contentType.matches('video/(mp4|webm|quicktime)') && isStorySize();
       allow delete: if isAuthenticated() && isOwner(fileName);
     }
   }
