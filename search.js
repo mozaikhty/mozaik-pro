@@ -3,7 +3,12 @@ import { collection, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arr
 import { auth, db } from './firebase-config.js';
 import './shared.js';
 
-let allUsers = []; let allPosts = []; let allUsersData = {}; let trendingTags = []; let currentCategory = 'all'; let myUsername = null; let myFollowing = [];
+let allPosts = []; 
+let allUsersData = {}; 
+let globalTrendingTags = []; 
+let currentCategory = 'all'; 
+let myUsername = null; 
+let myFollowing = [];
 let activeChats = [];
 
 let lastVisiblePost = null;
@@ -76,21 +81,41 @@ function renderWhoToFollow() {
     container.innerHTML = html;
 }
 
-function calculateTrendingTags() {
-    const tagScores = {};
-    allPosts.forEach(post => {
-        const postText = post.content || post.text || ""; 
-        if (postText) {
-            const matches = postText.match(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g);
-            if (matches) { 
+// 1. Etiketleri arka planda hesapla (Global Trending Tags)
+async function fetchGlobalTrendingTags() {
+    try {
+        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(200));
+        const snap = await getDocs(q);
+        const tagScores = {};
+        
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            const text = data.content || data.text || "";
+            const matches = text.match(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g);
+            if (matches) {
                 const uniqueTags = [...new Set(matches.map(t => t.toLowerCase()))];
+                
+                const likes = data.likes ? data.likes.length : 0;
+                const comments = data.comments ? data.comments.length : 0;
+                let recencyBonus = 0;
+                if(data.createdAt && data.createdAt.toMillis) {
+                    const hoursOld = (Date.now() - data.createdAt.toMillis()) / (1000 * 60 * 60);
+                    recencyBonus = Math.max(0, 50 - hoursOld);
+                }
+                const score = likes * 2 + comments * 3 + recencyBonus + 1;
+                
                 uniqueTags.forEach(tag => { 
-                    tagScores[tag] = (tagScores[tag] || 0) + (post.score || 1); 
-                }); 
+                    tagScores[tag] = (tagScores[tag] || 0) + score; 
+                });
             }
-        }
-    });
-    trendingTags = Object.keys(tagScores).map(tag => { return { tag: tag, score: tagScores[tag] }; }).sort((a, b) => b.score - a.score).slice(0, 10);
+        });
+        
+        globalTrendingTags = Object.keys(tagScores).map(tag => { 
+            return { tag: tag, score: tagScores[tag] }; 
+        }).sort((a, b) => b.score - a.score);
+        
+        renderCategoryPills();
+    } catch (e) { console.error("Trend etiketler hesaplanamadı:", e); }
 }
 
 async function fetchAllUsersForSearch() {
@@ -106,6 +131,20 @@ async function fetchAllUsersForSearch() {
     } catch (e) { console.error("Kullanıcılar çekilemedi:", e); }
 }
 
+function processPostData(docSnap) {
+    const data = docSnap.data();
+    data.id = docSnap.id;
+    const likes = data.likes ? data.likes.length : 0;
+    const comments = data.comments ? data.comments.length : 0;
+    let recencyBonus = 0;
+    if(data.createdAt && data.createdAt.toMillis) {
+        const hoursOld = (Date.now() - data.createdAt.toMillis()) / (1000 * 60 * 60);
+        recencyBonus = Math.max(0, 50 - hoursOld);
+    }
+    data.score = likes * 2 + comments * 3 + recencyBonus;
+    return data;
+}
+
 async function loadExplorePosts(isLoadMore = false) {
     if(isFetchingPosts || !hasMorePosts) return;
     isFetchingPosts = true;
@@ -114,61 +153,65 @@ async function loadExplorePosts(isLoadMore = false) {
     if(loadingInd) loadingInd.style.display = 'block';
 
     try {
-        let q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(12));
-        if (isLoadMore && lastVisiblePost) {
-            q = query(collection(db, "posts"), orderBy("createdAt", "desc"), startAfter(lastVisiblePost), limit(12));
-        }
-
-        const snapshot = await getDocs(q);
-        if(snapshot.empty) {
-            hasMorePosts = false;
-            if(loadingInd) loadingInd.style.display = 'none';
-            if(!isLoadMore && (!allPosts || allPosts.length === 0)) {
-                if(exploreResults) exploreResults.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">İçerik bulunamadı.</div>';
-            }
-            isFetchingPosts = false;
-            return;
-        }
-
-        lastVisiblePost = snapshot.docs[snapshot.docs.length - 1];
-        
         let newPosts = [];
         let neededUsers = new Set();
+        let loopCount = 0;
+        let targetCount = 12;
         
-        snapshot.forEach(docSnap => { 
-            const data = docSnap.data();
-            data.id = docSnap.id;
-            
-            const likes = data.likes ? data.likes.length : 0;
-            const comments = data.comments ? data.comments.length : 0;
-            let recencyBonus = 0;
-            if(data.createdAt && data.createdAt.toMillis) {
-                const hoursOld = (Date.now() - data.createdAt.toMillis()) / (1000 * 60 * 60);
-                recencyBonus = Math.max(0, 50 - hoursOld);
+        // Kategori seçiliyse veritabanından bulana kadar (max 5 kere) limit(12) çekeriz.
+        while (newPosts.length < targetCount && loopCount < 5 && hasMorePosts) {
+            let q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(12));
+            if (lastVisiblePost) {
+                q = query(collection(db, "posts"), orderBy("createdAt", "desc"), startAfter(lastVisiblePost), limit(12));
             }
-            data.score = likes * 2 + comments * 3 + recencyBonus;
+
+            const snapshot = await getDocs(q);
+            if(snapshot.empty) {
+                hasMorePosts = false;
+                break;
+            }
+
+            lastVisiblePost = snapshot.docs[snapshot.docs.length - 1];
             
-            newPosts.push(data); 
-            neededUsers.add(data.author);
-            if (data.isRepost && data.originalPostAuthor) neededUsers.add(data.originalPostAuthor);
-        }); 
-        
-        await window.fetchMissingUsers(Array.from(neededUsers));
-        
-        // Yeni gelenleri kendi içinde skora göre sırala ki en iyiler üstte çıksın
-        newPosts.sort((a,b) => b.score - a.score);
-        
-        if(isLoadMore) {
-            allPosts = [...allPosts, ...newPosts];
-        } else {
-            allPosts = newPosts;
-            if(exploreResults) exploreResults.innerHTML = '';
+            snapshot.forEach(docSnap => { 
+                const data = processPostData(docSnap);
+                
+                let matchesCategory = true;
+                if(currentCategory !== 'all') {
+                    const text = (data.content || data.text || "").toLowerCase();
+                    matchesCategory = text.includes(currentCategory);
+                }
+                
+                if (matchesCategory) {
+                    newPosts.push(data); 
+                    neededUsers.add(data.author);
+                    if (data.isRepost && data.originalPostAuthor) neededUsers.add(data.originalPostAuthor);
+                }
+            }); 
+            
+            if (currentCategory === 'all') break; 
+            loopCount++;
         }
-        
-        calculateTrendingTags(); 
-        renderCategoryPills();
-        renderExplore(newPosts, isLoadMore);
-        
+
+        if(newPosts.length === 0) {
+            if(!isLoadMore && (!allPosts || allPosts.length === 0)) {
+                if(exploreResults) exploreResults.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">Bu kategoride içerik bulunamadı.</div>';
+            }
+        } else {
+            await window.fetchMissingUsers(Array.from(neededUsers));
+            
+            // Kendi içinde score'a göre sırala
+            newPosts.sort((a,b) => b.score - a.score);
+            
+            if(isLoadMore) {
+                allPosts = [...allPosts, ...newPosts];
+            } else {
+                allPosts = newPosts;
+                if(exploreResults) exploreResults.innerHTML = '';
+            }
+            
+            renderExplore(newPosts, isLoadMore);
+        }
     } catch(error) {
         console.error("Gönderi yükleme hatası:", error);
     }
@@ -198,10 +241,10 @@ function fetchData() {
             const dName = document.getElementById('desktop-sidebar-name'); if(dName) dName.innerText = u.fullName || myUsername;
             const dHandle = document.getElementById('desktop-sidebar-handle'); if(dHandle) dHandle.innerText = '@' + myUsername;
         }
-        renderWhoToFollow(); 
     });
 
     fetchAllUsersForSearch();
+    fetchGlobalTrendingTags();
     loadExplorePosts(false);
 }
 
@@ -215,41 +258,39 @@ window.setCategory = function(cat) {
     currentCategory = cat;
     renderCategoryPills();
     
-    // Kategori değiştiğinde her şeyi sıfırlayıp baştan yükleyelim
+    // Reset pagination and reload
     allPosts = [];
     lastVisiblePost = null;
     hasMorePosts = true;
     if(exploreResults) exploreResults.innerHTML = '';
+    
+    if(searchInput) {
+        searchInput.value = '';
+        if(searchSuggestions) searchSuggestions.style.display = 'none';
+    }
+    
     loadExplorePosts(false);
 };
 
 function renderCategoryPills() {
     let html = `<div class="category-pill ${currentCategory === 'all' ? 'active' : ''}" onclick="window.setCategory('all')">Tümü</div>`;
-    trendingTags.forEach(t => {
+    
+    // Gündem etiketlerinden en popüler 10 tanesini üst barda gösteriyoruz. (Diğerleri aramada var).
+    const top10 = globalTrendingTags.slice(0, 10);
+    top10.forEach(t => {
         const isActive = currentCategory === t.tag ? 'active' : '';
         html += `<div class="category-pill ${isActive}" onclick="window.setCategory('${t.tag}')">${t.tag}</div>`;
     });
+    
     if(categoryPillsContainer) categoryPillsContainer.innerHTML = html;
 }
 
-function renderExplore(postsToRender = allPosts, append = false) {
+function renderExplore(postsToRender = [], append = false) {
     if(!exploreResults) return;
-    
-    let filtered = postsToRender;
-    if(currentCategory !== 'all') {
-        filtered = postsToRender.filter(p => {
-            const text = (p.content || p.text || "").toLowerCase();
-            return text.includes(currentCategory);
-        });
-    }
-    
-    if(filtered.length === 0 && !append) {
-        exploreResults.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">Bu kategoride içerik bulunamadı.</div>';
-        return;
-    }
+    if(postsToRender.length === 0) return;
     
     let html = '';
-    filtered.forEach(post => {
+    postsToRender.forEach(post => {
         const author = post.isRepost ? post.originalPostAuthor : post.author;
         const aData = allUsersData[author] || {};
         const avatar = aData.avatarUrl ? `<img src="${window.sanitizeUrl(aData.avatarUrl)}">` : `👤`;
@@ -321,13 +362,13 @@ async function performSmartSearch() {
     searchSuggestions.style.display = 'block';
     let html = '';
     
-    // 1. Etiket araması (Büyük-küçük harf duyarsız, kısmi eşleşme)
-    const matchedTags = trendingTags.filter(t => t.tag.toLowerCase().includes(q)).slice(0, 5);
+    // 1. Etiket araması (Tüm globalTrendingTags içerisinden arama yapar, sadece top10 ile sınırlı değildir!)
+    const matchedTags = globalTrendingTags.filter(t => t.tag.toLowerCase().includes(q)).slice(0, 5);
     if(matchedTags.length > 0) {
         html += '<div style="padding:10px 20px; font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Etiketler</div>';
         matchedTags.forEach(t => {
             html += `
-                <div class="suggestion-item" onclick="window.setCategory('${t.tag}'); document.getElementById('smart-search-input').value=''; document.getElementById('search-suggestions').style.display='none';">
+                <div class="suggestion-item" onclick="window.setCategory('${t.tag}'); document.getElementById('search-suggestions').style.display='none';">
                     <div class="suggestion-icon">#</div>
                     <div class="suggestion-content">
                         <div class="suggestion-title">${t.tag}</div>
@@ -364,7 +405,7 @@ async function performSmartSearch() {
         });
     }
     
-    // 3. Konu/Gönderi araması
+    // 3. Konu/Gönderi araması (Zaten yüklü gönderiler içinden arar)
     const matchedPosts = allPosts.filter(p => {
         const text = trLower(p.content || p.text || "");
         return text.includes(searchQ) && !text.includes('#'+searchQ); 
@@ -395,7 +436,7 @@ async function performSmartSearch() {
     searchSuggestions.innerHTML = html;
 }
 
-// POST DETAIL (Search sayfasına modal eklendiği için gerekli)
+// POST DETAIL LOGIC
 window.openPostDetail = async function(postId) {
     if(!postId) return;
     const modal = document.getElementById('post-detail-modal');
