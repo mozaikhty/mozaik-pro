@@ -36,7 +36,7 @@ service cloud.firestore {
       allow update: if (isAuthenticated() 
                     && resource.data.email == request.auth.token.email
                     && (!('fullName' in request.resource.data) || request.resource.data.fullName.size() <= 50)
-                    && (!('bio' in request.resource.data) || request.resource.data.bio.size() <= 250)
+                    && (!('bio' in request.resource.data) || request.resource.data.bio.size() <= 150)
                     && (!('location' in request.resource.data) || request.resource.data.location.size() <= 50))
                     || isAdmin();
       
@@ -52,12 +52,12 @@ service cloud.firestore {
       // Gönderi oluştururken içerik karakter sınırı (maksimum 280 karakter)
       allow create: if isAuthenticated() 
                     && request.resource.data.content is string
-                    && request.resource.data.content.size() <= 280;
+                    && request.resource.data.content.size() <= 1000;
                     
       // Güncelleme: İçerik düzenlemelerinde de 280 karakter sınırı geçerli
       // Beğeni ve yorum arrayUnion işlemleri için de izin verilir
       allow update: if isAuthenticated()
-                    && (!('content' in request.resource.data) || request.resource.data.content.size() <= 280);
+                    && (!('content' in request.resource.data) || request.resource.data.content.size() <= 1000);
       
       // Silme: Gönderi sahibi veya admin silebilir
       allow delete: if (isAuthenticated() 
@@ -82,7 +82,7 @@ service cloud.firestore {
                       && (!('text' in request.resource.data) || request.resource.data.text.size() <= 1000);
         
         // Silme: Sadece mesajı gönderen silebilir
-        allow delete: if isAuthenticated();
+        allow delete: if isAuthenticated() && get(/databases/$(database)/documents/users/$(resource.data.sender)).data.email == request.auth.token.email;
       }
       
       // WebRTC Arama Sinyalleri
@@ -108,7 +108,7 @@ service cloud.firestore {
         allow update: if isAuthenticated()
                       && (!('text' in request.resource.data) || request.resource.data.text.size() <= 1000);
         
-        allow delete: if isAuthenticated();
+        allow delete: if isAuthenticated() && get(/databases/$(database)/documents/users/$(resource.data.sender)).data.email == request.auth.token.email;
       }
       
       match /calls/{callId} {

@@ -209,6 +209,18 @@ document.getElementById('modal-image-input').addEventListener('change', (e) => {
 
 // GÖNDERİ PAYLAŞIRKEN FOTOĞRAF SIKIŞTIRMA 
 async function submitPost(textId, imageId, btnId, previewId, isModal) {
+    try {
+        const uSnap = await getDoc(doc(db, "users", myUsername));
+        if (uSnap.exists()) {
+            const uData = uSnap.data();
+            const today = new Date().toISOString().split('T')[0];
+            if (uData.lastPostDate === today && (uData.postCountToday || 0) >= 20) {
+                alert("Günlük 20 gönderi sınırına ulaştınız! Spamı önlemek için lütfen yarın tekrar deneyin.");
+                return;
+            }
+        }
+    } catch(e) {}
+
     const text = document.getElementById(textId).value.trim(); 
     let files = document.getElementById(imageId).files;
     let loc = isModal ? currentModalLocation : currentPostLocation;
@@ -231,7 +243,21 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
     }
 
     for (let file of files) {
-        if (file.size > 10 * 1024 * 1024) {
+        
+        if (!file.type.match(/^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm))$/)) {
+            alert("Sadece güvenli fotoğraf (JPEG, PNG, WEBP, GIF) ve video (MP4, WEBM) formatları yüklenebilir.");
+            return;
+        }
+        if (file.type.startsWith('image/') && file.size > 5 * 1024 * 1024) {
+            alert("Fotoğraf boyutu 5 MB'dan büyük olamaz!");
+            return;
+        }
+        if (file.type.startsWith('video/') && file.size > 20 * 1024 * 1024) {
+            alert("Video boyutu 20 MB'dan büyük olamaz!");
+            return;
+        }
+        if (false) { // Dummy block to absorb the old condition
+
             alert("Seçtiğiniz medya 10 MB'dan büyük olamaz!");
             document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; document.getElementById(btnId).classList.remove('active'); return; 
         }
@@ -249,7 +275,7 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
                 if (!isVideo) {
                     file = await window.compressImage(rawFile, 1200, 1200, 0.75, 800 * 1024); 
                 }
-                const fileName = `posts/${Date.now()}_${file.name}`;
+                const fileName = `posts/${auth.currentUser.uid}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
                 const storageRef = ref(storage, fileName);
                 await uploadBytes(storageRef, file);
                 const url = await getDownloadURL(storageRef);
@@ -260,6 +286,17 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         let imageUrl = mediaArray.length > 0 ? mediaArray[0].url : null;
         
         await addDoc(collection(db, "posts"), { content: text, imageUrl: imageUrl, media: mediaArray, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false });
+        
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const uSnap = await getDoc(doc(db, "users", myUsername));
+            if (uSnap.exists()) {
+                const uData = uSnap.data();
+                let newCount = (uData.lastPostDate === today) ? (uData.postCountToday || 0) + 1 : 1;
+                await updateDoc(doc(db, "users", myUsername), { lastPostDate: today, postCountToday: newCount });
+            }
+        } catch(e) {}
+
         
         document.getElementById(textId).value = ''; document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; window.removeLocation(isModal);
         btn.disabled = false; btn.innerText = "Yayınla"; btn.classList.remove('active'); updateCharCount(textId, isModal ? 'modal-char-count' : 'inline-char-count', btnId);
@@ -323,7 +360,14 @@ window.deletePost = async function(postId) {
             let postObj = globalPosts.find(p => p.id === postId);
             globalPosts = globalPosts.filter(p => p.id !== postId); renderFeed();
             const detailModal = document.getElementById('post-detail-modal'); if (detailModal) detailModal.style.display = 'none'; window.currentOpenPostId = null;
-            if (postObj && postObj.data && postObj.data.imageUrl && !postObj.data.isRepost) { try { await deleteObject(ref(storage, postObj.data.imageUrl)); } catch(imgErr) {} }
+            if (postObj && postObj.data && !postObj.data.isRepost) { 
+                if (postObj.data.imageUrl) { try { await deleteObject(ref(storage, postObj.data.imageUrl)); } catch(imgErr) {} }
+                if (postObj.data.media && Array.isArray(postObj.data.media)) {
+                    for (const m of postObj.data.media) {
+                        if (m.url) { try { await deleteObject(ref(storage, m.url)); } catch(imgErr) {} }
+                    }
+                }
+            }
             await deleteDoc(doc(db, "posts", postId)); 
         } catch(e) {}
     } 

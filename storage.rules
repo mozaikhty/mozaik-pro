@@ -7,59 +7,73 @@ service firebase.storage {
       return request.auth != null;
     }
     
-    // Yalnızca resim dosyalarına izin ver
+    // Dosya adının, yükleyen kullanıcının UID'si ile başlaması zorunludur
+    function isOwner(fileName) {
+      return fileName.matches(request.auth.uid + '_.*');
+    }
+    
+    // Yalnızca güvenli resim dosyalarına izin ver
     function isImage() {
-      return request.resource.contentType.matches('image/.*');
+      return request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
     }
 
     // Resim veya video dosyalarına izin ver
     function isMedia() {
-      return request.resource.contentType.matches('image/.*')
-          || request.resource.contentType.matches('video/mp4')
-          || request.resource.contentType.matches('video/webm');
+      return request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
+          || request.resource.contentType.matches('video/(mp4|webm)');
     }
     
-    // Gönderi medyası: max 10 MB (görsel + video)
+    // Gönderi ve sohbet medyası (Sıkıştırıldıktan sonra çok daha küçük, güvenlik için maks 20MB video, 5MB resim için ortalama bir limit koyuyoruz)
     function isPostSize() {
-      return request.resource.size <= 10 * 1024 * 1024;
+      return request.resource.size <= 20 * 1024 * 1024;
     }
 
-    // Profil fotoğrafları: max 5 MB
+    // Profil fotoğrafları (Sıkıştırılmış 300KB/600KB hedefine güveniyoruz, maks limit 2MB)
     function isProfileSize() {
-      return request.resource.size <= 5 * 1024 * 1024;
+      return request.resource.size <= 2 * 1024 * 1024;
     }
 
-    // Hikâye medyası: max 25 MB (video desteği)
+    // Hikaye medyası (Maks 20MB video)
     function isStorySize() {
-      return request.resource.size <= 25 * 1024 * 1024;
+      return request.resource.size <= 20 * 1024 * 1024;
     }
 
     // Gönderi fotoğraf ve videoları (posts/)
-    match /posts/{allPaths=**} {
+    match /posts/{fileName} {
       allow read: if true;
-      allow write: if isAuthenticated() && isMedia() && isPostSize();
+      allow create, update: if isAuthenticated() && isOwner(fileName) && isMedia() && isPostSize();
+      allow delete: if isAuthenticated() && isOwner(fileName);
     }
 
     // Profil ve Kapak fotoğrafları (avatars/, banners/)
-    match /avatars/{allPaths=**} {
+    match /avatars/{fileName} {
       allow read: if true;
-      allow write: if isAuthenticated() && isImage() && isProfileSize();
+      allow create, update: if isAuthenticated() && isOwner(fileName) && isImage() && isProfileSize();
+      allow delete: if isAuthenticated() && isOwner(fileName);
     }
-    match /banners/{allPaths=**} {
+    match /banners/{fileName} {
       allow read: if true;
-      allow write: if isAuthenticated() && isImage() && isProfileSize();
+      allow create, update: if isAuthenticated() && isOwner(fileName) && isImage() && isProfileSize();
+      allow delete: if isAuthenticated() && isOwner(fileName);
     }
 
     // Sohbet içi medya (chats/)
-    match /chats/{allPaths=**} {
+    match /chats/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isMedia() && isPostSize();
+      allow create, update: if isAuthenticated() && isOwner(fileName) && isImage() && isPostSize();
+      allow delete: if isAuthenticated() && isOwner(fileName);
     }
 
-    // Hikayeler — fotoğraf + video (stories/)
-    match /stories/{allPaths=**} {
+    // Hikayeler (stories/ ve story_videos/)
+    match /stories/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isMedia() && isStorySize();
+      allow create, update: if isAuthenticated() && isOwner(fileName) && isImage() && isStorySize();
+      allow delete: if isAuthenticated() && isOwner(fileName);
+    }
+    match /story_videos/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isOwner(fileName) && request.resource.contentType.matches('video/(mp4|webm)') && isStorySize();
+      allow delete: if isAuthenticated() && isOwner(fileName);
     }
   }
 }

@@ -478,7 +478,14 @@ async function sendMessage() {
     const file = imgInput ? imgInput.files[0] : null;
     if (!text && !file) return;
 
+    
+    if (file && !file.type.match(/^(image\/(jpeg|png|webp|gif))$/)) {
+        alert("Sadece güvenli fotoğraf (JPEG, PNG, WEBP, GIF) formatları yüklenebilir.");
+        if(imgInput) imgInput.value = '';
+        return;
+    }
     if (file && file.size > 5 * 1024 * 1024) {
+
         alert("Göndermek istediğiniz fotoğraf 5 MB'dan büyük olamaz!");
         if(imgInput) imgInput.value = ''; 
         const upLabel = document.getElementById('img-upload-label'); if(upLabel) upLabel.style.color = '#64748b'; 
@@ -496,7 +503,7 @@ async function sendMessage() {
         if(file) {
             // Sohbet fotoğrafını yüklemeden önce sıkıştır (Maks 1200px ve maks 800 KB)
             const compressedImg = await window.compressImage(file, 1200, 1200, 0.75, 800 * 1024);
-            const fileName = `chats/${Date.now()}_${compressedImg.name}`;
+            const fileName = `chats/${auth.currentUser.uid}_${Date.now()}_${compressedImg.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
             const storageRef = ref(storage, fileName);
             await uploadBytes(storageRef, compressedImg);
             imgUrl = await getDownloadURL(storageRef);

@@ -249,6 +249,18 @@ setTimeout(() => {
 // 4. HİKÂYE PAYLAŞMA (YENİ: stories KOLEKSİYONU)
 // =====================================
 document.getElementById('submit-story-btn')?.addEventListener('click', async () => {
+    try {
+        const uSnap = await getDoc(doc(db, "users", window.myUsername));
+        if (uSnap.exists()) {
+            const uData = uSnap.data();
+            const today = new Date().toISOString().split('T')[0];
+            if (uData.lastStoryDate === today && (uData.storyCountToday || 0) >= 10) {
+                alert("Günlük 10 hikaye sınırına ulaştınız! Lütfen yarın tekrar deneyin.");
+                return;
+            }
+        }
+    } catch(e) {}
+
     const textVal = document.getElementById('story-text-input').value.trim();
     if (textVal && textVal.length > 300) { alert("Hikaye metni en fazla 300 karakter olabilir!"); return; }
     let rawFile = document.getElementById('story-image-input').files[0];
@@ -258,8 +270,15 @@ document.getElementById('submit-story-btn')?.addEventListener('click', async () 
     let mediaType = 'image';
     if(rawFile && rawFile.type.startsWith('video/')) {
         mediaType = 'video';
-        if (rawFile.size > 25 * 1024 * 1024) { alert("Video 25 MB'dan büyük olamaz!"); return; }
-    } else if (rawFile && rawFile.size > 10 * 1024 * 1024) { 
+        
+        if (!rawFile.type.match(/^video\/(mp4|webm)$/)) { alert("Sadece MP4 ve WEBM video formatları yüklenebilir."); return; }
+        if (rawFile.size > 20 * 1024 * 1024) {
+ alert("Video 25 MB'dan büyük olamaz!"); return; }
+    
+    } else if (rawFile) {
+        if (!rawFile.type.match(/^(image\/(jpeg|png|webp|gif))$/)) { alert("Sadece güvenli fotoğraf formatları yüklenebilir."); return; }
+        if (rawFile.size > 5 * 1024 * 1024) {
+ 
         alert("Hikaye fotoğrafı 10 MB'dan büyük olamaz!"); return; 
     }
 
@@ -296,6 +315,16 @@ document.getElementById('submit-story-btn')?.addEventListener('click', async () 
         };
 
         await addDoc(collection(db, "stories"), newStory);
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const uSnap = await getDoc(doc(db, "users", window.myUsername));
+            if (uSnap.exists()) {
+                const uData = uSnap.data();
+                let newCount = (uData.lastStoryDate === today) ? (uData.storyCountToday || 0) + 1 : 1;
+                await updateDoc(doc(db, "users", window.myUsername), { lastStoryDate: today, storyCountToday: newCount });
+            }
+        } catch(e) {}
+
         
         // Eski sisteme de geriye dönük uyumluluk: users dokümanına da ekle
         try {

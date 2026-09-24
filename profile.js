@@ -572,11 +572,17 @@ document.getElementById('save-edit-btn')?.addEventListener('click', async () => 
 
     if(!newFullName) { alert("İsim zorunludur!"); return; }
     if (newFullName.length > 50) { alert("İsim en fazla 50 karakter olabilir!"); return; }
-    if (newBio.length > 250) { alert("Biyografi en fazla 250 karakter olabilir!"); return; }
+    if (newBio.length > 150) { alert("Biyografi en fazla 250 karakter olabilir!"); return; }
     if (newLocation.length > 50) { alert("Konum en fazla 50 karakter olabilir!"); return; }
 
-    if (rawAvatarFile && rawAvatarFile.size > 10 * 1024 * 1024) { alert("Profil fotoğrafı 10 MB'dan büyük olamaz!"); return; }
-    if (rawBannerFile && rawBannerFile.size > 10 * 1024 * 1024) { alert("Kapak fotoğrafı 10 MB'dan büyük olamaz!"); return; }
+    
+    if (rawAvatarFile && !rawAvatarFile.type.match(/^(image\/(jpeg|png|webp|gif))$/)) { alert("Sadece güvenli profil fotoğrafı formatları yüklenebilir."); return; }
+    if (rawAvatarFile && rawAvatarFile.size > 5 * 1024 * 1024)
+ { alert("Profil fotoğrafı 10 MB'dan büyük olamaz!"); return; }
+    
+    if (rawBannerFile && !rawBannerFile.type.match(/^(image\/(jpeg|png|webp|gif))$/)) { alert("Sadece güvenli kapak fotoğrafı formatları yüklenebilir."); return; }
+    if (rawBannerFile && rawBannerFile.size > 5 * 1024 * 1024)
+ { alert("Kapak fotoğrafı 10 MB'dan büyük olamaz!"); return; }
 
     saveBtn.innerText = "Sıkıştırılıyor..."; saveBtn.disabled = true;
     
@@ -588,7 +594,7 @@ document.getElementById('save-edit-btn')?.addEventListener('click', async () => 
             // Profil avatarı: Maks 400x400 ve maks 300 KB hedef boyut
             const avatarFile = await window.compressImage(rawAvatarFile, 400, 400, 0.8, 300 * 1024); 
             saveBtn.innerText = "Fotoğraf yükleniyor...";
-            const avatarRef = ref(storage, `avatars/${Date.now()}_${avatarFile.name}`);
+            const avatarRef = ref(storage, `avatars/${auth.currentUser.uid}_${Date.now()}_${avatarFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`);
             await uploadBytes(avatarRef, avatarFile);
             newAvatarUrl = await getDownloadURL(avatarRef);
         }
@@ -596,7 +602,7 @@ document.getElementById('save-edit-btn')?.addEventListener('click', async () => 
             // Kapak fotoğrafı: Maks 1200x600 ve maks 600 KB hedef boyut
             const bannerFile = await window.compressImage(rawBannerFile, 1200, 600, 0.75, 600 * 1024); 
             saveBtn.innerText = "Kapak yükleniyor...";
-            const bannerRef = ref(storage, `banners/${Date.now()}_${bannerFile.name}`);
+            const bannerRef = ref(storage, `banners/${auth.currentUser.uid}_${Date.now()}_${bannerFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`);
             await uploadBytes(bannerRef, bannerFile);
             newBannerUrl = await getDownloadURL(bannerRef);
         }

@@ -68,7 +68,7 @@
             <div class="post-input-box" id="desktop-post-box">
                 <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
                 <div class="input-form">
-                    <textarea id="post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..."></textarea>
+                    <textarea id="post-text" maxlength="1000" placeholder="Düşüncelerinizi aktarın..."></textarea>
                     <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">✓ Fotoğraf Eklendi</div>
                     <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">📍 <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
                     <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
@@ -273,7 +273,7 @@
             <div class="input-form" style="display:flex; gap:15px; margin-top:10px;">
                 <div class="input-avatar" id="modal-avatar">👤</div>
                 <div style="flex:1;">
-                    <textarea id="modal-post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..." style="width:100%; border:none; font-size:18px; outline:none; resize:none; min-height:120px; font-family:inherit; color:#0f172a; background:transparent;"></textarea>
+                    <textarea id="modal-post-text" maxlength="1000" placeholder="Düşüncelerinizi aktarın..." style="width:100%; border:none; font-size:18px; outline:none; resize:none; min-height:120px; font-family:inherit; color:#0f172a; background:transparent;"></textarea>
                     <input type="file" id="modal-image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
                     <div id="modal-image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">✓ Fotoğraf Eklendi</div>
                     <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">📍 <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">✖</span></div>
@@ -283,7 +283,7 @@
                             <label for="modal-image-input" class="icon-btn" title="Medya">🖼️</label>
                             <label onclick="window.addLocation(true)" class="icon-btn" title="Konum">📍</label>
                         </div>
-                        <div class="char-counter" id="modal-char-count">280</div>
+                        <div class="char-counter" id="modal-char-count">1000</div>
                     </div>
                 </div>
             </div>
