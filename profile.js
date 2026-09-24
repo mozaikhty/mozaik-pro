@@ -112,11 +112,11 @@ onAuthStateChanged(auth, async (user) => {
     } else { window.location.href = "index.html"; }
 });
 
-window.toggleLike = async function(postId, isLiked, postAuthor, event) { 
+window.toggleLike = async function(postId, isLiked, postAuthor, event, isDoubleTap = false) { 
     event.stopPropagation();
     if (window.isActionLocked && window.isActionLocked('like_' + postId)) return; 
     
-    let isDouble = event && event.type === 'dblclick';
+    let isDouble = (event && event.type === 'dblclick') || isDoubleTap;
     if (isDouble && isLiked) return; // Do not unlike on double click
 
     if (isDouble && !isLiked) {
@@ -825,19 +825,19 @@ window.renderProfileFeed = function() {
                 postDiv.onclick = () => window.openPostDetail(postId); 
 
                 let mediaHtml = '';
-                const likeAction = `window.toggleLike('${postId}', ${isLiked}, '${postData.author}', event)`;
+                const likeAction = `window.handleMediaClick('${postId}', ${isLiked}, '${postData.author}', event)`;
                 if (postData.media && postData.media.length > 1) {
                     let slides = postData.media.map(m => {
-                        let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}">`;
+                        let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" onclick="${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="${likeAction}">`;
                         return `<div style="flex: 0 0 100%; scroll-snap-align: start; position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
                     }).join('');
                     mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()"><div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%;">${slides}</div></div>`;
                 } else if (postData.media && postData.media.length === 1) {
                     let m = postData.media[0];
-                    let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}">`;
+                    let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" onclick="${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}">`;
                     mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
                 } else if (postData.imageUrl) {
-                    mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"><div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+                    mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}"><div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
                 }
 
                 postDiv.innerHTML = `

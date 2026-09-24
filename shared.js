@@ -27,6 +27,23 @@ window.initVideoObserver = function() {
         window.videoObserver.observe(vid);
     });
 };
+
+window.handleMediaClick = function(postId, isLiked, postAuthor, event) {
+    event.stopPropagation(); // Post detayına gitmesini engelle
+    if (event.type === 'click' && event.button !== 0) return; // Sadece sol tık veya dokunma
+    
+    const now = Date.now();
+    if (!window.lastClickTime) window.lastClickTime = {};
+    const lastTime = window.lastClickTime[postId] || 0;
+    
+    if (now - lastTime < 300) { // Çift tıklama / dokunma algılandı
+        window.lastClickTime[postId] = 0;
+        window.toggleLike(postId, isLiked, postAuthor, event, true);
+    } else {
+        window.lastClickTime[postId] = now;
+        // Eğer video ise native controls varsa zaten pause/play olur. Ekstra koda gerek yok.
+    }
+};
 onAuthStateChanged(auth, async (user) => {
     if (user && !window.location.href.includes('admin.html')) {
         const myUsername = user.displayName || user.email.split('@')[0];
