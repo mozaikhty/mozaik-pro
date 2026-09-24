@@ -57,7 +57,7 @@ button {
 /* ==========================================================================
    ORTA AKIŞ (FEED MAIN) & SEKMELER & ORTAK BAŞLIK
    ========================================================================== */
-.feed-main { width: 620px; min-height: 100vh; padding: 0 15px; padding-bottom: 80px; flex-shrink:0; background: transparent; border-right: 1px solid rgba(226, 232, 240, 0.6);}
+.feed-main { width: 620px; min-width: 0; min-height: 100vh; padding: 0 15px; padding-bottom: 80px; flex-shrink:0; background: transparent; border-right: 1px solid rgba(226, 232, 240, 0.6);}
 .header-sticky { position: sticky; top: 0; background: rgba(244, 246, 248, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 100; padding: 10px 0; display: flex; align-items: center; gap: 20px; min-height: 53px; border-bottom: 1px solid transparent; flex-wrap: wrap;}
 .mobile-header-top { display: none; padding: 10px 0; align-items: center; justify-content: space-between; width: 100%; }
 .mobile-logo-text { font-size: 20px; font-weight: 800; color: #2c3e50; }
