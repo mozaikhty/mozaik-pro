@@ -7,42 +7,59 @@ service firebase.storage {
       return request.auth != null;
     }
     
-    // Yalnızca resim dosyalarına izin ver (image/jpeg, image/png, image/webp vb.)
+    // Yalnızca resim dosyalarına izin ver
     function isImage() {
       return request.resource.contentType.matches('image/.*');
     }
+
+    // Resim veya video dosyalarına izin ver
+    function isMedia() {
+      return request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('video/mp4')
+          || request.resource.contentType.matches('video/webm');
+    }
     
-    // Maksimum dosya boyutu 5 MB (Görsel sıkıştırma sayesinde normalde 300-800 KB olacaktır)
-    function isValidSize() {
+    // Gönderi medyası: max 10 MB (görsel + video)
+    function isPostSize() {
+      return request.resource.size <= 10 * 1024 * 1024;
+    }
+
+    // Profil fotoğrafları: max 5 MB
+    function isProfileSize() {
       return request.resource.size <= 5 * 1024 * 1024;
     }
 
-    // Gönderi fotoğrafları (posts/)
+    // Hikâye medyası: max 25 MB (video desteği)
+    function isStorySize() {
+      return request.resource.size <= 25 * 1024 * 1024;
+    }
+
+    // Gönderi fotoğraf ve videoları (posts/)
     match /posts/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuthenticated() && isImage() && isValidSize();
+      allow write: if isAuthenticated() && isMedia() && isPostSize();
     }
 
     // Profil ve Kapak fotoğrafları (avatars/, banners/)
     match /avatars/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuthenticated() && isImage() && isValidSize();
+      allow write: if isAuthenticated() && isImage() && isProfileSize();
     }
     match /banners/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuthenticated() && isImage() && isValidSize();
+      allow write: if isAuthenticated() && isImage() && isProfileSize();
     }
 
     // Sohbet içi medya (chats/)
     match /chats/{allPaths=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isImage() && isValidSize();
+      allow write: if isAuthenticated() && isMedia() && isPostSize();
     }
 
-    // Hikayeler (stories/)
+    // Hikayeler — fotoğraf + video (stories/)
     match /stories/{allPaths=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isValidSize();
+      allow write: if isAuthenticated() && isMedia() && isStorySize();
     }
   }
 }

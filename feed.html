@@ -71,7 +71,7 @@
                     <textarea id="post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..."></textarea>
                     <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">✓ Fotoğraf Eklendi</div>
                     <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">📍 <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
-                    <input type="file" id="image-input" accept="image/*" style="display: none;">
+                    <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
                     
                     <div class="input-actions">
                         <div class="action-icons">
@@ -127,6 +127,7 @@
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap: 20px;">
+                <button id="story-mute-btn" title="Sesi Aç/Kapat" style="background:none; border:none; color:white; font-size:20px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5);" onclick="window.toggleStoryMute()">🔇</button>
                 <button title="Yeni Hikaye Paylaş" style="background:none; border:none; color:white; font-size:28px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5);" onclick="window.openAddStoryModal()">+</button>
                 <button title="Kapat" style="background:none; border:none; color:white; font-size:36px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5); padding-bottom:5px;" onclick="window.closeStoryViewer()">&times;</button>
             </div>
@@ -200,19 +201,45 @@
             
             <div class="story-editor-board" id="story-editor-board">
                 <img id="editor-image-preview" class="draggable-img" src="">
+                <video id="editor-video-preview" class="draggable-img" src="" style="display: none;" playsinline loop muted></video>
                 <div id="editor-text-preview" class="draggable-text"></div>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:15px;">
                 <textarea id="story-text-input" style="width:100%; border:1px solid #cbd5e1; padding:10px; border-radius:8px; resize:none; font-family:inherit; outline:none; font-size:15px;" placeholder="Hikayene bir şeyler yaz... Sürükleyebilirsin." oninput="window.updateEditorText(this.value)"></textarea>
                 
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <input type="file" id="story-image-input" accept="image/*" style="display:none;" onchange="window.loadEditorImage(event)">
-                    <label for="story-image-input" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 15px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155; transition:0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">📷 Fotoğraf Seç</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap: 5px;">
+                    <button id="story-text-bg-btn" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer;" title="Arka Plan" onclick="window.toggleTextBackground()">A</button>
+                    <button id="story-text-bold-btn" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="window.toggleTextBold()">B</button>
+                    <div id="story-color-palette" style="display:flex; gap:5px; overflow-x:auto; padding:2px;">
+                        <div class="color-swatch" style="background:white; border:1px solid #ccc; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('white')"></div>
+                        <div class="color-swatch" style="background:black; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('black')"></div>
+                        <div class="color-swatch" style="background:#ef4444; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('#ef4444')"></div>
+                        <div class="color-swatch" style="background:#3b82f6; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('#3b82f6')"></div>
+                        <div class="color-swatch" style="background:#22c55e; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('#22c55e')"></div>
+                        <div class="color-swatch" style="background:#eab308; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('#eab308')"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <input type="file" id="story-image-input" accept="image/*,video/mp4,video/webm" style="display:none;" onchange="window.loadEditorImage(event)">
+                    <label for="story-image-input" style="flex:1; text-align:center; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;">📁 Seç</label>
+                    <button id="story-camera-btn" style="flex:1; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;" onclick="window.openStoryCamera()">📸 Çek</button>
+                    <select id="story-privacy-select" style="flex:2; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; font-size:13px; outline:none;">
+                        <option value="public">🌍 Herkes</option>
+                        <option value="followers">👥 Takipçiler</option>
+                        <option value="close_friends">💚 Yakın Arkadaşlar</option>
+                    </select>
+                </div>
+                
+                <div id="story-camera-container" style="display:none; position:relative; width:100%; aspect-ratio:9/16; background:#000; border-radius:8px; overflow:hidden;">
+                    <video id="story-camera-video" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+                    <button id="story-capture-btn" style="position:absolute; bottom:15px; left:50%; transform:translateX(-50%); width:50px; height:50px; border-radius:50%; background:white; border:4px solid #cbd5e1; cursor:pointer;" onclick="window.captureStoryPhoto()"></button>
+                    <button style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.5); border:none; color:white; font-size:20px; border-radius:50%; width:30px; height:30px; cursor:pointer;" onclick="window.closeStoryCamera()">&times;</button>
                 </div>
 
                 <div class="slider-group">
-                    <label>Fotoğraf Büyüklüğü</label>
+                    <label>Medya Büyüklüğü</label>
                     <input type="range" id="img-scale-slider" min="0.5" max="3" step="0.1" value="1" disabled oninput="window.updateScale('image', this.value)">
                 </div>
                 <div class="slider-group">
@@ -247,7 +274,7 @@
                 <div class="input-avatar" id="modal-avatar">👤</div>
                 <div style="flex:1;">
                     <textarea id="modal-post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..." style="width:100%; border:none; font-size:18px; outline:none; resize:none; min-height:120px; font-family:inherit; color:#0f172a; background:transparent;"></textarea>
-                    <input type="file" id="modal-image-input" accept="image/*" style="display: none;">
+                    <input type="file" id="modal-image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
                     <div id="modal-image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">✓ Fotoğraf Eklendi</div>
                     <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">📍 <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">✖</span></div>
                     

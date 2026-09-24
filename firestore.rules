@@ -152,5 +152,24 @@ service cloud.firestore {
       allow create: if isAdmin();
       allow update, delete: if false;
     }
+
+    // 9. HİKÂYELER (STORIES) KOLEKSİYONU
+    // Hikâyeler bağımsız dokümanlar olarak saklanır.
+    match /stories/{storyId} {
+      allow read: if isAuthenticated();
+      
+      // Oluşturma: Giriş yapmış kullanıcı, kendi kullanıcı adıyla oluşturabilir
+      allow create: if isAuthenticated()
+                    && request.resource.data.author is string
+                    && request.resource.data.createdAt is number;
+      
+      // Güncelleme: Sahibi (views/likes dizisini herkes güncelleyebilmeli) veya admin
+      // Herhangi bir authenticated kullanıcı güncelleyebilir (views, likes için)
+      allow update: if isAuthenticated();
+      
+      // Silme: Sadece hikâye sahibi veya admin
+      allow delete: if (isAuthenticated() && resource.data.author == request.auth.token.email)
+                    || isAdmin();
+    }
   }
 }

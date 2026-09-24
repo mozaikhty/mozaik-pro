@@ -11,7 +11,7 @@ import './shared.js';
 let currentUser = null; let myUsername = null; let allUsersData = {}; 
 let currentFeedTab = 'discover'; let myFollowingList = []; let myBookmarks = []; let globalPosts = []; 
 let currentlyEditingPostId = null; let postToShare = null; let activeReplyParentId = null; 
-const MAX_CHARS = 280;
+const MAX_CHARS = 2200;
 
 // GLOBAL ÇAĞRI DİNLEYİCİ DEĞİŞKENLERİ
 let activeChats = [];
@@ -63,7 +63,10 @@ onAuthStateChanged(auth, async (user) => {
                 const deskName = document.getElementById('desktop-sidebar-name'); if(deskName) deskName.innerText = u.fullName || myUsername;
                 const deskHandle = document.getElementById('desktop-sidebar-handle'); if(deskHandle) deskHandle.innerText = '@' + myUsername;
             }
-            renderWhoToFollow(); if(window.renderStories) window.renderStories(); renderFeed(); 
+            renderWhoToFollow(); 
+            if(window.listenToStories && !window._storiesListening) { window.listenToStories(); window._storiesListening = true; } 
+            else if(window.renderStories) window.renderStories(); 
+            renderFeed(); 
         });
 
         onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
@@ -175,17 +178,42 @@ window.addLocation = function(isModal) {
 window.removeLocation = function(isModal) { if(isModal) { currentModalLocation = null; document.getElementById('modal-location-preview-text').style.display = 'none'; } else { currentPostLocation = null; document.getElementById('location-preview-text').style.display = 'none'; } };
 window.closeMainPostModal = function() { document.getElementById('main-post-modal').style.display = 'none'; document.getElementById('modal-post-text').value = ''; document.getElementById('modal-char-count').innerText = MAX_CHARS; document.getElementById('modal-share-btn').classList.remove('active'); document.getElementById('modal-image-input').value = ''; document.getElementById('modal-image-preview-text').style.display = 'none'; window.removeLocation(true); };
 
-document.getElementById('image-input').addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('image-preview-text').style.display = 'block'; document.getElementById('share-btn').classList.add('active'); }});
-document.getElementById('modal-image-input').addEventListener('change', (e) => { if(e.target.files.length > 0) { document.getElementById('modal-image-preview-text').style.display = 'block'; document.getElementById('modal-share-btn').classList.add('active'); }});
+document.getElementById('image-input').addEventListener('change', (e) => { 
+    if(e.target.files.length > 0) { 
+        const previewEl = document.getElementById('image-preview-text');
+        previewEl.style.display = 'flex'; previewEl.style.flexWrap = 'wrap'; previewEl.style.gap = '5px'; previewEl.innerHTML = '';
+        Array.from(e.target.files).forEach(file => {
+            if (file.type.startsWith('video/')) {
+                previewEl.innerHTML += `<video src="${URL.createObjectURL(file)}" autoplay muted loop style="max-height: 100px; border-radius: 8px; margin-top: 10px;"></video>`;
+            } else {
+                previewEl.innerHTML += `<img src="${URL.createObjectURL(file)}" style="max-height: 100px; border-radius: 8px; margin-top: 10px;">`;
+            }
+        });
+        document.getElementById('share-btn').classList.add('active'); 
+    }
+});
+document.getElementById('modal-image-input').addEventListener('change', (e) => { 
+    if(e.target.files.length > 0) { 
+        const previewEl = document.getElementById('modal-image-preview-text');
+        previewEl.style.display = 'flex'; previewEl.style.flexWrap = 'wrap'; previewEl.style.gap = '5px'; previewEl.innerHTML = '';
+        Array.from(e.target.files).forEach(file => {
+            if (file.type.startsWith('video/')) {
+                previewEl.innerHTML += `<video src="${URL.createObjectURL(file)}" autoplay muted loop style="max-height: 100px; border-radius: 8px; margin-top: 10px;"></video>`;
+            } else {
+                previewEl.innerHTML += `<img src="${URL.createObjectURL(file)}" style="max-height: 100px; border-radius: 8px; margin-top: 10px;">`;
+            }
+        });
+        document.getElementById('modal-share-btn').classList.add('active'); 
+    }
+});
 
 // GÖNDERİ PAYLAŞIRKEN FOTOĞRAF SIKIŞTIRMA 
 async function submitPost(textId, imageId, btnId, previewId, isModal) {
     const text = document.getElementById(textId).value.trim(); 
-    let rawFile = document.getElementById(imageId).files[0];
-    let file = rawFile;
+    let files = document.getElementById(imageId).files;
     let loc = isModal ? currentModalLocation : currentPostLocation;
     
-    if(!text && !rawFile && !loc) return; 
+    if(!text && files.length === 0 && !loc) return; 
 
     if (text.length > MAX_CHARS) {
         alert(`Gönderiniz en fazla ${MAX_CHARS} karakter olabilir!`);
@@ -197,25 +225,41 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         return;
     }
 
-    if (rawFile && rawFile.size > 10 * 1024 * 1024) {
-        alert("Seçtiğiniz fotoğraf 10 MB'dan büyük olamaz!");
-        document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; document.getElementById(btnId).classList.remove('active'); return; 
+    if (files.length > 4) {
+        alert("En fazla 4 medya dosyası yükleyebilirsiniz!");
+        return;
+    }
+
+    for (let file of files) {
+        if (file.size > 10 * 1024 * 1024) {
+            alert("Seçtiğiniz medya 10 MB'dan büyük olamaz!");
+            document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; document.getElementById(btnId).classList.remove('active'); return; 
+        }
     }
     
-    const btn = document.getElementById(btnId); btn.disabled = true; btn.innerText = "Sıkıştırılıyor..."; let url = null;
+    const btn = document.getElementById(btnId); btn.disabled = true; btn.innerText = "Sıkıştırılıyor..."; 
+    let mediaArray = [];
     
     try {
-        if(rawFile) { 
-            // Akıllı sıkıştırma: Maks 1200px ve maks 800 KB hedef boyut
-            file = await window.compressImage(rawFile, 1200, 1200, 0.75, 800 * 1024); 
+        if(files.length > 0) { 
             btn.innerText = "Yükleniyor...";
-            const fileName = `posts/${Date.now()}_${file.name}`;
-            const storageRef = ref(storage, fileName);
-            await uploadBytes(storageRef, file);
-            url = await getDownloadURL(storageRef);
+            for (let rawFile of files) {
+                let file = rawFile;
+                let isVideo = file.type.startsWith('video/');
+                if (!isVideo) {
+                    file = await window.compressImage(rawFile, 1200, 1200, 0.75, 800 * 1024); 
+                }
+                const fileName = `posts/${Date.now()}_${file.name}`;
+                const storageRef = ref(storage, fileName);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                mediaArray.push({ url, type: isVideo ? 'video' : 'image', storagePath: fileName });
+            }
         }
         
-        await addDoc(collection(db, "posts"), { content: text, imageUrl: url, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false });
+        let imageUrl = mediaArray.length > 0 ? mediaArray[0].url : null;
+        
+        await addDoc(collection(db, "posts"), { content: text, imageUrl: imageUrl, media: mediaArray, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false });
         
         document.getElementById(textId).value = ''; document.getElementById(imageId).value = ''; document.getElementById(previewId).style.display = 'none'; window.removeLocation(isModal);
         btn.disabled = false; btn.innerText = "Yayınla"; btn.classList.remove('active'); updateCharCount(textId, isModal ? 'modal-char-count' : 'inline-char-count', btnId);
@@ -233,6 +277,15 @@ window.isActionLocked = function(actionId) { if (window.actionLocks[actionId]) r
 
 window.toggleLike = async function(postId, isLiked, postAuthor, event) { 
     event.stopPropagation(); if (window.isActionLocked('like_' + postId)) return; 
+    
+    if (event && event.type === 'dblclick' && !isLiked) {
+        const heart = document.getElementById('heart-' + postId);
+        if(heart) {
+            heart.style.transform = 'translate(-50%, -50%) scale(1.5)';
+            setTimeout(() => { heart.style.transform = 'translate(-50%, -50%) scale(0)'; }, 800);
+        }
+    }
+
     const postObj = globalPosts.find(p => p.id === postId);
     if (postObj) { if (!postObj.data.likes) postObj.data.likes = []; if (isLiked) { postObj.data.likes = postObj.data.likes.filter(u => u !== myUsername); } else { postObj.data.likes.push(myUsername); } renderFeed(); if (window.currentOpenPostId === postId) window.openPostDetail(postId); }
     const postRef = doc(db, "posts", postId); 
@@ -262,6 +315,24 @@ window.repostPost = async function(postId, originalAuthor, event) {
 };
 
 window.toggleDropdown = function(postId, event) { event.stopPropagation(); document.querySelectorAll('.dropdown-menu').forEach(menu => { if(menu.id !== `dropdown-${postId}`) menu.style.display = 'none'; }); const menu = document.getElementById(`dropdown-${postId}`); menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; };
+
+window.pinPost = async function(postId) {
+    try {
+        const userRef = doc(db, "users", myUsername);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const currentPinned = userSnap.data().pinnedPostId;
+            if (currentPinned === postId) {
+                await updateDoc(userRef, { pinnedPostId: null });
+                window.showToast?.('Gönderi sabitlemeden kaldırıldı.', 'info');
+            } else {
+                await updateDoc(userRef, { pinnedPostId: postId });
+                window.showToast?.('Gönderi profilinize sabitlendi.', 'info');
+            }
+        }
+    } catch(e) { console.error('Sabitleme hatası:', e.code || 'Bilinmeyen hata'); }
+};
+
 window.openEditModal = function(postId, currentContent) { currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex'; };
 
 document.getElementById('save-edited-post-btn').addEventListener('click', async () => {
@@ -326,21 +397,36 @@ window.openPostDetail = async function(postId) {
     let locHtml = postData.location ? `<span style="font-size:14px; color:#3b82f6; margin-left:10px;">📍 ${window.escapeHtml(postData.location)}</span>` : '';
     let repostLabel = ""; if(postData.isRepost) { repostLabel = `<div style="color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;">🔁 @${window.escapeHtml(postData.author)} ağında paylaştı</div>`; }
 
-    let html = `
-        ${repostLabel}
-        <div style="padding: 10px 25px 25px 25px; border-bottom:1px solid #f1f5f9;">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
-                <div style="width:48px; height:48px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;">${avatarImg}</div>
-                <div style="flex:1;">
-                    <div style="font-weight:700; font-size:16px; color:#0f172a;">${fullName} ${vHtml}</div>
-                    <div style="color:#64748b; font-size:14px;">@${window.escapeHtml(originalAuthor)} ${locHtml}</div>
-                </div>
-            </div>
-            <div style="font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;">
-                ${DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`)}
-            </div>
-            ${postData.imageUrl ? `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">` : ''}
-            <div style="color:#94a3b8; font-size:13px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;">${timeString}</div>
+            let mediaHtmlDetail = '';
+            if (postData.media && postData.media.length > 1) {
+                let slides = postData.media.map(m => {
+                    let tag = m.type === 'video' ? `<video controls src="${window.sanitizeUrl(m.url)}" style="width:100%; border-radius:8px; background:black;"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; border-radius:8px; object-fit:cover;">`;
+                    return `<div style="flex: 0 0 100%; scroll-snap-align: start;">${tag}</div>`;
+                }).join('');
+                mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
+            } else if (postData.media && postData.media.length === 1) {
+                let m = postData.media[0];
+                let tag = m.type === 'video' ? `<video controls src="${window.sanitizeUrl(m.url)}" style="width:100%; border-radius:8px; background:black; margin-bottom:15px;"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">`;
+                mediaHtmlDetail = tag;
+            } else if (postData.imageUrl) {
+                mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">`;
+            }
+
+            let html = `
+                ${repostLabel}
+                <div style="padding: 10px 25px 25px 25px; border-bottom:1px solid #f1f5f9;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
+                        <div style="width:48px; height:48px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;">${avatarImg}</div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700; font-size:16px; color:#0f172a;">${fullName} ${vHtml}</div>
+                            <div style="color:#64748b; font-size:14px;">@${window.escapeHtml(originalAuthor)} ${locHtml}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;">
+                        ${DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`)}
+                    </div>
+                    ${mediaHtmlDetail}
+                    <div style="color:#94a3b8; font-size:13px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;">${timeString}</div>
             
             <div style="display:flex; justify-content:flex-start; gap:30px; padding:15px 0; color:#64748b;">
                 <div class="action-item" onclick="document.getElementById('detail-comment-input').focus()"><span class="action-icon">💬</span> ${(postData.comments || []).length}</div>
@@ -428,6 +514,22 @@ function renderFeed() {
 
         let repostHtml = ''; if(postData.isRepost) { const reposterName = postData.author === myUsername ? 'Sen' : window.escapeHtml(allUsersData[postData.author]?.fullName || postData.author); repostHtml = `<div class="repost-indicator" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(postData.author)}'">🔁 ${reposterName} ağında paylaştı</div>`; }
 
+        let mediaHtml = '';
+        const likeAction = `window.toggleLike('${post.id}', ${isLiked}, '${originalAuthor}', event)`;
+        if (postData.media && postData.media.length > 1) {
+            let slides = postData.media.map(m => {
+                let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}">`;
+                return `<div style="flex: 0 0 100%; scroll-snap-align: start; position:relative;">${tag}<div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+            }).join('');
+            mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()"><div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%;">${slides}</div></div>`;
+        } else if (postData.media && postData.media.length === 1) {
+            let m = postData.media[0];
+            let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}">`;
+            mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;">${tag}<div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+        } else if (postData.imageUrl) {
+            mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"><div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+        }
+
         const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.onclick = () => window.openPostDetail(post.id); 
 
         postDiv.innerHTML = `
@@ -454,7 +556,7 @@ function renderFeed() {
                             </div>
                         </div>
                         <div class="post-content">${DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`)}</div>
-                        ${postData.imageUrl ? `<div class="post-image-container" onclick="event.stopPropagation()"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image"></div>` : ''}
+                        ${mediaHtml}
                         <div class="post-footer-actions">
                             <div class="action-item" onclick="event.stopPropagation(); window.openPostDetail('${post.id}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
                             <div class="action-item repost-box" onclick="window.repostPost('${post.id}', '${originalAuthor}', event)" title="Ağınıza Ekle"><span class="action-icon">🔁</span> </div>
@@ -472,4 +574,5 @@ function renderFeed() {
         if(currentFeedTab === 'bookmarks') { feedContainer.innerHTML = '<div style="padding: 60px 20px; text-align: center; color: #64748b;"><div style="font-size:40px; margin-bottom:15px;">📑</div><div style="font-size:18px; font-weight:700; color:#0f172a; margin-bottom:5px;">Henüz kaydedilmiş içerik yok.</div>İçeriklerdeki yer işareti ikonuna tıklayarak koleksiyonunuzu oluşturun.</div>'; } 
         else { feedContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: #64748b;">Buralar çok sessiz...</div>'; }
     }
+    if (window.initVideoObserver) window.initVideoObserver();
 }

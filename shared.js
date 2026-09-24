@@ -11,6 +11,22 @@ import { auth, db } from './firebase-config.js';
 // =====================================
 // GLOBAL BAN CHECK
 // =====================================
+window.initVideoObserver = function() {
+    if(!window.videoObserver) {
+        window.videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.play().catch(() => {});
+                } else {
+                    entry.target.pause();
+                }
+            });
+        }, { threshold: 0.5 });
+    }
+    document.querySelectorAll('.auto-play-video').forEach(vid => {
+        window.videoObserver.observe(vid);
+    });
+};
 onAuthStateChanged(auth, async (user) => {
     if (user && !window.location.href.includes('admin.html')) {
         const myUsername = user.displayName || user.email.split('@')[0];

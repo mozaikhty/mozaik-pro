@@ -7,7 +7,7 @@ import './shared.js';
 let currentUser = null; let myUsername = null; let allUsersData = {}; 
 let currentFeedTab = 'discover'; let myFollowingList = []; let myBookmarks = []; let globalPosts = []; 
 let currentlyEditingPostId = null; let postToShare = null; let activeReplyParentId = null; 
-const MAX_CHARS = 280;
+const MAX_CHARS = 2200;
 
 let currentProfileTab = 'posts';
 let currentProfileFollowers = [];
@@ -115,6 +115,14 @@ onAuthStateChanged(auth, async (user) => {
 window.toggleLike = async function(postId, isLiked, postAuthor, event) { 
     event.stopPropagation();
     if (window.isActionLocked && window.isActionLocked('like_' + postId)) return; 
+    
+    if (event && event.type === 'dblclick' && !isLiked) {
+        const heart = document.getElementById('heart-' + postId);
+        if(heart) {
+            heart.style.transform = 'translate(-50%, -50%) scale(1.5)';
+            setTimeout(() => { heart.style.transform = 'translate(-50%, -50%) scale(0)'; }, 800);
+        }
+    }
 
     const postObj = globalPosts.find(p => p.id === postId);
     if (postObj) {
@@ -185,6 +193,23 @@ window.toggleDropdown = function(postId, event) {
     document.querySelectorAll('.dropdown-menu').forEach(menu => { if(menu.id !== `dropdown-${postId}`) menu.style.display = 'none'; });
     const menu = document.getElementById(`dropdown-${postId}`);
     if(menu) menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+};
+
+window.pinPost = async function(postId) {
+    try {
+        const userRef = doc(db, "users", myUsername);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const currentPinned = userSnap.data().pinnedPostId;
+            if (currentPinned === postId) {
+                await updateDoc(userRef, { pinnedPostId: null });
+                window.showToast?.('Gönderi sabitlemeden kaldırıldı.', 'info');
+            } else {
+                await updateDoc(userRef, { pinnedPostId: postId });
+                window.showToast?.('Gönderi profilinize sabitlendi.', 'info');
+            }
+        }
+    } catch(e) { console.error('Sabitleme hatası:', e.code || 'Bilinmeyen hata'); }
 };
 
 window.openEditModal = function(postId, currentContent) { currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex'; };
@@ -269,21 +294,36 @@ window.openPostDetail = async function(postId) {
     let repostLabel = "";
     if(postData.isRepost) { repostLabel = `<div style=\"color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;\">🔁 @${postData.author} ağında paylaştı</div>`; }
 
-    let html = `
-        ${repostLabel}
-        <div style=\"padding: 10px 25px 25px 25px; border-bottom:1px solid #f1f5f9;\">
-            <div style=\"display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;\" onclick=\"window.location.href='profile.html?user=${originalAuthor}'\">
-                <div style=\"width:48px; height:48px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;\">${avatarImg}</div>
-                <div style=\"flex:1;\">
-                    <div style=\"font-weight:700; font-size:16px; color:#0f172a;\">${fullName} ${vHtml}</div>
-                    <div style=\"color:#64748b; font-size:14px;\">@${originalAuthor} ${locHtml}</div>
-                </div>
-            </div>
-            <div style=\"font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;\">
-                ${postData.content ? DOMPurify.sanitize(postData.content).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href=\"search.html?tag=$1\" style=\"color:#3b82f6; font-weight:500; text-decoration:none;\">#$1</a>`) : ''}
-            </div>
-            ${postData.imageUrl ? `<img src=\"${window.sanitizeUrl(postData.imageUrl)}\" style=\"width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;\">` : ''}
-            <div style=\"color:#94a3b8; font-size:13px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;\">${timeString}</div>
+            let mediaHtmlDetail = '';
+            if (postData.media && postData.media.length > 1) {
+                let slides = postData.media.map(m => {
+                    let tag = m.type === 'video' ? `<video controls src="${window.sanitizeUrl(m.url)}" style="width:100%; border-radius:8px; background:black;"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; border-radius:8px; object-fit:cover;">`;
+                    return `<div style="flex: 0 0 100%; scroll-snap-align: start;">${tag}</div>`;
+                }).join('');
+                mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
+            } else if (postData.media && postData.media.length === 1) {
+                let m = postData.media[0];
+                let tag = m.type === 'video' ? `<video controls src="${window.sanitizeUrl(m.url)}" style="width:100%; border-radius:8px; background:black; margin-bottom:15px;"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">`;
+                mediaHtmlDetail = tag;
+            } else if (postData.imageUrl) {
+                mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">`;
+            }
+
+            let html = `
+                ${repostLabel}
+                <div style="padding: 10px 25px 25px 25px; border-bottom:1px solid #f1f5f9;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${originalAuthor}'">
+                        <div style="width:48px; height:48px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;">${avatarImg}</div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700; font-size:16px; color:#0f172a;">${fullName} ${vHtml}</div>
+                            <div style="color:#64748b; font-size:14px;">@${originalAuthor} ${locHtml}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;">
+                        ${postData.content ? DOMPurify.sanitize(postData.content).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`) : ''}
+                    </div>
+                    ${mediaHtmlDetail}
+                    <div style="color:#94a3b8; font-size:13px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;">${timeString}</div>
             
             <div style=\"display:flex; justify-content:flex-start; gap:30px; padding:15px 0; color:#64748b;\">
                 <div class=\"action-item\" onclick=\"document.getElementById('detail-comment-input').focus()\"><span class=\"action-icon\">💬</span> ${(postData.comments || []).length}</div>
@@ -767,6 +807,22 @@ window.renderProfileFeed = function() {
                 const postDiv = document.createElement('div'); postDiv.className = 'post';
                 postDiv.onclick = () => window.openPostDetail(postId); 
 
+                let mediaHtml = '';
+                const likeAction = `window.toggleLike('${postId}', ${isLiked}, '${postData.author}', event)`;
+                if (postData.media && postData.media.length > 1) {
+                    let slides = postData.media.map(m => {
+                        let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}">`;
+                        return `<div style="flex: 0 0 100%; scroll-snap-align: start; position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+                    }).join('');
+                    mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()"><div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%;">${slides}</div></div>`;
+                } else if (postData.media && postData.media.length === 1) {
+                    let m = postData.media[0];
+                    let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}">`;
+                    mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+                } else if (postData.imageUrl) {
+                    mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" ondblclick="event.stopPropagation(); ${likeAction}"><div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+                }
+
                 postDiv.innerHTML = `
                     <div style="width:100%; display:flex; flex-direction:column;">
                         ${pinHtml}
@@ -792,17 +848,15 @@ window.renderProfileFeed = function() {
                                     </div>
                                 </div>
                                 
-                                <div class="post-content">${postData.content ? DOMPurify.sanitize(postData.content).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<span style="color:#3b82f6;">#$1</span>`) : ''}</div>
+                                <div class="post-content">${postData.content ? DOMPurify.sanitize(postData.content).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`) : ''}</div>
                                 
-                                ${postData.imageUrl ? `
-                                <div class="post-image-container" onclick="event.stopPropagation()">
-                                    <img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image">
-                                </div>` : ''}
+                                ${mediaHtml}
                                 
                                 <div class="post-footer-actions">
                                     <div class="action-item" onclick="event.stopPropagation(); window.openPostDetail('${postId}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
-                                    <div class="action-item repost-box" onclick="window.repostPost('${postId}', '${postData.author}', event)" title="Ağına Ekle"><span class="action-icon">🔁</span> </div>
+                                    <div class="action-item repost-box" onclick="window.repostPost('${postId}', '${postData.isRepost ? postData.originalPostAuthor : postData.author}', event)" title="Ağına Ekle"><span class="action-icon">🔁</span> </div>
                                     <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${postData.author}', event)" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${postId}', event)">${likesArray.length || ''}</span></div>
+                                    <div class="action-item ${myBookmarks.includes(postId) ? 'liked' : ''}" onclick="window.toggleBookmark('${postId}', ${myBookmarks.includes(postId)}, event)" title="Kaydet"><span class="action-icon">${myBookmarks.includes(postId) ? '🔖' : '📑'}</span></div>
                                     <div class="action-item" onclick="window.openShareModal('${postId}', event)" title="İlet"><span class="action-icon">📤</span></div>
                                 </div>
                             </div>
@@ -825,4 +879,5 @@ window.renderProfileFeed = function() {
     if(userPostCount === 0 && feedContainer) {
         feedContainer.innerHTML = `<div style="padding:40px; text-align:center;"><div style="font-size:28px; font-weight:800; margin-bottom:10px; color:#0f172a;">Henüz bir içerik yok</div><div style="color:#64748b; font-size:15px;">Burada paylaşılanlar listelenecek.</div></div>`;
     }
+    if (window.initVideoObserver) window.initVideoObserver();
 };
