@@ -325,3 +325,70 @@ window.compressImage = function(file, maxWidth = 1200, maxHeight = 1200, quality
     });
 };
 
+
+
+window.showLikes = async function(postId, event) {
+    if(event) event.stopPropagation();
+    const titleEl = document.getElementById('users-list-title'); 
+    const container = document.getElementById('users-list-container'); 
+    if(!titleEl || !container) return;
+    
+    // Yükleniyor durumu (Sadece container içeriği değişecek, listeler bozulmayacak)
+    titleEl.innerText = "Beğenenler";
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b; font-weight:600;">Yükleniyor...</div>';
+    document.getElementById('users-list-modal').style.display = 'flex';
+    
+    try {
+        const postRef = doc(db, "posts", postId);
+        const postSnap = await getDoc(postRef);
+        
+        if (!postSnap.exists()) {
+            container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Gönderi bulunamadı.</p>';
+            return;
+        }
+        
+        let likesArray = postSnap.data().likes || [];
+        
+        // Remove duplicates if any
+        likesArray = [...new Set(likesArray)];
+        
+        if (likesArray.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Henüz beğeni yok.</p>';
+            return;
+        }
+        
+        let html = '';
+        window.allUsersData = window.allUsersData || {};
+        
+        for (const uname of likesArray) {
+            let uData = window.allUsersData[uname];
+            // Eksik kullanıcı bilgilerini doğrudan Firebase'den al (anlık getirme)
+            if (!uData) {
+                const uSnap = await getDoc(doc(db, "users", uname));
+                if (uSnap.exists()) {
+                    uData = uSnap.data();
+                    window.allUsersData[uname] = uData; // Cache'e ekle
+                }
+            }
+            
+            if (uData) {
+                const safeAvatarUrl = window.sanitizeUrl(uData.avatarUrl);
+                let avatarHtml = safeAvatarUrl ? `<img src="${safeAvatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : `👤`; 
+                let vHtml = uData.isVerified ? '<span class="verified-badge" style="font-size:14px; margin-left:4px;">✔️</span>' : '';
+                let safeName = window.escapeHtml(uData.fullName || uname);
+                const safeUname = window.escapeHtml(uname);
+                html += `<div onclick="window.location.href='profile.html?user=${safeUname}'" class="user-row"><div class="row-avatar">${avatarHtml}</div><div><div style="font-weight:700; color:#0f172a;">${safeName} ${vHtml}</div><div style="font-size:13px; color:#64748b;">@${safeUname}</div></div></div>`;
+            }
+        }
+        
+        if (html === '') {
+            html = '<p style="text-align:center; color:#64748b; padding:20px;">Kullanıcı bilgileri alınamadı.</p>';
+        }
+        
+        container.innerHTML = html;
+        
+    } catch (err) {
+        console.error("Beğeni listesi alınırken hata:", err);
+        container.innerHTML = '<p style="text-align:center; color:#ef4444; padding:20px;">Veriler alınırken bir hata oluştu.</p>';
+    }
+};

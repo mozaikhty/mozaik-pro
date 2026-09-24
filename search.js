@@ -324,7 +324,7 @@ function renderExplore(postsToRender = [], append = false) {
                             ${avatar} <span style="font-size:13px; font-weight:600; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px;">${window.escapeHtml(aData.fullName || author)}</span>
                         </div>
                         <div class="explore-card-stats">
-                            <span>❤️ ${likes}</span>
+                            <span onclick="event.stopPropagation(); window.showLikes('${post.id}', event)" style="cursor:pointer;">❤️ ${likes}</span>
                             <span>💬 ${comments}</span>
                         </div>
                     </div>
@@ -492,7 +492,7 @@ window.openPostDetail = async function(postId) {
                     ${window.escapeHtml(cleanContent).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="#" onclick="window.closePostDetail(); window.setCategory('#$1');" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`)}
                 </div>
                 <div style="display:flex; gap:15px; color:#64748b; font-weight:600; padding-top:15px; border-top:1px solid #f1f5f9;">
-                    <span>❤️ ${postData.likes ? postData.likes.length : 0} Beğeni</span>
+                    <span onclick="window.showLikes('${postId}', event)" style="cursor:pointer;">❤️ ${postData.likes ? postData.likes.length : 0} Beğeni</span>
                     <span>💬 ${postData.comments ? postData.comments.length : 0} Yorum</span>
                 </div>
             </div>

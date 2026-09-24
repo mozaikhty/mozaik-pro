@@ -266,7 +266,7 @@ window.sendPostAsMessage = async function(targetUser) {
     alert(`İçerik iletildi.`); document.getElementById('share-dm-modal').style.display = 'none';
 };
 
-window.showLikes = function(postId, event) { event.stopPropagation(); const postObj = globalPosts.find(p => p.id === postId); if(!postObj) return; const likesArray = postObj.data.likes || []; if(likesArray.length === 0) return; window.showUserList("Beğenenler", likesArray); };
+
 
 function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
 
