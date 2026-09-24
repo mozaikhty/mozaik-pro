@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
     <script>
@@ -56,17 +56,23 @@
                     <div style="width:36px;"></div>
                 </div>
                 
-                <div class="search-header-box" style="padding: 10px 0;">
-                    <input type="text" id="search-input" class="search-input" placeholder="Kişi veya Gündem arayın..." style="width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 15px; outline: none; background: white; transition: 0.2s;">
+                <div class="search-header-box" style="padding: 10px 0; position:relative;">
+                    <input type="text" id="smart-search-input" class="search-input" placeholder="Kişi, konu veya etiket arayın..." style="width: 100%; padding: 12px 15px; border-radius: 100px; border: 1px solid rgba(226, 232, 240, 0.8); font-size: 15px; outline: none; background: rgba(255,255,255,0.8); backdrop-filter:blur(10px); transition: 0.2s;" autocomplete="off">
+                    <div id="search-suggestions" style="display:none; position:absolute; top:100%; left:0; width:100%; background:rgba(255,255,255,0.95); backdrop-filter:blur(10px); border:1px solid #cbd5e1; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,0.1); z-index:100; max-height:350px; overflow-y:auto; padding:10px 0;"></div>
                 </div>
                 
                 <div class="feed-tabs" style="margin-top: 5px;">
-                    <div class="feed-tab active" id="tab-users">Kişiler</div>
-                    <div class="feed-tab" id="tab-tags">Gündem</div>
+                    <div class="feed-tab active" id="tab-explore">Keşfet</div>
+                    <div class="feed-tab" id="tab-trending">Gündem</div>
+                </div>
+                
+                <div id="category-pills-container" style="display:flex; overflow-x:auto; gap:10px; padding:10px 0; scrollbar-width:none; -ms-overflow-style:none;">
+                    <!-- Categories will be injected here -->
                 </div>
             </div>
             
-            <div id="search-results" class="search-results-container" style="padding-top: 15px;"></div>
+            <div id="explore-results" class="explore-results-container" style="padding-top: 15px;"></div>
+            <div id="trending-results" class="search-results-container" style="padding-top: 15px; display:none;"></div>
         </main>
 
         <aside class="sidebar-right">
@@ -98,6 +104,16 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="post-detail-modal">
+        <div class="modal-content" id="post-detail-content-box">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size:18px; color:#0f172a;">Gönderi Detayı</h3>
+                <button class="close-btn" onclick="window.closePostDetail()">&times;</button>
+            </div>
+            <div id="post-detail-container" style="padding-bottom: 20px;"></div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="users-list-modal">
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
@@ -122,9 +138,9 @@
         </div>
     </div>
 
-    <script type="module" src="app.js"></script>
-    <script type="module" src="search.js"></script>
-    <script type="module" src="webrtc.js"></script>
-    <script src="ui.js"></script>
+    <script type="module" src="app.js?v=8"></script>
+    <script type="module" src="search.js?v=8"></script>
+    <script type="module" src="webrtc.js?v=8"></script>
+    <script src="ui.js?v=8"></script>
 </body>
 </html>
