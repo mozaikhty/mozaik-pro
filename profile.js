@@ -846,8 +846,8 @@ window.renderProfileFeed = function() {
                     <div style="width:100%; display:flex; flex-direction:column;">
                         ${pinHtml}
                         <div style="display:flex; gap:15px;">
-                            <div class="post-left" onclick="event.stopPropagation(); window.location.href='profile.html?user=${postData.author}'">
-                                <div class="post-avatar-img" style="overflow:hidden; display:flex; align-items:center; justify-content:center;">${avatarImg}</div>
+                            <div class="post-left">
+                                <div class="post-avatar-img" onclick="event.stopPropagation(); window.location.href='profile.html?user=${postData.author}'" style="overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer;">${avatarImg}</div>
                             </div>
                             <div class="post-right">
                                 <div class="post-header-info">

@@ -561,8 +561,8 @@ function renderFeed() {
             <div style="width:100%; display:flex; flex-direction:column;">
                 ${repostHtml}
                 <div style="display:flex; gap:15px;">
-                    <div class="post-left" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
-                        <div class="post-avatar-img">${avatarImg}</div>
+                    <div class="post-left">
+                        <div class="post-avatar-img" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'" style="cursor:pointer;">${avatarImg}</div>
                     </div>
                     <div class="post-right">
                         <div class="post-header-info">
