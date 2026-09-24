@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mozaik / Anasayfa</title>
+
+<link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css?v=27">
+</head>
+<body>
+    <script>
+        try {
+            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+        } catch(e) { console.warn("Gizli mod veya erişim engeli nedeniyle tema okunamadı."); }
+    </script>
+    <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <div class="sidebar-header-mobile">
+            <div class="sidebar-top-icons">
+                <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
+                <div class="sidebar-extra-icons">
+                    <div class="s-icon-btn" title="Başka hesap ekle">+</div>
+                </div>
+            </div>
+            <div class="sidebar-name-mobile" id="sidebar-name-mobile">Yükleniyor...</div>
+            <div class="sidebar-handle-mobile" id="sidebar-handle-mobile">@bekleniyor</div>
+            <div class="sidebar-stats-mobile">
+                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Ağım</div>
+                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçiler</div>
+            </div>
+        </div>
+        <div class="sidebar-menu-mobile">
+            <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
+            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Koleksiyonum</a>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-bottom-menu">
+                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
+                <a href="#" class="sidebar-bottom-item" style="color: #ef4444; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        
+        <div id="sidebar-container"></div>
+
+        <main class="feed-main">
+            <div class="header-sticky">
+                <div class="mobile-header-top">
+                    <div id="mobile-avatar-header" style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">👤</div>
+                    <div class="mobile-logo-text">Mozaik.</div>
+                    <div style="width:36px;"></div>
+                </div>
+                <div class="feed-tabs">
+                    <div class="feed-tab active" id="tab-discover" onclick="window.switchFeedTab('discover')">Öne Çıkanlar</div>
+                    <div class="feed-tab" id="tab-following" onclick="window.switchFeedTab('following')">Ağım</div>
+                </div>
+            </div>
+
+            <div class="stories-container" id="stories-container"></div>
+
+            <div class="post-input-box" id="desktop-post-box">
+                <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
+                <div class="input-form">
+                    <textarea id="post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..."></textarea>
+                    <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">✓ Fotoğraf Eklendi</div>
+                    <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">📍 <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
+                    <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
+                    
+                    <div class="input-actions">
+                        <div class="action-icons">
+                            <label for="image-input" class="icon-btn" title="Medya">🖼️</label>
+                            <div class="icon-btn" title="Konum" onclick="window.addLocation(false)">📍</div>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            <span class="char-counter" id="inline-char-count" style="margin-right: 15px;">280</span>
+                            <button class="share-btn" id="share-btn">Yayınla</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="feed-container">
+                <div style="padding: 40px; text-align: center; color: #64748b;">İçerikler yükleniyor...</div>
+            </div> 
+            
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="search-box-right">
+                    <span>🔍</span>
+                <input type="text" placeholder="Arama yapın..." onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
+            </div>
+
+            <div class="who-to-follow">
+                <div class="wtf-title">Gündem ve Öneriler</div>
+                <div id="who-to-follow-list">
+                    <div style="font-size:14px; color:#64748b;">Öneriler yükleniyor...</div>
+                </div>
+            </div>
+            
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 20px; text-align:center;">
+                © 2026 Mozaik Platform
+            </div>
+        </aside>
+
+    </div>
+
+    <button class="fab-button" onclick="window.openMainPostModal()">+</button>
+    
+    <div id="bottom-nav-container"></div>
+
+    <div class="story-viewer-overlay" id="story-viewer-overlay">
+        <div class="story-progress-container" id="story-progress-container"></div>
+        <div class="story-header">
+            <div class="story-user-info">
+                <div style="width:40px; height:40px; border-radius:50%; overflow:hidden; border:2px solid white; display:flex; justify-content:center; align-items:center; background:#e2e8f0; font-size:20px;" id="story-viewer-avatar-container"></div>
+                <div>
+                    <div style="font-weight:700; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,0.5);" id="story-viewer-name">Yükleniyor</div>
+                    <div style="font-size:12px; opacity:0.8; text-shadow:0 1px 2px rgba(0,0,0,0.5);" id="story-viewer-time"></div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap: 20px;">
+                <button id="story-mute-btn" title="Sesi Aç/Kapat" style="background:none; border:none; color:white; font-size:20px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5);" onclick="window.toggleStoryMute()">🔇</button>
+                <button title="Yeni Hikaye Paylaş" style="background:none; border:none; color:white; font-size:28px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5);" onclick="window.openAddStoryModal()">+</button>
+                <button title="Kapat" style="background:none; border:none; color:white; font-size:36px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5); padding-bottom:5px;" onclick="window.closeStoryViewer()">&times;</button>
+            </div>
+        </div>
+        
+        <div class="story-content-area" id="story-content-area">
+            <div class="story-nav-left" onmousedown="window.handleStoryPointerDown()" onmouseup="window.handleStoryPointerUp('prev')" ontouchstart="window.handleStoryPointerDown()" ontouchend="window.handleStoryPointerUp('prev')"></div>
+            <div class="story-nav-right" onmousedown="window.handleStoryPointerDown()" onmouseup="window.handleStoryPointerUp('next')" ontouchstart="window.handleStoryPointerDown()" ontouchend="window.handleStoryPointerUp('next')"></div>
+            
+            <img id="story-viewer-image" class="story-image" src="" style="display:none;">
+            <div id="story-viewer-text" class="story-text" style="display:none;"></div>
+        </div>
+        
+        <div class="story-footer" id="story-footer">
+            <div id="story-quick-reactions" style="display:flex; justify-content:space-evenly; width:100%; margin-bottom: 5px;">
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😍')">😍</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('👏')">👏</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('🔥')">🔥</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😢')">😢</span>
+            <span class="quick-reaction-btn" onclick="window.sendQuickReaction('👏')">👏</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😮')">😮</span>
+            </div>
+            <div class="story-footer-row">
+                <input type="text" id="story-reply-input" class="story-reply-input" placeholder="Mesaj gönder..." onfocus="window.pauseStory()" onblur="window.resumeStory()" onkeypress="if(event.key === 'Enter') window.sendStoryReply()">
+                <button class="story-action-btn" onclick="window.sendStoryReply()" title="Gönder" style="font-size: 20px;">✈️</button>
+                <button class="story-action-btn" id="story-like-btn" onclick="window.likeStory()" title="Hikayeyi Beğen">🤍</button>
+                <button class="story-action-btn" onclick="window.openStoryShareModal()" title="Hikayeyi Paylaş">📤</button>
+            </div>
+        </div>
+        
+        <div class="story-footer-owner" id="story-footer-owner" style="display:none;">
+            <button class="story-view-count-btn" onclick="window.openStoryDetailsModal()" title="Detayları İncele">
+                👁️ <span id="story-view-count">0</span> Görüntüleyenler
+            </button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="story-details-modal" style="z-index: 5020;">
+        <div class="modal-content" style="padding:0;">
+            <div class="modal-header" style="padding: 20px; margin:0;">
+                <h3 style="margin:0; font-size:16px;">Hikaye Detayları</h3>
+                <button class="close-btn" onclick="window.closeStoryDetailsModal()">&times;</button>
+            </div>
+            <div class="feed-tabs" style="margin:0; box-shadow:none; border-radius:0; border-left:none; border-right:none;">
+                <div class="feed-tab active" id="tab-story-views" onclick="window.switchStoryDetailsTab('views')">Görüntüleyenler</div>
+                <div class="feed-tab" id="tab-story-likes" onclick="window.switchStoryDetailsTab('likes')">Beğenenler</div>
+            </div>
+            <div id="story-details-list" style="max-height:300px; overflow-y:auto; padding: 10px;"></div>
+            <div style="padding: 15px; border-top: 1px solid #e2e8f0; text-align: center;">
+                <button onclick="window.deleteCurrentStory()" style="background:#ef4444; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">🗑️ Hikayeyi Sil</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="story-share-modal" style="z-index: 5020;">
+        <div class="modal-content" style="padding:0;">
+            <div class="modal-header" style="padding: 20px; margin:0;">
+                <h3 style="margin:0; font-size:16px;">Hikayeyi İlet</h3>
+                <button class="close-btn" onclick="window.closeStoryShareModal()">&times;</button>
+            </div>
+            <div id="story-share-list" style="max-height:300px; overflow-y:auto; padding: 10px;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="add-story-modal" style="z-index: 5020;">
+        <div class="modal-content" style="max-width: 400px; width:90%; padding:15px;">
+            <div class="modal-header" style="padding-bottom:10px; border-bottom:1px solid #f1f5f9; margin-bottom:15px;">
+                <h3 style="margin:0; font-size:16px;">Durumunu Paylaş</h3>
+                <button class="close-btn" onclick="document.getElementById('add-story-modal').style.display='none'">&times;</button>
+            </div>
+            
+            <div class="story-editor-board" id="story-editor-board">
+                <img id="editor-image-preview" class="draggable-img" src="">
+                <video id="editor-video-preview" class="draggable-img" src="" style="display: none;" playsinline loop muted></video>
+                <div id="editor-text-preview" class="draggable-text"></div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:15px;">
+                <textarea id="story-text-input" style="width:100%; border:1px solid #cbd5e1; padding:10px; border-radius:8px; resize:none; font-family:inherit; outline:none; font-size:15px;" placeholder="Hikayene bir şeyler yaz... Sürükleyebilirsin." oninput="window.updateEditorText(this.value)"></textarea>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; gap: 5px;">
+                    <button id="story-text-bg-btn" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer;" title="Arka Plan" onclick="window.toggleTextBackground()">A</button>
+                    <button id="story-text-bold-btn" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="window.toggleTextBold()">B</button>
+                    <div id="story-color-palette" style="display:flex; gap:5px; overflow-x:auto; padding:2px;">
+                        <div class="color-swatch" style="background:white; border:1px solid #ccc; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('white')"></div>
+                        <div class="color-swatch" style="background:black; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('black')"></div>
+                        <div class="color-swatch" style="background:#ef4444; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('#ef4444')"></div>
+                        <div class="color-swatch" style="background:#3b82f6; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('#3b82f6')"></div>
+                        <div class="color-swatch" style="background:#22c55e; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('#22c55e')"></div>
+                        <div class="color-swatch" style="background:#eab308; width:20px; height:20px; border-radius:50%; cursor:pointer;" onclick="window.changeTextColor('#eab308')"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <input type="file" id="story-image-input" accept="image/*,video/mp4,video/webm" style="display:none;" onchange="window.loadEditorImage(event)">
+                    <label for="story-image-input" style="flex:1; text-align:center; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;">🖼️ Seç</label>
+                    <button id="story-camera-btn" style="flex:1; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;" onclick="window.openStoryCamera()">📸 Çek</button>
+                    <select id="story-privacy-select" style="flex:2; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; font-size:13px; outline:none;">
+                        <option value="public">🌍 Herkes</option>
+                        <option value="followers">👥 Takipçiler</option>
+                        <option value="close_friends">💚 Yakın Arkadaşlar</option>
+                    </select>
+                </div>
+                
+                <div id="story-camera-container" style="display:none; position:relative; width:100%; aspect-ratio:9/16; background:#000; border-radius:8px; overflow:hidden;">
+                    <video id="story-camera-video" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+                    <button id="story-capture-btn" style="position:absolute; bottom:15px; left:50%; transform:translateX(-50%); width:50px; height:50px; border-radius:50%; background:white; border:4px solid #cbd5e1; cursor:pointer;" onclick="window.captureStoryPhoto()"></button>
+                    <button style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.5); border:none; color:white; font-size:20px; border-radius:50%; width:30px; height:30px; cursor:pointer;" onclick="window.closeStoryCamera()">&times;</button>
+                </div>
+
+                <div class="slider-group">
+                    <label>Medya Büyüklüğü</label>
+                    <input type="range" id="img-scale-slider" min="0.5" max="3" step="0.1" value="1" disabled oninput="window.updateScale('image', this.value)">
+                </div>
+                <div class="slider-group">
+                    <label>Yazı Büyüklüğü</label>
+                    <input type="range" id="text-scale-slider" min="0.5" max="3" step="0.1" value="1" disabled oninput="window.updateScale('text', this.value)">
+                </div>
+            </div>
+
+            <button id="submit-story-btn" style="width:100%; background:#2c3e50; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:15px; transition:0.2s;" onmouseover="this.style.background='#1a252f'" onmouseout="this.style.background='#2c3e50'">Hikayemi Yayınla</button>
+        </div>
+    </div>
+
+    <div class="call-overlay" id="call-overlay">
+        <h2 class="call-status-text" id="call-status-text">Aranıyor...</h2>
+        <div class="video-container" id="video-container">
+            <video id="remote-video" class="remote-video" autoplay playsinline></video>
+            <video id="local-video" class="local-video" autoplay playsinline muted></video>
+        </div>
+        <div class="call-controls">
+            <button class="call-action-btn btn-accept" id="accept-call-btn">📞</button>
+            <button class="call-action-btn btn-end" id="end-call-btn">🎥</button>
+        </div>
+    </div>
+
+    <div id="main-post-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px; width:90%;">
+            <div class="modal-header" style="border-bottom:none; margin-bottom:0;">
+                <button class="close-btn" onclick="window.closeMainPostModal()">&times;</button>
+                <button class="share-btn" id="modal-share-btn" style="padding: 8px 20px;">Yayınla</button>
+            </div>
+            <div class="input-form" style="display:flex; gap:15px; margin-top:10px;">
+                <div class="input-avatar" id="modal-avatar">👤</div>
+                <div style="flex:1;">
+                    <textarea id="modal-post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..." style="width:100%; border:none; font-size:18px; outline:none; resize:none; min-height:120px; font-family:inherit; color:#0f172a; background:transparent;"></textarea>
+                    <input type="file" id="modal-image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
+                    <div id="modal-image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">✓ Fotoğraf Eklendi</div>
+                    <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">📍 <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">✖</span></div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px;">
+                        <div class="action-icons">
+                            <label for="modal-image-input" class="icon-btn" title="Medya">🖼️</label>
+                            <label onclick="window.addLocation(true)" class="icon-btn" title="Konum">📍</label>
+                        </div>
+                        <div class="char-counter" id="modal-char-count">280</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="post-detail-modal">
+        <div class="modal-content" id="post-detail-content-box">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size:18px; color:#0f172a;">Gönderi Detayı</h3>
+                <button class="close-btn" onclick="window.closePostDetail()">&times;</button>
+            </div>
+            <div id="post-detail-container" style="padding-bottom: 20px;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="share-dm-modal">
+        <div class="modal-content" style="padding:0;">
+            <div class="modal-header" style="padding: 20px; margin:0;">
+                <h3 style="margin:0; font-size:16px;">Direkt Mesaj ile İlet</h3>
+                <button class="close-btn" onclick="document.getElementById('share-dm-modal').style.display='none'">&times;</button>
+            </div>
+            <div id="share-users-list" style="max-height:300px; overflow-y:auto; padding: 10px;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="users-list-modal">
+        <div class="modal-content" style="padding:0;">
+            <div class="modal-header" style="padding: 20px; margin:0;">
+                <h3 id="users-list-title" style="margin:0; font-size:16px;">Liste</h3>
+                <button class="close-btn" id="close-list-btn">&times;</button>
+            </div>
+            <div id="users-list-container" style="max-height:400px; overflow-y:auto; padding: 10px;"></div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="edit-post-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size:16px;">İçeriği Düzenle</h3>
+                <button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button>
+            </div>
+            <textarea id="edit-post-input" style="width:100%; height:120px; padding:15px; box-sizing:border-box; border-radius:8px; border:1px solid #cbd5e1; resize:none; font-family:inherit; outline:none; font-size:15px; color:#0f172a; background:transparent;"></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button style="padding:8px 20px; border:none; background:#f1f5f9; border-radius:6px; font-weight:600; cursor:pointer; color:#334155;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button>
+                <button id="save-edited-post-btn" style="padding:8px 20px; border:none; background:#2c3e50; color:white; border-radius:6px; font-weight:600; cursor:pointer;">Güncelle</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="support-modal" style="z-index: 5000;">
+        <div class="modal-content" style="padding:0;">
+            <div class="modal-header" style="padding: 20px; margin:0;">
+                <h3 style="margin:0; font-size:16px;">Destek ve Åikayet</h3>
+                <button class="close-btn" onclick="document.getElementById('support-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <p style="font-size: 14px; color: #64748b; margin-bottom: 15px;">Karşılaştığınız sorunu veya önerinizi detaylıca yazın. Ekibimiz en kısa sürede inceleyecektir.</p>
+                <textarea id="support-message-input" class="modal-input" style="height:120px; resize:none; width:100%; border:1px solid #cbd5e1; padding:10px; border-radius:8px; font-family:inherit;" placeholder="Mesajınız..."></textarea>
+                <button id="send-support-btn" class="desktop-post-btn" style="width:100%; margin-top:10px;" onclick="window.sendSupportMessage()">Gönder</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js?v=7"></script>
+    <script type="module" src="feed.js?v=7"></script>
+    <script type="module" src="webrtc.js?v=7"></script>
+    <script type="module" src="story.js?v=7"></script>
+    <script src="ui.js?v=27"></script>
+</body>
+</html>
