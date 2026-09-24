@@ -282,7 +282,7 @@ window.toggleLike = async function(postId, isLiked, postAuthor, event, isDoubleT
     if (isDouble && isLiked) return; // Do not unlike on double click
 
     if (isDouble && !isLiked) {
-        const heart = event.currentTarget.parentNode.querySelector('.dblclick-heart');
+        const heart = event.target.parentNode.querySelector('.dblclick-heart');
         if(heart) {
             heart.style.transform = 'translate(-50%, -50%) scale(1.5)';
             setTimeout(() => { heart.style.transform = 'translate(-50%, -50%) scale(0)'; }, 800);
@@ -296,7 +296,7 @@ window.toggleLike = async function(postId, isLiked, postAuthor, event, isDoubleT
         else { postObj.data.likes.push(myUsername); } 
         
         if (isDouble) {
-            const postEl = event.currentTarget.closest('.post');
+            const postEl = event.target.closest('.post');
             if (postEl) {
                 const likeBox = postEl.querySelector('.like-box');
                 if (likeBox) {
