@@ -269,8 +269,16 @@ window.setCategory = function(cat) {
 };
 
 function renderCategoryPills() {
-    let html = `<div class="category-pill ${currentCategory === 'all' ? 'active' : ''}" onclick="window.setCategory('all')">Tümü</div>`;
-    
+    const fixedAllBtn = document.getElementById('fixed-all-btn');
+    if (fixedAllBtn) {
+        if (currentCategory === 'all') {
+            fixedAllBtn.classList.add('active');
+        } else {
+            fixedAllBtn.classList.remove('active');
+        }
+    }
+
+    let html = '';
     const top10 = globalTrendingTags.slice(0, 10);
     top10.forEach(t => {
         const isActive = currentCategory === t.tag ? 'active' : '';
