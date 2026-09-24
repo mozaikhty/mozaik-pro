@@ -214,70 +214,83 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // --- NAV AND HEADER SCROLL BEHAVIOR ---
-document.addEventListener('DOMContentLoaded', () => {
-    let isCompact = false;
-    let lastHeaderScrollY = 0;
-    
-    function handleScrollAll(currentScrollY) {
-        // 1. BOTTOM NAV LOGIC (Independent)
-        const nav = document.querySelector('.bottom-nav');
-        if (currentScrollY > 50 && !isCompact) {
-            isCompact = true;
-            if (nav) nav.classList.add('compact');
-        } else if (currentScrollY <= 10 && isCompact) {
-            isCompact = false;
-            if (nav) nav.classList.remove('compact');
-        }
+(function() {
+    function initScroll() {
+        let isCompact = false;
+        let lastScrollY = window.scrollY || document.documentElement.scrollTop || 0;
         
-        // 2. HEADER LOGIC (Directional)
-        if (currentScrollY <= 10) {
-            document.body.classList.remove('header-state-down', 'header-state-up');
-            // 'header-state-top' is the default state without classes
-        } else {
-            const delta = currentScrollY - lastHeaderScrollY;
-            if (Math.abs(delta) > 5) { // Anti-flicker threshold
-                if (delta > 0) {
-                    // Scrolling DOWN
-                    document.body.classList.remove('header-state-up');
-                    document.body.classList.add('header-state-down');
-                } else {
-                    // Scrolling UP
-                    document.body.classList.remove('header-state-down');
-                    document.body.classList.add('header-state-up');
+        // Setup base transitions for headers
+        const headers = document.querySelectorAll('.header-sticky, .chat-header-main');
+        headers.forEach(h => {
+            h.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, background 0.3s ease';
+        });
+
+        const searchContainers = document.querySelectorAll('.inbox-search-container, #inbox-tabs');
+        searchContainers.forEach(s => {
+            s.style.transition = 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
+            s.style.overflow = 'hidden';
+        });
+
+        function onScroll(currentY) {
+            // 1. Bottom Nav Logic
+            const nav = document.querySelector('.bottom-nav');
+            if (currentY > 50 && !isCompact) {
+                isCompact = true;
+                if (nav) nav.classList.add('compact');
+            } else if (currentY <= 10 && isCompact) {
+                isCompact = false;
+                if (nav) nav.classList.remove('compact');
+            }
+
+            // 2. Header Logic
+            if (currentY <= 10) {
+                // AT TOP: Show full header
+                document.body.classList.remove('h-state-down', 'h-state-up');
+            } else {
+                const delta = currentY - lastScrollY;
+                if (Math.abs(delta) > 5) {
+                    if (delta > 0) {
+                        // SCROLL DOWN: Hide completely
+                        document.body.classList.add('h-state-down');
+                        document.body.classList.remove('h-state-up');
+                    } else {
+                        // SCROLL UP: Compact avatar
+                        document.body.classList.add('h-state-up');
+                        document.body.classList.remove('h-state-down');
+                    }
+                    lastScrollY = currentY;
                 }
-                lastHeaderScrollY = currentScrollY;
             }
         }
-    }
 
-    // Ana sayfalar için window scroll
-    window.addEventListener('scroll', () => {
-        handleScrollAll(window.scrollY || document.documentElement.scrollTop);
-    }, { passive: true });
-
-    // Mesajlar sayfası (chat.html) için özel scroll container
-    const inboxList = document.querySelector('.inbox-list');
-    if (inboxList) {
-        inboxList.addEventListener('scroll', () => {
-            handleScrollAll(inboxList.scrollTop);
+        // Attach listeners safely
+        window.addEventListener('scroll', () => {
+            onScroll(window.scrollY || document.documentElement.scrollTop);
         }, { passive: true });
-    }
-    
-    // İlk yüklemede durum kontrolü
-    setTimeout(() => {
-        const wScroll = window.scrollY || document.documentElement.scrollTop;
-        const iScroll = inboxList ? inboxList.scrollTop : 0;
-        const initScroll = Math.max(wScroll, iScroll);
-        
-        lastHeaderScrollY = initScroll;
-        
-        if (initScroll > 50) {
-            isCompact = true;
-            const nav = document.querySelector('.bottom-nav');
-            if (nav) nav.classList.add('compact');
-            
-            // Assume we arrived here by scrolling down
-            document.body.classList.add('header-state-down');
+
+        const inboxList = document.querySelector('.inbox-list');
+        if (inboxList) {
+            inboxList.addEventListener('scroll', () => {
+                onScroll(inboxList.scrollTop);
+            }, { passive: true });
         }
-    }, 100);
-});
+        
+        // Initial check
+        setTimeout(() => {
+            const currentY = window.scrollY || (inboxList ? inboxList.scrollTop : 0);
+            lastScrollY = currentY;
+            if (currentY > 50) {
+                isCompact = true;
+                const nav = document.querySelector('.bottom-nav');
+                if (nav) nav.classList.add('compact');
+                document.body.classList.add('h-state-down');
+            }
+        }, 150);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initScroll);
+    } else {
+        initScroll();
+    }
+})();
