@@ -219,29 +219,19 @@ if (document.readyState === 'loading') {
     class ScrollManager {
         constructor() {
             this.lastScrollY = 0;
+            this.currentState = 'expanded'; // expanded, hidden, compact
             this.isBottomCompact = false;
             
             // DOM Elements
-            this.header = document.querySelector('.header-sticky') || document.querySelector('.chat-header-main');
             this.bottomNav = document.querySelector('.bottom-nav');
-            this.inboxSearch = document.querySelector('.inbox-search-container');
-            this.inboxTabs = document.querySelector('#inbox-tabs');
-            
-            // Clean inline transitions that override CSS
-            if (this.header) {
-                this.header.style.transition = '';
-            }
-
             this.bindEvents();
         }
 
         bindEvents() {
-            // Ana pencere scroll (Anasayfa, Keşfet, Profil)
             window.addEventListener('scroll', () => {
                 this.handleScroll(window.scrollY || document.documentElement.scrollTop);
             }, { passive: true });
 
-            // Mesajlar sayfası özel scroll container
             const inboxList = document.querySelector('.inbox-list');
             if (inboxList) {
                 inboxList.addEventListener('scroll', () => {
@@ -249,61 +239,63 @@ if (document.readyState === 'loading') {
                 }, { passive: true });
             }
 
-            // İlk açılışta state'i ayarla
+            // Init state
             setTimeout(() => {
                 const initY = window.scrollY || (inboxList ? inboxList.scrollTop : 0);
                 this.lastScrollY = initY;
-                if (initY > 50) {
-                    if (this.bottomNav) {
-                        this.isBottomCompact = true;
-                        this.bottomNav.classList.add('compact');
-                    }
-                    if (this.header) {
-                        this.header.classList.add('header-hidden');
-                    }
+                if (initY > 10) {
+                    this.setBottomNavState(true);
+                    this.setHeaderState('hidden');
                 }
             }, 100);
         }
 
-        handleScroll(currentY) {
-            // 1. Alt Navigasyon (Bağımsız çalışır)
-            if (currentY > 50 && !this.isBottomCompact) {
-                this.isBottomCompact = true;
-                if (this.bottomNav) this.bottomNav.classList.add('compact');
-            } else if (currentY <= 10 && this.isBottomCompact) {
-                this.isBottomCompact = false;
-                if (this.bottomNav) this.bottomNav.classList.remove('compact');
-            }
-
-            // 2. Üst Header Yönlü Animasyon
-            if (currentY <= 10) {
-                // En üstteyken her şeyi normal haline döndür
-                if (this.header) {
-                    this.header.classList.remove('header-hidden', 'header-compact');
+        setBottomNavState(isCompact) {
+            if (this.isBottomCompact !== isCompact) {
+                this.isBottomCompact = isCompact;
+                if (this.bottomNav) {
+                    if (isCompact) this.bottomNav.classList.add('compact');
+                    else this.bottomNav.classList.remove('compact');
                 }
-                if (this.inboxSearch) this.inboxSearch.classList.remove('search-hidden');
-                if (this.inboxTabs) this.inboxTabs.classList.remove('search-hidden');
+            }
+        }
+
+        setHeaderState(state) {
+            if (this.currentState === state) return;
+            this.currentState = state;
+            
+            // Apply states to body instead of header directly for more robust CSS targeting
+            if (state === 'expanded') {
+                document.body.classList.remove('header-hidden', 'header-compact');
+            } else if (state === 'hidden') {
+                document.body.classList.add('header-hidden');
+                document.body.classList.remove('header-compact');
+            } else if (state === 'compact') {
+                document.body.classList.add('header-compact');
+                document.body.classList.remove('header-hidden');
+            }
+        }
+
+        handleScroll(currentY) {
+            // 1. Alt Navigasyon Mantığı (Bağımsız)
+            if (currentY > 50) this.setBottomNavState(true);
+            else if (currentY <= 10) this.setBottomNavState(false);
+
+            // 2. Akıllı Header Durum Makinesi
+            if (currentY <= 10) {
+                // DURUM A / D: En üste gelindi, her şey görünür.
+                this.setHeaderState('expanded');
             } else {
                 const delta = currentY - this.lastScrollY;
                 
-                // Titremeyi önlemek için sadece 5px'ten büyük hareketleri işle
+                // Titreme önleyici tolerans
                 if (Math.abs(delta) > 5) {
                     if (delta > 0) {
-                        // Aşağı kaydırma: Tamamen gizle
-                        if (this.header) {
-                            this.header.classList.add('header-hidden');
-                            this.header.classList.remove('header-compact');
-                        }
-                        if (this.inboxSearch) this.inboxSearch.classList.add('search-hidden');
-                        if (this.inboxTabs) this.inboxTabs.classList.add('search-hidden');
+                        // DURUM B: Aşağı kaydırma
+                        this.setHeaderState('hidden');
                     } else {
-                        // Yukarı kaydırma: Kompakt avatarı göster
-                        if (this.header) {
-                            this.header.classList.add('header-compact');
-                            this.header.classList.remove('header-hidden');
-                        }
-                        if (this.inboxSearch) this.inboxSearch.classList.remove('search-hidden');
-                        if (this.inboxTabs) this.inboxTabs.classList.remove('search-hidden');
+                        // DURUM C: Sayfanın ortasında yukarı kaydırma
+                        this.setHeaderState('compact');
                     }
                     this.lastScrollY = currentY;
                 }
@@ -311,14 +303,13 @@ if (document.readyState === 'loading') {
         }
     }
 
-    // Sayfa DOM'u hazır olduğunda veya zaten hazırsa başlat
-    function init() {
+    function initScrollManager() {
         new ScrollManager();
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', initScrollManager);
     } else {
-        init();
+        initScrollManager();
     }
 })();

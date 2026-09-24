@@ -917,90 +917,120 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 
+
 /* ==========================================================================
-   MOBİL HEADER SCROLL-HIDE ARCHITECTURE (STICKY + MAX-HEIGHT)
+   MOBİL HEADER SCROLL-HIDE ARCHITECTURE (TRANSFORM CHILDREN PATTERN)
    ========================================================================== */
 @media (max-width: 1000px) {
-    /* Doğru Mimari: Sticky kullanarak doğal akışı bozmadan alanı yönetiyoruz. */
+    /* Ana Container'lar: Sticky kalır, yükseklikleri ASLA değişmez (Layout kaymasını/zıplamasını önler) */
     .header-sticky, .chat-header-main {
-        transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                    min-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                    padding 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                    opacity 0.3s ease, 
-                    background 0.3s ease !important;
-        overflow: hidden;
-        max-height: 200px;
+        transition: background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease !important;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
 
-    /* Scroll Aşağı: Tamamen Gizle (WebKit transform bug'ına karşı en stabil yol) */
-    .header-sticky.header-hidden, 
-    .chat-header-main.header-hidden {
-        max-height: 0 !important;
-        min-height: 0 !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
+    /* Tüm iç öğeler transform ile donanım hızlandırmalı kaydırılır (iOS Safari bug'ını atlatır) */
+    .mobile-logo-text, .feed-tabs:not(#inbox-tabs), .search-header-box, .category-pills-wrapper, .header-title, .header-icons, .header-info {
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease !important;
+    }
+    
+    #mobile-avatar-header, .back-arrow {
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease !important;
+    }
+
+    /* ----------------------------------------------------
+       DURUM B: HIDDEN (Aşağı Scroll - Tamamen Gizli) 
+       ---------------------------------------------------- */
+    body.header-hidden .header-sticky, 
+    body.header-hidden .chat-header-main {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border-color: transparent !important;
+        pointer-events: none !important; /* Altından kayan içeriğe tıklanabilsin */
+    }
+
+    body.header-hidden .mobile-logo-text,
+    body.header-hidden .feed-tabs:not(#inbox-tabs),
+    body.header-hidden .search-header-box,
+    body.header-hidden .category-pills-wrapper,
+    body.header-hidden .header-title,
+    body.header-hidden .header-icons,
+    body.header-hidden .header-info,
+    body.header-hidden #mobile-avatar-header,
+    body.header-hidden .back-arrow {
+        transform: translateY(-150%) !important;
         opacity: 0 !important;
-        border: none !important;
         pointer-events: none !important;
     }
 
-    /* Inbox arama sekmeleri: Header gizlenirken bunlar da yukarı daralır */
+    /* ----------------------------------------------------
+       DURUM C: COMPACT (Yukarı Scroll - Sadece Avatar) 
+       ---------------------------------------------------- */
+    body.header-compact .header-sticky, 
+    body.header-compact .chat-header-main {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border-color: transparent !important;
+        pointer-events: none !important; /* Boşluklara tıklama alt içeriğe geçsin */
+    }
+
+    /* Diğer öğeler gizli kalır */
+    body.header-compact .mobile-logo-text,
+    body.header-compact .feed-tabs:not(#inbox-tabs),
+    body.header-compact .search-header-box,
+    body.header-compact .category-pills-wrapper,
+    body.header-compact .header-title,
+    body.header-compact .header-icons,
+    body.header-compact .header-info {
+        transform: translateY(-15px) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Sadece avatar ve geri tuşu geri gelir */
+    body.header-compact #mobile-avatar-header,
+    body.header-compact .back-arrow {
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+        pointer-events: auto !important; /* Tıklanabilir olsun */
+        background: rgba(226, 232, 240, 0.95) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+        border-radius: 8px;
+    }
+
+    body.dark-mode.header-compact #mobile-avatar-header,
+    body.dark-mode.header-compact .back-arrow {
+        background: rgba(30, 41, 59, 0.95) !important;
+    }
+
+    /* ----------------------------------------------------
+       INBOX EKLENTİLERİ (Arama ve Sekmeler)
+       Bunlar sticky değildir, kaydırma sırasında içeriği yukarı 
+       çekmek için max-height: 0 ile ezilmeleri (collapse) gerekir.
+       ---------------------------------------------------- */
     .inbox-search-container, #inbox-tabs {
-        transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
+        transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, margin 0.4s ease, padding 0.4s ease;
         max-height: 120px;
         overflow: hidden;
         opacity: 1;
     }
-    .inbox-search-container.search-hidden, #inbox-tabs.search-hidden {
+
+    /* Her iki scroll durumunda da gizli kalırlar (Ta ki sayfa en üste çıkana kadar) */
+    body.header-hidden .inbox-search-container,
+    body.header-hidden #inbox-tabs,
+    body.header-compact .inbox-search-container,
+    body.header-compact #inbox-tabs {
         max-height: 0 !important;
         opacity: 0 !important;
         margin-bottom: 0 !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
         border: none !important;
-    }
-
-    /* Scroll Yukarı: Kompakt Mod (Görünmez kutu, sadece avatar ve butonlar görünür) */
-    .header-sticky.header-compact,
-    .chat-header-main.header-compact {
-        background: transparent !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        border-bottom-color: transparent !important;
         pointer-events: none !important;
-    }
-
-    /* Kompakt modda header içindeki diğer öğeleri gizle */
-    .header-sticky.header-compact .mobile-logo-text,
-    .header-sticky.header-compact .feed-tabs:not(#inbox-tabs),
-    .header-sticky.header-compact .search-header-box,
-    .header-sticky.header-compact .category-pills-wrapper,
-    .header-sticky.header-compact .header-info,
-    .chat-header-main.header-compact .header-title,
-    .chat-header-main.header-compact .header-icons {
-        opacity: 0 !important;
-        pointer-events: none !important;
-        transform: translateY(-15px);
-        transition: all 0.3s ease !important;
-    }
-
-    /* Yalnızca avatarı ve geri tuşunu tıklanabilir ve görünür bırak */
-    .header-sticky.header-compact #mobile-avatar-header,
-    .chat-header-main.header-compact #mobile-avatar-header,
-    .header-sticky.header-compact .back-arrow {
-        pointer-events: auto !important;
-        opacity: 1 !important;
-        background: rgba(226, 232, 240, 0.95) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
-        border-radius: 8px;
-        transition: all 0.3s ease !important;
-    }
-    
-    body.dark-mode .header-sticky.header-compact #mobile-avatar-header,
-    body.dark-mode .chat-header-main.header-compact #mobile-avatar-header,
-    body.dark-mode .header-sticky.header-compact .back-arrow {
-        background: rgba(30, 41, 59, 0.95) !important;
     }
 }
