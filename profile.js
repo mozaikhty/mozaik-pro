@@ -272,7 +272,7 @@ function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
 
 window.closePostDetail = function() {
     document.getElementById('post-detail-modal').style.display = 'none'; window.currentOpenPostId = null; activeReplyParentId = null;
-    document.getElementById('post-detail-container').innerHTML = ''; window.history.replaceState({}, document.title, window.location.pathname);
+    document.getElementById('post-detail-container').innerHTML = ''; document.body.classList.remove('modal-open'); window.history.replaceState({}, document.title, window.location.pathname);
 };
 
 window.openPostDetail = async function(postId) {
@@ -369,6 +369,8 @@ window.openPostDetail = async function(postId) {
     if(contentBox) contentBox.scrollTop = 0; 
     document.getElementById('post-detail-container').innerHTML = html;
     document.getElementById('post-detail-modal').style.display = 'flex';
+    document.body.classList.add('modal-open');
+    document.getElementById('post-detail-modal').onclick = function(e) { if(e.target === this) window.closePostDetail(); };
 };
 
 function buildCommentsTree(allComments, parentId, depth = 0, postId = null, postAuthor = null) {
@@ -831,13 +833,13 @@ window.renderProfileFeed = function() {
                         let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" onclick="${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="${likeAction}">`;
                         return `<div style="flex: 0 0 100%; scroll-snap-align: start; position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
                     }).join('');
-                    mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()"><div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%;">${slides}</div></div>`;
+                    mediaHtml = `<div class="post-image-container"><div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%;">${slides}</div></div>`;
                 } else if (postData.media && postData.media.length === 1) {
                     let m = postData.media[0];
                     let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" onclick="${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}">`;
-                    mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+                    mediaHtml = `<div class="post-image-container" style="position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
                 } else if (postData.imageUrl) {
-                    mediaHtml = `<div class="post-image-container" onclick="event.stopPropagation()" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}"><div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+                    mediaHtml = `<div class="post-image-container" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}"><div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
                 }
 
                 postDiv.innerHTML = `
@@ -898,3 +900,12 @@ window.renderProfileFeed = function() {
     }
     if (window.initVideoObserver) window.initVideoObserver();
 };
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const pdm = document.getElementById('post-detail-modal');
+        if (pdm && pdm.style.display !== 'none' && pdm.style.display !== '') {
+            window.closePostDetail();
+        }
+    }
+});
