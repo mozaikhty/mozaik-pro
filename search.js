@@ -336,7 +336,7 @@ function renderExplore(postsToRender = [], append = false) {
     if(append) {
         exploreResults.insertAdjacentHTML('beforeend', html);
     } else {
-        exploreResults.innerHTML = html;
+        exploreResults.innerHTML = html; window.initVideoPlayers(); window.observeVideos();
     }
 }
 
@@ -463,13 +463,13 @@ window.openPostDetail = async function(postId) {
         let mediaHtmlDetail = '';
         if (postData.media && postData.media.length > 1) {
             let slides = postData.media.map(m => {
-                let tag = m.type === 'video' ? `<video controls src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; background:black; object-fit:contain;"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; object-fit:contain;">`;
+                let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; object-fit:contain;">`;
                 return `<div style="flex: 0 0 100%; scroll-snap-align: start;">${tag}</div>`;
             }).join('');
             mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
         } else if (postData.media && postData.media.length === 1) {
             let m = postData.media[0];
-            let tag = m.type === 'video' ? `<video controls src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; background:black; margin-bottom:15px; object-fit:contain;"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
+            let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
             mediaHtmlDetail = tag;
         } else if (postData.imageUrl) {
             mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;

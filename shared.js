@@ -392,3 +392,172 @@ window.showLikes = async function(postId, event) {
         container.innerHTML = '<p style="text-align:center; color:#ef4444; padding:20px;">Veriler alınırken bir hata oluştu.</p>';
     }
 };
+
+
+
+// MOZAİK CUSTOM VIDEO PLAYER LOGIC
+window.renderCustomVideo = function(url, likeActionStr, uniqueId) {
+    const safeLikeAction = likeActionStr ? likeActionStr.replace(/"/g, '&quot;') : '';
+    
+    return `
+        <div class="mz-video-player" id="player-${uniqueId}" data-video-id="${uniqueId}">
+            <video class="mz-video" id="video-${uniqueId}" src="${url}" playsinline loop muted></video>
+            <div class="mz-video-overlay" id="overlay-${uniqueId}" onclick="window.handleVideoClick('${uniqueId}', event, \`${safeLikeAction}\`)" aria-label="Videoyu Oynat/Durdur" role="button" tabindex="0">
+                <div class="mz-big-play">▶</div>
+            </div>
+            <div class="mz-video-controls" onclick="event.stopPropagation()">
+                <button class="mz-control-btn mz-control-play" onclick="window.toggleVideoPlay('${uniqueId}', event)" aria-label="Oynat/Durdur">▶</button>
+                <div class="mz-progress-container" onclick="window.seekVideo('${uniqueId}', event)" aria-label="Video İlerleme Çubuğu" role="slider" tabindex="0">
+                    <div class="mz-progress-bar" id="pbar-${uniqueId}">
+                        <div class="mz-progress-filled" id="pfill-${uniqueId}"></div>
+                    </div>
+                </div>
+                <div class="mz-time" id="time-${uniqueId}">00:00 / 00:00</div>
+                <button class="mz-control-btn mz-control-mute" onclick="window.toggleVideoMute('${uniqueId}', event)" aria-label="Sesi Aç/Kapat">🔇</button>
+                <button class="mz-control-btn mz-control-fullscreen" onclick="window.toggleVideoFullscreen('${uniqueId}', event)" aria-label="Tam Ekran">⛶</button>
+            </div>
+        </div>
+    `;
+};
+
+window.handleVideoClick = function(id, event, likeActionStr) {
+    if(event) event.stopPropagation();
+    window.toggleVideoPlay(id);
+    if (likeActionStr && likeActionStr.trim() !== '' && likeActionStr !== 'undefined') {
+        try { eval(likeActionStr); } catch(e) {}
+    }
+};
+
+window.formatVideoTime = function(seconds) {
+    if (isNaN(seconds)) return "00:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+};
+
+window.toggleVideoPlay = function(id, event) {
+    if (event) event.stopPropagation();
+    const video = document.getElementById('video-' + id);
+    if (!video) return;
+    
+    if (video.paused) {
+        // Pause all other videos first
+        document.querySelectorAll('.mz-video').forEach(v => {
+            if (v !== video && !v.paused) v.pause();
+        });
+        video.play();
+    } else {
+        video.pause();
+    }
+};
+
+window.toggleVideoMute = function(id, event) {
+    if (event) event.stopPropagation();
+    const video = document.getElementById('video-' + id);
+    const btn = document.querySelector(`#player-${id} .mz-control-mute`);
+    if (!video || !btn) return;
+    
+    video.muted = !video.muted;
+    if (!video.muted) {
+        document.querySelectorAll('.mz-video').forEach(v => {
+            if (v !== video) {
+                v.muted = true;
+                const otherBtn = document.querySelector(`#player-${v.id.replace('video-','')} .mz-control-mute`);
+                if (otherBtn) otherBtn.innerText = '🔇';
+            }
+        });
+    }
+
+    btn.innerText = video.muted ? '🔇' : '🔊';
+};
+
+window.seekVideo = function(id, event) {
+    if (event) event.stopPropagation();
+    const video = document.getElementById('video-' + id);
+    const pbar = document.getElementById('pbar-' + id);
+    if (!video || !pbar) return;
+    
+    const rect = pbar.getBoundingClientRect();
+    const pos = (event.clientX - rect.left) / rect.width;
+    video.currentTime = pos * video.duration;
+};
+
+window.toggleVideoFullscreen = function(id, event) {
+    if (event) event.stopPropagation();
+    const player = document.getElementById('player-' + id);
+    if (!player) return;
+    
+    if (!document.fullscreenElement) {
+        if (player.requestFullscreen) player.requestFullscreen();
+        else if (player.webkitRequestFullscreen) player.webkitRequestFullscreen();
+        player.classList.add('fullscreen');
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        player.classList.remove('fullscreen');
+    }
+};
+
+// Initialize video listeners for updates
+window.initVideoPlayers = function() {
+    document.querySelectorAll('.mz-video').forEach(video => {
+        if (video.dataset.initialized) return;
+        video.dataset.initialized = 'true';
+        
+        const id = video.id.replace('video-', '');
+        const player = document.getElementById('player-' + id);
+        const pfill = document.getElementById('pfill-' + id);
+        const timeEl = document.getElementById('time-' + id);
+        const playBtn = player.querySelector('.mz-control-play');
+        const overlay = document.getElementById('overlay-' + id);
+        
+        video.addEventListener('timeupdate', () => {
+            if (!video.duration) return;
+            const percent = (video.currentTime / video.duration) * 100;
+            if (pfill) pfill.style.width = percent + '%';
+            if (timeEl) timeEl.innerText = window.formatVideoTime(video.currentTime) + ' / ' + window.formatVideoTime(video.duration);
+        });
+        
+        video.addEventListener('play', () => {
+            player.classList.add('playing');
+            player.classList.remove('paused');
+            if (playBtn) playBtn.innerText = '⏸';
+        });
+        
+        video.addEventListener('pause', () => {
+            player.classList.remove('playing');
+            player.classList.add('paused');
+            if (playBtn) playBtn.innerText = '▶';
+        });
+        
+        video.addEventListener('ended', () => {
+            player.classList.remove('playing');
+            player.classList.remove('paused');
+            if (playBtn) playBtn.innerText = '▶';
+            video.currentTime = 0; // reset
+        });
+    });
+};
+
+// Autoplay logic via Intersection Observer
+window.videoObserver = null;
+if (typeof IntersectionObserver !== 'undefined') {
+    window.videoObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+            if (entry.isIntersecting) {
+                // Sadece daha önce manuel olarak durdurulmamışsa otomatik oynat (veya autoplay'i basit tut)
+                video.play().catch(e => {}); // muted olduğu için çalışır
+            } else {
+                video.pause();
+            }
+        });
+    }, { threshold: 0.6 });
+}
+
+window.observeVideos = function() {
+    if (!window.videoObserver) return;
+    document.querySelectorAll('.mz-video').forEach(video => {
+        window.videoObserver.observe(video);
+    });
+};

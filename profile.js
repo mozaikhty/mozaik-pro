@@ -314,13 +314,13 @@ window.openPostDetail = async function(postId) {
             let mediaHtmlDetail = '';
             if (postData.media && postData.media.length > 1) {
                 let slides = postData.media.map(m => {
-                    let tag = m.type === 'video' ? `<video controls src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; background:black; object-fit:contain;"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; object-fit:contain;">`;
+                    let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; object-fit:contain;">`;
                     return `<div style="flex: 0 0 100%; scroll-snap-align: start;">${tag}</div>`;
                 }).join('');
                 mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
             } else if (postData.media && postData.media.length === 1) {
                 let m = postData.media[0];
-                let tag = m.type === 'video' ? `<video controls src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; background:black; margin-bottom:15px; object-fit:contain;"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
+                let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
                 mediaHtmlDetail = tag;
             } else if (postData.imageUrl) {
                 mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
@@ -367,7 +367,7 @@ window.openPostDetail = async function(postId) {
     `;
     const contentBox = document.getElementById('post-detail-content-box');
     if(contentBox) contentBox.scrollTop = 0; 
-    document.getElementById('post-detail-container').innerHTML = html;
+    document.getElementById('post-detail-container').innerHTML = html; window.initVideoPlayers(); window.observeVideos();
     document.getElementById('post-detail-modal').style.display = 'flex';
     document.body.classList.add('modal-open');
     document.getElementById('post-detail-modal').onclick = function(e) { if(e.target === this) window.closePostDetail(); };
@@ -836,13 +836,13 @@ window.renderProfileFeed = function() {
                 const likeAction = `window.handleMediaClick('${postId}', ${isLiked}, '${postData.author}', event)`;
                 if (postData.media && postData.media.length > 1) {
                     let slides = postData.media.map(m => {
-                        let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" onclick="${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="${likeAction}">`;
+                        let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), likeAction, "feed-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="${likeAction}">`;
                         return `<div style="flex: 0 0 100%; scroll-snap-align: start; position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
                     }).join('');
                     mediaHtml = `<div class="post-image-container"><div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%;">${slides}</div></div>`;
                 } else if (postData.media && postData.media.length === 1) {
                     let m = postData.media[0];
-                    let tag = m.type === 'video' ? `<video class="auto-play-video" controls muted playsinline src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; background:black; cursor:pointer;" onclick="${likeAction}"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}">`;
+                    let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), likeAction, "feed-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}">`;
                     mediaHtml = `<div class="post-image-container" style="position:relative;">${tag}<div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
                 } else if (postData.imageUrl) {
                     mediaHtml = `<div class="post-image-container" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}"><div class="dblclick-heart" id="heart-${postId}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
