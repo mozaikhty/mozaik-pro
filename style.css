@@ -890,3 +890,17 @@ input:checked + .slider:before { transform: translateX(20px); }
         margin-right: 0;
     }
 }
+.bottom-nav {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+.bottom-nav.compact {
+    padding: 8px 15px !important;
+    bottom: 15px !important;
+    width: 70% !important;
+    left: 15% !important;
+}
+.bottom-nav.compact .nav-item {
+    font-size: 20px;
+    padding: 6px;
+    width: 45px;
+}

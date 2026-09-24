@@ -212,3 +212,32 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("Tarayıcı gizlilik ayarları nedeniyle tema tercihi okunamadı.");
     }
 });
+
+// --- BOTTOM NAV SCROLL BEHAVIOR ---
+document.addEventListener('DOMContentLoaded', () => {
+    let isCompact = false;
+    
+    window.addEventListener('scroll', () => {
+        const nav = document.querySelector('.bottom-nav');
+        if (!nav) return;
+        
+        const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+        
+        if (currentScrollY > 50 && !isCompact) {
+            isCompact = true;
+            nav.classList.add('compact');
+        } else if (currentScrollY <= 10 && isCompact) {
+            isCompact = false;
+            nav.classList.remove('compact');
+        }
+    }, { passive: true });
+    
+    setTimeout(() => {
+        const nav = document.querySelector('.bottom-nav');
+        const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+        if (nav && currentScrollY > 50) {
+            isCompact = true;
+            nav.classList.add('compact');
+        }
+    }, 100);
+});
