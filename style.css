@@ -169,10 +169,10 @@ button {
 /* ==========================================================================
    MODALLAR (KART PENCERELERİ)
    ========================================================================== */
-.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); z-index: 2000; justify-content: center; align-items: flex-start; padding-top: 50px; padding-bottom: 50px; overflow: hidden; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); overscroll-behavior: none;}
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(15, 23, 42, 0.4); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; overflow: hidden; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); overscroll-behavior: none;}
 body.modal-open { overflow: hidden; overscroll-behavior: none; touch-action: none; }
-.modal-content { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 24px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.2); border: 1px solid rgba(255, 255, 255, 0.5); overscroll-behavior: contain;}
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: sticky; top: -30px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; padding-bottom: 15px; padding-top: 30px; border-bottom: 1px solid #f1f5f9;}
+.modal-content { background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 24px; width: 100%; max-width: 600px; max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); overflow-y: auto; box-sizing: border-box; box-shadow: 0 20px 50px rgba(0,0,0,0.2); border: 1px solid rgba(255, 255, 255, 0.5); overscroll-behavior: contain;}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: sticky; top: -25px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; padding-bottom: 15px; padding-top: 25px; border-bottom: 1px solid #f1f5f9;}
 .close-btn { background: #f8fafc; border: 1px solid #e2e8f0; font-size: 20px; cursor: pointer; color: #334155; display:flex; justify-content:center; align-items:center; width:36px; height:36px; border-radius:100px; transition:0.2s;}
 .close-btn:hover { background:#e2e8f0; color:#0f172a; transform: rotate(90deg);}
 .modal-input { width: 100%; box-sizing: border-box; padding: 14px 20px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 12px; font-family: inherit; font-size: 15px; outline:none; background: rgba(255, 255, 255, 0.8); transition: 0.2s; color:#0f172a;}
@@ -376,8 +376,9 @@ body.modal-open { overflow: hidden; overscroll-behavior: none; touch-action: non
 .stat-item:hover { color:#0f172a; transform: translateY(-2px);}
 .stat-number { font-weight: 800; color: #0f172a; font-size: 18px;}
 .private-badge { background: rgba(241, 245, 249, 0.8); backdrop-filter: blur(5px); color: #334155; font-size: 13px; padding: 6px 14px; border-radius: 100px; font-weight: 700; display: inline-block; margin-bottom: 12px; border: 1px solid rgba(226, 232, 240, 0.8);}
-#post-detail-modal { align-items: center; padding-top: 0; padding-bottom: 0; }
-#post-detail-modal .modal-content { max-width: 700px; width: 100%; max-height: 90vh; min-height: 50vh; padding: 0; border-radius: 24px; overflow-y: auto; overscroll-behavior: contain;}
+#post-detail-modal { align-items: center; padding: 20px; box-sizing: border-box; }
+#post-detail-modal .modal-content { max-width: 700px; width: 100%; max-height: 100%; min-height: 50vh; padding: 0; border-radius: 24px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column;}
+#post-detail-modal .modal-header { top: 0; padding: 20px; margin: 0; border-bottom: 1px solid #f1f5f9; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 10; position: sticky;}
 
 /* ==========================================================================
    KEŞFET / ARAMA (SEARCH.HTML) EKLENTİLERİ
