@@ -1032,3 +1032,33 @@ input:checked + .slider:before { transform: translateX(20px); }
         border: none !important;
         pointer-events: none !important;
     }
+
+
+
+
+/* ==========================================================================
+   MOBIL MODAL FIX (BOTTOM SHEET)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .modal-overlay {
+        align-items: flex-end !important; /* Modali ekranin altina hizala */
+        padding: 0 !important;
+    }
+    .modal-content {
+        max-width: 100% !important;
+        border-radius: 24px 24px 0 0 !important;
+        margin: 0 !important;
+        max-height: 85dvh !important; /* Klavye ve safe-area icin esneklik */
+        padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+        border-bottom: none !important;
+        animation: slideUpModal 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    #post-detail-modal .modal-content {
+        max-height: 90dvh !important;
+        min-height: 50vh !important;
+    }
+}
+@keyframes slideUpModal {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
