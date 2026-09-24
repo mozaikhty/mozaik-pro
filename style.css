@@ -121,7 +121,7 @@ button {
 .hashtag { color: #3b82f6; text-decoration: none; font-weight: 500;}
 .hashtag:hover { text-decoration: underline; }
 .post-image-container { border-radius: 16px; overflow: hidden; border: 1px solid rgba(226, 232, 240, 0.5); margin-top: 10px; }
-.post-image { width: 100%; max-height: 400px; object-fit: cover; display: block; pointer-events: none;}
+.post-image { width: 100%; max-height: 400px; object-fit: cover; display: block; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
 .post-footer-actions { display: flex; justify-content: flex-start; gap: 30px; margin-top: 15px; color: #64748b; border-top: 1px solid rgba(241, 245, 249, 0.8); padding-top: 12px;}
 .action-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; user-select: none;}
 .action-item:hover { color: #2c3e50; }
@@ -671,5 +671,5 @@ body.dark-mode .mobile-sidebar { background: rgba(15, 23, 42, 0.95) !important; 
 .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
 input:checked + .slider { background-color: #2c3e50; }
 input:checked + .slider:before { transform: translateX(20px); }
-.post-image-container img, .post-image-container video { touch-action: manipulation; }
+.post-image-container img, .post-image-container video { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
 
