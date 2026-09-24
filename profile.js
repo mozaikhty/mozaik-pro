@@ -116,7 +116,10 @@ window.toggleLike = async function(postId, isLiked, postAuthor, event) {
     event.stopPropagation();
     if (window.isActionLocked && window.isActionLocked('like_' + postId)) return; 
     
-    if (event && event.type === 'dblclick' && !isLiked) {
+    let isDouble = event && event.type === 'dblclick';
+    if (isDouble && isLiked) return; // Do not unlike on double click
+
+    if (isDouble && !isLiked) {
         const heart = event.currentTarget.parentNode.querySelector('.dblclick-heart');
         if(heart) {
             heart.style.transform = 'translate(-50%, -50%) scale(1.5)';
@@ -132,7 +135,21 @@ window.toggleLike = async function(postId, isLiked, postAuthor, event) {
         } else {
             postObj.data.likes.push(myUsername);
         }
-        window.renderProfileFeed(); 
+        
+        if (isDouble) {
+            const postEl = event.currentTarget.closest('.post');
+            if (postEl) {
+                const likeBox = postEl.querySelector('.like-box');
+                if (likeBox) {
+                    likeBox.classList.add('liked');
+                    likeBox.innerHTML = `<span class="action-icon">❤️</span> <span onclick="window.showLikes('${postId}', event)">${postObj.data.likes.length || ''}</span>`;
+                    likeBox.setAttribute('onclick', `window.toggleLike('${postId}', true, '${postAuthor}', event)`);
+                }
+            }
+        } else {
+            window.renderProfileFeed(); 
+        }
+        
         if (window.currentOpenPostId === postId) window.openPostDetail(postId);
     }
 
