@@ -245,9 +245,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.body.classList.remove('header-state-down');
                     document.body.classList.add('header-state-up');
                 }
+                lastHeaderScrollY = currentScrollY;
             }
         }
-        lastHeaderScrollY = currentScrollY;
     }
 
     // Ana sayfalar için window scroll
@@ -269,6 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const iScroll = inboxList ? inboxList.scrollTop : 0;
         const initScroll = Math.max(wScroll, iScroll);
         
+        lastHeaderScrollY = initScroll;
+        
         if (initScroll > 50) {
             isCompact = true;
             const nav = document.querySelector('.bottom-nav');
@@ -276,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Assume we arrived here by scrolling down
             document.body.classList.add('header-state-down');
-            lastHeaderScrollY = initScroll;
         }
     }, 100);
 });
