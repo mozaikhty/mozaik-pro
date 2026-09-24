@@ -20,6 +20,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig); 
 
 // GÖRÜNMEZ SPAM VE BOT KORUMASI (APP CHECK)
+if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') {
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        console.log("App Check: Yerel geliştirme ortamı algılandı, DEBUG TOKEN modu aktif edildi.");
+    }
+}
 const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider('6LcwbZ4sAAAAAPJm8ty9Edqyjn_-6COG2rj_axCA'),
     isTokenAutoRefreshEnabled: true
