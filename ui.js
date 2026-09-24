@@ -215,82 +215,109 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- NAV AND HEADER SCROLL BEHAVIOR ---
 (function() {
-    function initScroll() {
-        let isCompact = false;
-        let lastScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-        
-        // Setup base transitions for headers
-        const headers = document.querySelectorAll('.header-sticky, .chat-header-main');
-        headers.forEach(h => {
-            h.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, background 0.3s ease';
-        });
-
-        const searchContainers = document.querySelectorAll('.inbox-search-container, #inbox-tabs');
-        searchContainers.forEach(s => {
-            s.style.transition = 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
-            s.style.overflow = 'hidden';
-        });
-
-        function onScroll(currentY) {
-            // 1. Bottom Nav Logic
-            const nav = document.querySelector('.bottom-nav');
-            if (currentY > 50 && !isCompact) {
-                isCompact = true;
-                if (nav) nav.classList.add('compact');
-            } else if (currentY <= 10 && isCompact) {
-                isCompact = false;
-                if (nav) nav.classList.remove('compact');
+    class ScrollManager {
+        constructor() {
+            this.lastScrollY = 0;
+            this.isBottomCompact = false;
+            
+            // DOM Elements
+            this.header = document.querySelector('.header-sticky') || document.querySelector('.chat-header-main');
+            this.bottomNav = document.querySelector('.bottom-nav');
+            this.inboxSearch = document.querySelector('.inbox-search-container');
+            this.inboxTabs = document.querySelector('#inbox-tabs');
+            
+            // Clean inline transitions that override CSS
+            if (this.header) {
+                this.header.style.transition = '';
             }
 
-            // 2. Header Logic
+            this.bindEvents();
+        }
+
+        bindEvents() {
+            // Ana pencere scroll (Anasayfa, Keşfet, Profil)
+            window.addEventListener('scroll', () => {
+                this.handleScroll(window.scrollY || document.documentElement.scrollTop);
+            }, { passive: true });
+
+            // Mesajlar sayfası özel scroll container
+            const inboxList = document.querySelector('.inbox-list');
+            if (inboxList) {
+                inboxList.addEventListener('scroll', () => {
+                    this.handleScroll(inboxList.scrollTop);
+                }, { passive: true });
+            }
+
+            // İlk açılışta state'i ayarla
+            setTimeout(() => {
+                const initY = window.scrollY || (inboxList ? inboxList.scrollTop : 0);
+                this.lastScrollY = initY;
+                if (initY > 50) {
+                    if (this.bottomNav) {
+                        this.isBottomCompact = true;
+                        this.bottomNav.classList.add('compact');
+                    }
+                    if (this.header) {
+                        this.header.classList.add('header-hidden');
+                    }
+                }
+            }, 100);
+        }
+
+        handleScroll(currentY) {
+            // 1. Alt Navigasyon (Bağımsız çalışır)
+            if (currentY > 50 && !this.isBottomCompact) {
+                this.isBottomCompact = true;
+                if (this.bottomNav) this.bottomNav.classList.add('compact');
+            } else if (currentY <= 10 && this.isBottomCompact) {
+                this.isBottomCompact = false;
+                if (this.bottomNav) this.bottomNav.classList.remove('compact');
+            }
+
+            // 2. Üst Header Yönlü Animasyon
             if (currentY <= 10) {
-                // AT TOP: Show full header
-                document.body.classList.remove('h-state-down', 'h-state-up');
+                // En üstteyken her şeyi normal haline döndür
+                if (this.header) {
+                    this.header.classList.remove('header-hidden', 'header-compact');
+                }
+                if (this.inboxSearch) this.inboxSearch.classList.remove('search-hidden');
+                if (this.inboxTabs) this.inboxTabs.classList.remove('search-hidden');
             } else {
-                const delta = currentY - lastScrollY;
+                const delta = currentY - this.lastScrollY;
+                
+                // Titremeyi önlemek için sadece 5px'ten büyük hareketleri işle
                 if (Math.abs(delta) > 5) {
                     if (delta > 0) {
-                        // SCROLL DOWN: Hide completely
-                        document.body.classList.add('h-state-down');
-                        document.body.classList.remove('h-state-up');
+                        // Aşağı kaydırma: Tamamen gizle
+                        if (this.header) {
+                            this.header.classList.add('header-hidden');
+                            this.header.classList.remove('header-compact');
+                        }
+                        if (this.inboxSearch) this.inboxSearch.classList.add('search-hidden');
+                        if (this.inboxTabs) this.inboxTabs.classList.add('search-hidden');
                     } else {
-                        // SCROLL UP: Compact avatar
-                        document.body.classList.add('h-state-up');
-                        document.body.classList.remove('h-state-down');
+                        // Yukarı kaydırma: Kompakt avatarı göster
+                        if (this.header) {
+                            this.header.classList.add('header-compact');
+                            this.header.classList.remove('header-hidden');
+                        }
+                        if (this.inboxSearch) this.inboxSearch.classList.remove('search-hidden');
+                        if (this.inboxTabs) this.inboxTabs.classList.remove('search-hidden');
                     }
-                    lastScrollY = currentY;
+                    this.lastScrollY = currentY;
                 }
             }
         }
+    }
 
-        // Attach listeners safely
-        window.addEventListener('scroll', () => {
-            onScroll(window.scrollY || document.documentElement.scrollTop);
-        }, { passive: true });
-
-        const inboxList = document.querySelector('.inbox-list');
-        if (inboxList) {
-            inboxList.addEventListener('scroll', () => {
-                onScroll(inboxList.scrollTop);
-            }, { passive: true });
-        }
-        
-        // Initial check
-        setTimeout(() => {
-            const currentY = window.scrollY || (inboxList ? inboxList.scrollTop : 0);
-            lastScrollY = currentY;
-            if (currentY > 50) {
-                isCompact = true;
-                const nav = document.querySelector('.bottom-nav');
-                if (nav) nav.classList.add('compact');
-                document.body.classList.add('h-state-down');
-            }
-        }, 150);
+    // Sayfa DOM'u hazır olduğunda veya zaten hazırsa başlat
+    function init() {
+        new ScrollManager();
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initScroll);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        initScroll();
+        init();
     }
 })();

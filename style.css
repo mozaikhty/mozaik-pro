@@ -915,34 +915,47 @@ input:checked + .slider:before { transform: translateX(20px); }
         background: rgba(30, 41, 59, 0.9) !important;
     }
 }
-/* MOBİL HEADER COMPACT MODE */
+
+/* ==========================================================================
+   MOBİL HEADER SCROLL-HIDE ARCHITECTURE
+   ========================================================================== */
 @media (max-width: 1000px) {
-    /* Base transitions for collapsing */
+    /* 1. Doğru Mimari: Mobilde header'lar sticky değil, fixed olmalıdır. 
+       Bu sayede transform animasyonları donanım hızlandırmasıyla pürüzsüz çalışır. */
     .header-sticky, .chat-header-main {
-        transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                    min-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                    padding 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                    opacity 0.3s ease, 
-                    background 0.3s ease !important;
-        overflow: hidden;
-        max-height: 200px; /* Safe upper bound for normal state */
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
+        z-index: 1000;
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.3s ease !important;
     }
 
-    /* SCROLL DOWN: Completely collapse the header (bypasses sticky transform bugs) */
-    body.h-state-down .header-sticky,
-    body.h-state-down .chat-header-main {
-        max-height: 0 !important;
-        min-height: 0 !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-        opacity: 0 !important;
-        border: none !important;
+    /* Fixed header'ın altında kalan içeriğin örtülmemesi için padding */
+    .feed-main:not(#inbox-column) {
+        padding-top: 110px !important; /* Feed tabs (40px) + Header top (60px) */
+    }
+    #inbox-column {
+        padding-top: 75px !important; /* Mesajlar header yüksekliği */
+    }
+
+    /* 2. Scroll Aşağı: Tamamen Gizle */
+    .header-sticky.header-hidden, 
+    .chat-header-main.header-hidden {
+        transform: translateY(-110%) !important;
         pointer-events: none !important;
     }
 
-    /* Inbox specific elements collapse too */
-    body.h-state-down .inbox-search-container,
-    body.h-state-down #inbox-tabs {
+    /* Inbox arama sekmeleri: Header gizlenirken bunlar da yukarı daralır */
+    .inbox-search-container, #inbox-tabs {
+        transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
+        max-height: 120px;
+        overflow: hidden;
+        opacity: 1;
+    }
+    .inbox-search-container.search-hidden, #inbox-tabs.search-hidden {
         max-height: 0 !important;
         opacity: 0 !important;
         margin-bottom: 0 !important;
@@ -951,9 +964,10 @@ input:checked + .slider:before { transform: translateX(20px); }
         border: none !important;
     }
 
-    /* SCROLL UP: Expand back, but make it transparent */
-    body.h-state-up .header-sticky,
-    body.h-state-up .chat-header-main {
+    /* 3. Scroll Yukarı: Yalnızca Avatar Göster (Kompakt Mod) */
+    .header-sticky.header-compact,
+    .chat-header-main.header-compact {
+        transform: translateY(0) !important;
         background: transparent !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
@@ -961,25 +975,26 @@ input:checked + .slider:before { transform: translateX(20px); }
         pointer-events: none !important;
     }
 
-    /* Hide children by fading them out */
-    body.h-state-up .header-sticky .mobile-logo-text,
-    body.h-state-up .header-sticky .feed-tabs:not(#inbox-tabs),
-    body.h-state-up .header-sticky .search-header-box,
-    body.h-state-up .header-sticky .category-pills-wrapper,
-    body.h-state-up .header-sticky .header-info,
-    body.h-state-up .chat-header-main .header-title,
-    body.h-state-up .chat-header-main .header-icons {
+    /* Kompakt modda header içindeki diğer öğeleri gizle */
+    .header-sticky.header-compact .mobile-logo-text,
+    .header-sticky.header-compact .feed-tabs:not(#inbox-tabs),
+    .header-sticky.header-compact .search-header-box,
+    .header-sticky.header-compact .category-pills-wrapper,
+    .header-sticky.header-compact .header-info,
+    .chat-header-main.header-compact .header-title,
+    .chat-header-main.header-compact .header-icons {
         opacity: 0 !important;
         pointer-events: none !important;
         transform: translateY(-15px);
         transition: all 0.3s ease !important;
     }
 
-    /* Keep avatar visible and interactive */
-    body.h-state-up .header-sticky #mobile-avatar-header,
-    body.h-state-up .chat-header-main #mobile-avatar-header,
-    body.h-state-up .header-sticky .back-arrow {
+    /* Yalnızca avatarı ve geri tuşunu tıklanabilir ve görünür bırak */
+    .header-sticky.header-compact #mobile-avatar-header,
+    .chat-header-main.header-compact #mobile-avatar-header,
+    .header-sticky.header-compact .back-arrow {
         pointer-events: auto !important;
+        opacity: 1 !important;
         background: rgba(226, 232, 240, 0.95) !important;
         backdrop-filter: blur(10px) !important;
         -webkit-backdrop-filter: blur(10px) !important;
@@ -988,9 +1003,9 @@ input:checked + .slider:before { transform: translateX(20px); }
         transition: all 0.3s ease !important;
     }
     
-    body.dark-mode.h-state-up .header-sticky #mobile-avatar-header,
-    body.dark-mode.h-state-up .chat-header-main #mobile-avatar-header,
-    body.dark-mode.h-state-up .header-sticky .back-arrow {
+    body.dark-mode .header-sticky.header-compact #mobile-avatar-header,
+    body.dark-mode .chat-header-main.header-compact #mobile-avatar-header,
+    body.dark-mode .header-sticky.header-compact .back-arrow {
         background: rgba(30, 41, 59, 0.95) !important;
     }
 }
