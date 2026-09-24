@@ -2,6 +2,8 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
+import { getToken } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app-check.js";
+
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
@@ -30,6 +32,17 @@ const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider('6LcwbZ4sAAAAAPJm8ty9Edqyjn_-6COG2rj_axCA'),
     isTokenAutoRefreshEnabled: true
 });
+
+// --- APP CHECK DEBUG ---
+if (typeof window !== 'undefined') {
+    getToken(appCheck, false).then(() => {
+        console.log("App Check: Token başarıyla alındı.");
+    }).catch((error) => {
+        console.error("App Check: Token Alınamadı! Hata:", error);
+    });
+}
+// -----------------------
+
 
 // Diğer sayfalarda kullanmak üzere dışa aktar (Export)
 export const auth = getAuth(app); 

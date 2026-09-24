@@ -343,7 +343,7 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         
         // Hata kodlarına göre anlaşılır mesajlar
         let errMsg = "Video yüklenirken bir hata oluştu. Lütfen tekrar deneyin.";
-        if (e.code === 'storage/unauthorized') errMsg = "Video yükleme yetkiniz bulunmuyor veya dosya sınırları aştı (maks 20MB video, 5MB fotoğraf).";
+        if (e.code === 'storage/unauthorized') errMsg = "Güvenlik engeli: App Check (reCAPTCHA) doğrulaması başarısız veya Firebase Storage yetkiniz yok (storage/unauthorized). Boyut sınırlarıyla ilgili bir sorun YOK.";
         else if (e.code === 'storage/canceled') errMsg = "Yükleme iptal edildi.";
         else if (e.code === 'storage/retry-limit-exceeded' || e.message?.includes('network')) errMsg = "Video yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.";
         
