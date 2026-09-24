@@ -269,18 +269,38 @@ document.getElementById('submit-story-btn')?.addEventListener('click', async () 
     if(!textVal && !rawFile) return;
 
     let mediaType = 'image';
-    if(rawFile && rawFile.type.startsWith('video/')) {
-        mediaType = 'video';
-        
-        if (!rawFile.type.match(/^video\/(mp4|webm|quicktime)$/)) { alert("Sadece MP4, WEBM ve MOV video formatları yüklenebilir."); return; }
-        if (rawFile.size > 20 * 1024 * 1024) {
- alert("Video 25 MB'dan büyük olamaz!"); return; }
-    
-    } else if (rawFile) {
-        if (!rawFile.type.match(/^(image\/(jpeg|png|webp|gif))$/)) { alert("Sadece güvenli fotoğraf formatları yüklenebilir."); return; }
-        if (rawFile.size > 5 * 1024 * 1024) {
- 
-        alert("Hikaye fotoğrafı 10 MB'dan büyük olamaz!"); return; 
+    if (rawFile) {
+        const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+        const MAX_VIDEO_SIZE = 20 * 1024 * 1024;
+
+        console.log("=== UPLOAD DEBUG (STORY) ===");
+        console.log("Video adı:", rawFile.name);
+        console.log("Video MIME:", rawFile.type);
+        console.log("Video boyutu (bytes):", rawFile.size);
+        console.log("Video boyutu (MB):", (rawFile.size / (1024 * 1024)).toFixed(2));
+        console.log("İzin verilen maksimum boyut (MB):", (MAX_VIDEO_SIZE / (1024 * 1024)).toFixed(2));
+        console.log("====================");
+
+        if (rawFile.type.startsWith('video/')) {
+            mediaType = 'video';
+            if (!rawFile.type.match(/^video\/(mp4|webm|quicktime)/i)) { 
+                alert("Sadece MP4, WEBM ve MOV video formatları yüklenebilir."); 
+                return; 
+            }
+            if (rawFile.size > MAX_VIDEO_SIZE) {
+                alert("Video boyutu çok büyük. Maksimum 20 MB video yükleyebilirsiniz."); 
+                return; 
+            }
+        } else {
+            if (!rawFile.type.match(/^(image\/(jpeg|png|webp|gif))/i)) { 
+                alert("Sadece güvenli fotoğraf formatları yüklenebilir."); 
+                return; 
+            }
+            if (rawFile.size > MAX_IMAGE_SIZE) {
+                alert("Fotoğraf boyutu çok büyük. Maksimum 5 MB fotoğraf yükleyebilirsiniz."); 
+                return; 
+            }
+        }
     }
 
     const btn = document.getElementById('submit-story-btn'); btn.disabled = true; btn.innerText = mediaType === 'video' ? "Video Yükleniyor..." : "Sıkıştırılıyor...";

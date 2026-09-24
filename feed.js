@@ -244,16 +244,28 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
 
     for (let file of files) {
         
-        if (!file.type.match(/^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm|quicktime))$/)) {
+        if (!file.type.match(/^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm|quicktime))/i)) {
             alert("Sadece güvenli fotoğraf (JPEG, PNG, WEBP, GIF) ve video (MP4, WEBM, MOV) formatları yüklenebilir.");
             return;
         }
-        if (file.type.startsWith('image/') && file.size > 5 * 1024 * 1024) {
-            alert("Fotoğraf boyutu 5 MB'dan büyük olamaz!");
+        
+        const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+        const MAX_VIDEO_SIZE = 20 * 1024 * 1024;
+        
+        console.log("=== UPLOAD DEBUG (FEED) ===");
+        console.log("Video adı:", file.name);
+        console.log("Video MIME:", file.type);
+        console.log("Video boyutu (bytes):", file.size);
+        console.log("Video boyutu (MB):", (file.size / (1024 * 1024)).toFixed(2));
+        console.log("İzin verilen maksimum boyut (MB):", (MAX_VIDEO_SIZE / (1024 * 1024)).toFixed(2));
+        console.log("====================");
+
+        if (file.type.startsWith('image/') && file.size > MAX_IMAGE_SIZE) {
+            alert("Fotoğraf boyutu çok büyük. Maksimum 5 MB fotoğraf yükleyebilirsiniz.");
             return;
         }
-        if (file.type.startsWith('video/') && file.size > 20 * 1024 * 1024) {
-            alert("Video boyutu 20 MB'dan büyük olamaz!");
+        if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
+            alert("Video boyutu çok büyük. Maksimum 20 MB video yükleyebilirsiniz.");
             return;
         }
         if (false) { // Dummy block to absorb the old condition
