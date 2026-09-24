@@ -219,14 +219,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function handleNavScroll(currentScrollY) {
         const nav = document.querySelector('.bottom-nav');
-        if (!nav) return;
+        const header = document.querySelector('.header-sticky');
+        const chatHeader = document.querySelector('.chat-header-main');
         
         if (currentScrollY > 50 && !isCompact) {
             isCompact = true;
-            nav.classList.add('compact');
+            if (nav) nav.classList.add('compact');
+            if (header) header.classList.add('compact');
+            if (chatHeader) chatHeader.classList.add('compact');
         } else if (currentScrollY <= 10 && isCompact) {
             isCompact = false;
-            nav.classList.remove('compact');
+            if (nav) nav.classList.remove('compact');
+            if (header) header.classList.remove('compact');
+            if (chatHeader) chatHeader.classList.remove('compact');
         }
     }
 

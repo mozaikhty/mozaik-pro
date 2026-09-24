@@ -677,7 +677,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 .post-image-container img, .post-image-container video { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
 
 /* ==========================================================================
-   YENÝ KEÞFET (EXPLORE) SAYFASI TASARIMI
+   YENï¿½ KEï¿½FET (EXPLORE) SAYFASI TASARIMI
    ========================================================================== */
 .explore-results-container {
     column-count: 2;
@@ -823,7 +823,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     text-overflow: ellipsis;
 }
 /* ==========================================================================
-   KATEGORÝ ETÝKETLERÝ VE KAYDIRMA (SCROLL) SÝSTEMÝ
+   KATEGORï¿½ ETï¿½KETLERï¿½ VE KAYDIRMA (SCROLL) Sï¿½STEMï¿½
    ========================================================================== */
 .category-pills-wrapper {
     display: flex;
@@ -849,7 +849,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     scroll-behavior: auto;
 }
 .category-pills-container.dragging .category-pill { flex-shrink: 0;
-    pointer-events: none; /* Sürükleme sýrasýnda týklamayý engeller */
+    pointer-events: none; /* Sï¿½rï¿½kleme sï¿½rasï¿½nda tï¿½klamayï¿½ engeller */
 }
 .pill-scroll-btn {
     background: rgba(255, 255, 255, 0.95);
@@ -903,4 +903,58 @@ input:checked + .slider:before { transform: translateX(20px); }
     font-size: 20px;
     padding: 6px;
     width: 45px;
+}
+
+
+/* MOBÄ°L HEADER COMPACT MODE */
+@media (max-width: 1000px) {
+    .header-sticky, .chat-header-main {
+        transition: background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease !important;
+    }
+    
+    .header-sticky.compact, .chat-header-main.compact {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border-bottom-color: transparent !important;
+        pointer-events: none !important;
+    }
+
+    .header-sticky.compact .mobile-logo-text,
+    .header-sticky.compact .feed-tabs,
+    .header-sticky.compact .search-header-box,
+    .header-sticky.compact .category-pills-wrapper,
+    .header-sticky.compact .header-info,
+    .chat-header-main.compact .header-title,
+    .chat-header-main.compact .header-icons {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translateY(-10px) !important;
+    }
+
+    .header-sticky .mobile-logo-text,
+    .header-sticky .feed-tabs,
+    .header-sticky .search-header-box,
+    .header-sticky .category-pills-wrapper,
+    .header-sticky .header-info,
+    .chat-header-main .header-title,
+    .chat-header-main .header-icons {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }
+
+    .header-sticky.compact #mobile-avatar-header,
+    .chat-header-main.compact #mobile-avatar-header,
+    .header-sticky.compact .back-arrow {
+        pointer-events: auto !important;
+        background: rgba(226, 232, 240, 0.9) !important;
+        backdrop-filter: blur(5px) !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+        border-radius: 8px; /* For back arrow to look like a button if it wasn't already */
+    }
+    
+    body.dark-mode .header-sticky.compact #mobile-avatar-header,
+    body.dark-mode .chat-header-main.compact #mobile-avatar-header,
+    body.dark-mode .header-sticky.compact .back-arrow {
+        background: rgba(30, 41, 59, 0.9) !important;
+    }
 }
