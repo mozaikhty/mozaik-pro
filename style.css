@@ -762,7 +762,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     display: flex;
     gap: 8px;
 }
-.category-pill {
+.category-pill { flex-shrink: 0;
     padding: 8px 16px;
     background: rgba(255,255,255,0.8);
     border: 1px solid #cbd5e1;
@@ -821,4 +821,72 @@ input:checked + .slider:before { transform: translateX(20px); }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+/* ==========================================================================
+   KATEGORÝ ETÝKETLERÝ VE KAYDIRMA (SCROLL) SÝSTEMÝ
+   ========================================================================== */
+.category-pills-wrapper {
+    display: flex;
+    align-items: center;
+}
+.category-pills-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding: 5px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    flex-grow: 1;
+    cursor: grab;
+    width: 100%;
+}
+.category-pills-container::-webkit-scrollbar {
+    display: none;
+}
+.category-pills-container.dragging {
+    cursor: grabbing;
+    scroll-behavior: auto;
+}
+.category-pills-container.dragging .category-pill { flex-shrink: 0;
+    pointer-events: none; /* Sürükleme sýrasýnda týklamayý engeller */
+}
+.pill-scroll-btn {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #cbd5e1;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 10;
+    color: #334155;
+    position: absolute;
+    top: calc(50% - 10px);
+    transform: translateY(-50%);
+    opacity: 0.9;
+    transition: 0.2s;
+}
+.pill-scroll-btn:hover {
+    opacity: 1;
+    background: white;
+    transform: translateY(-50%) scale(1.1);
+}
+#pill-scroll-left {
+    left: -10px;
+}
+#pill-scroll-right {
+    right: -10px;
+}
+@media (max-width: 768px) {
+    .pill-scroll-btn {
+        display: none !important;
+    }
+    .category-pills-wrapper {
+        margin-left: 0;
+        margin-right: 0;
+    }
 }

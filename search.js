@@ -1,4 +1,4 @@
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+﻿import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { collection, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, where, getDoc, limit, startAt, endAt, getDocs, startAfter } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { auth, db } from './firebase-config.js';
 import './shared.js';
@@ -56,15 +56,15 @@ function renderWhoToFollow() {
     let eligibleUsers = Object.keys(allUsersData).filter(uid => uid !== myUsername && !myFollowing.includes(uid));
     eligibleUsers = eligibleUsers.sort(() => 0.5 - Math.random()).slice(0, 3);
     if (eligibleUsers.length === 0) {
-        container.innerHTML = '<div style="font-size:14px; color:#64748b; padding: 10px 0;">Şu an için yeni öneri yok.</div>';
+        container.innerHTML = '<div style="font-size:14px; color:#64748b; padding: 10px 0;">Åu an iÃ§in yeni Ã¶neri yok.</div>';
         return;
     }
     let html = '';
     eligibleUsers.forEach(uid => {
         const uData = allUsersData[uid];
-        const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+        const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `ğŸ‘¤`;
         const fullName = window.escapeHtml(uData.fullName || uid);
-        const vHtml = uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
+        const vHtml = uData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">â˜‘ï¸</span>' : '';
         html += `
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'">
                 <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
@@ -91,7 +91,7 @@ async function fetchGlobalTrendingTags() {
         snap.forEach(docSnap => {
             const data = docSnap.data();
             const text = data.content || data.text || "";
-            const matches = text.match(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g);
+            const matches = text.match(/#([a-zA-Z0-9ÄŸÃ¼ÅŸÄ±Ã¶Ã§ÄÃœÅÄ°Ã–Ã‡_]+)/g);
             if (matches) {
                 const uniqueTags = [...new Set(matches.map(t => t.toLowerCase()))];
                 
@@ -115,7 +115,7 @@ async function fetchGlobalTrendingTags() {
         }).sort((a, b) => b.score - a.score);
         
         renderCategoryPills();
-    } catch (e) { console.error("Trend etiketler hesaplanamadı:", e); }
+    } catch (e) { console.error("Trend etiketler hesaplanamadÄ±:", e); }
 }
 
 async function fetchAllUsersForSearch() {
@@ -128,7 +128,7 @@ async function fetchAllUsersForSearch() {
             allUsersData[docSnap.id] = data;
         });
         renderWhoToFollow();
-    } catch (e) { console.error("Kullanıcılar çekilemedi:", e); }
+    } catch (e) { console.error("KullanÄ±cÄ±lar Ã§ekilemedi:", e); }
 }
 
 function processPostData(docSnap) {
@@ -158,7 +158,7 @@ async function loadExplorePosts(isLoadMore = false) {
         let loopCount = 0;
         let targetCount = 12;
         
-        // Kategori seçiliyse veritabanından bulana kadar (max 5 kere) limit(12) çekeriz.
+        // Kategori seÃ§iliyse veritabanÄ±ndan bulana kadar (max 5 kere) limit(12) Ã§ekeriz.
         while (newPosts.length < targetCount && loopCount < 5 && hasMorePosts) {
             let q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(12));
             if (lastVisiblePost) {
@@ -195,12 +195,12 @@ async function loadExplorePosts(isLoadMore = false) {
 
         if(newPosts.length === 0) {
             if(!isLoadMore && (!allPosts || allPosts.length === 0)) {
-                if(exploreResults) exploreResults.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">Bu kategoride içerik bulunamadı.</div>';
+                if(exploreResults) exploreResults.innerHTML = '<div style="color:#64748b; padding:40px; text-align:center;">Bu kategoride iÃ§erik bulunamadÄ±.</div>';
             }
         } else {
             await window.fetchMissingUsers(Array.from(neededUsers));
             
-            // Kendi içinde score'a göre sırala
+            // Kendi iÃ§inde score'a gÃ¶re sÄ±rala
             newPosts.sort((a,b) => b.score - a.score);
             
             if(isLoadMore) {
@@ -213,7 +213,7 @@ async function loadExplorePosts(isLoadMore = false) {
             renderExplore(newPosts, isLoadMore);
         }
     } catch(error) {
-        console.error("Gönderi yükleme hatası:", error);
+        console.error("GÃ¶nderi yÃ¼kleme hatasÄ±:", error);
     }
     
     if(loadingInd) loadingInd.style.display = 'none';
@@ -273,9 +273,9 @@ window.setCategory = function(cat) {
 };
 
 function renderCategoryPills() {
-    let html = `<div class="category-pill ${currentCategory === 'all' ? 'active' : ''}" onclick="window.setCategory('all')">Tümü</div>`;
+    let html = `<div class="category-pill ${currentCategory === 'all' ? 'active' : ''}" onclick="window.setCategory('all')">TÃ¼mÃ¼</div>`;
     
-    // Gündem etiketlerinden en popüler 10 tanesini üst barda gösteriyoruz. (Diğerleri aramada var).
+    // GÃ¼ndem etiketlerinden en popÃ¼ler 10 tanesini Ã¼st barda gÃ¶steriyoruz. (DiÄŸerleri aramada var).
     const top10 = globalTrendingTags.slice(0, 10);
     top10.forEach(t => {
         const isActive = currentCategory === t.tag ? 'active' : '';
@@ -293,16 +293,16 @@ function renderExplore(postsToRender = [], append = false) {
     postsToRender.forEach(post => {
         const author = post.isRepost ? post.originalPostAuthor : post.author;
         const aData = allUsersData[author] || {};
-        const avatar = aData.avatarUrl ? `<img src="${window.sanitizeUrl(aData.avatarUrl)}">` : `👤`;
+        const avatar = aData.avatarUrl ? `<img src="${window.sanitizeUrl(aData.avatarUrl)}">` : `ğŸ‘¤`;
         const likes = post.likes ? post.likes.length : 0;
         const comments = post.comments ? post.comments.length : 0;
         
         let mediaHtml = '';
         if (post.media && post.media.length > 1) {
-            mediaHtml = `<div class="explore-card-media"><img src="${window.sanitizeUrl(post.media[0].url)}"><div class="explore-card-icon">📸 ${post.media.length}</div></div>`;
+            mediaHtml = `<div class="explore-card-media"><img src="${window.sanitizeUrl(post.media[0].url)}"><div class="explore-card-icon">ğŸ“¸ ${post.media.length}</div></div>`;
         } else if (post.media && post.media.length === 1) {
             let m = post.media[0];
-            if(m.type === 'video') mediaHtml = `<div class="explore-card-media"><video src="${window.sanitizeUrl(m.url)}"></video><div class="explore-card-icon">▶️</div></div>`;
+            if(m.type === 'video') mediaHtml = `<div class="explore-card-media"><video src="${window.sanitizeUrl(m.url)}"></video><div class="explore-card-icon">â–¶ï¸</div></div>`;
             else mediaHtml = `<div class="explore-card-media"><img src="${window.sanitizeUrl(m.url)}"></div>`;
         } else if (post.imageUrl) {
             mediaHtml = `<div class="explore-card-media"><img src="${window.sanitizeUrl(post.imageUrl)}"></div>`;
@@ -321,8 +321,8 @@ function renderExplore(postsToRender = [], append = false) {
                             ${avatar} <span style="font-size:13px; font-weight:600; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px;">${window.escapeHtml(aData.fullName || author)}</span>
                         </div>
                         <div class="explore-card-stats">
-                            <span>❤️ ${likes}</span>
-                            <span>💬 ${comments}</span>
+                            <span>â¤ï¸ ${likes}</span>
+                            <span>ğŸ’¬ ${comments}</span>
                         </div>
                     </div>
                 </div>
@@ -362,7 +362,7 @@ async function performSmartSearch() {
     searchSuggestions.style.display = 'block';
     let html = '';
     
-    // 1. Etiket araması (Tüm globalTrendingTags içerisinden arama yapar, sadece top10 ile sınırlı değildir!)
+    // 1. Etiket aramasÄ± (TÃ¼m globalTrendingTags iÃ§erisinden arama yapar, sadece top10 ile sÄ±nÄ±rlÄ± deÄŸildir!)
     const matchedTags = globalTrendingTags.filter(t => t.tag.toLowerCase().includes(q)).slice(0, 5);
     if(matchedTags.length > 0) {
         html += '<div style="padding:10px 20px; font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Etiketler</div>';
@@ -372,15 +372,15 @@ async function performSmartSearch() {
                     <div class="suggestion-icon">#</div>
                     <div class="suggestion-content">
                         <div class="suggestion-title">${t.tag}</div>
-                        <div class="suggestion-subtitle">Popüler Etiket (${t.score} Puan)</div>
+                        <div class="suggestion-subtitle">PopÃ¼ler Etiket (${t.score} Puan)</div>
                     </div>
                 </div>
             `;
         });
     }
     
-    // 2. Kişi araması (Tam isim, kullanıcı adı, büyük-küçük Türkçe karakter duyarsız)
-    const trLower = (str) => str.replace(/I/g,'ı').replace(/İ/g,'i').toLowerCase();
+    // 2. KiÅŸi aramasÄ± (Tam isim, kullanÄ±cÄ± adÄ±, bÃ¼yÃ¼k-kÃ¼Ã§Ã¼k TÃ¼rkÃ§e karakter duyarsÄ±z)
+    const trLower = (str) => str.replace(/I/g,'Ä±').replace(/Ä°/g,'i').toLowerCase();
     const searchQ = trLower(q);
     
     const matchedUsers = allUsersCache.filter(u => {
@@ -390,9 +390,9 @@ async function performSmartSearch() {
     }).slice(0, 5);
     
     if(matchedUsers.length > 0) {
-        html += '<div style="padding:10px 20px; font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-top:10px;">Kişiler</div>';
+        html += '<div style="padding:10px 20px; font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-top:10px;">KiÅŸiler</div>';
         matchedUsers.forEach(u => {
-            const avatarHtml = u.avatarUrl ? `<img src="${window.sanitizeUrl(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
+            const avatarHtml = u.avatarUrl ? `<img src="${window.sanitizeUrl(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : 'ğŸ‘¤';
             html += `
                 <div class="suggestion-item" onclick="window.location.href='profile.html?user=${window.escapeHtml(u.username)}'">
                     <div class="suggestion-icon" style="background:transparent; border:1px solid #e2e8f0;">${avatarHtml}</div>
@@ -405,14 +405,14 @@ async function performSmartSearch() {
         });
     }
     
-    // 3. Konu/Gönderi araması (Zaten yüklü gönderiler içinden arar)
+    // 3. Konu/GÃ¶nderi aramasÄ± (Zaten yÃ¼klÃ¼ gÃ¶nderiler iÃ§inden arar)
     const matchedPosts = allPosts.filter(p => {
         const text = trLower(p.content || p.text || "");
         return text.includes(searchQ) && !text.includes('#'+searchQ); 
     }).slice(0, 5);
     
     if(matchedPosts.length > 0) {
-        html += '<div style="padding:10px 20px; font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-top:10px;">Konular & Gönderiler</div>';
+        html += '<div style="padding:10px 20px; font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-top:10px;">Konular & GÃ¶nderiler</div>';
         matchedPosts.forEach(p => {
             let cleanText = p.content || p.text || "";
             cleanText = cleanText.replace(/<[^>]*>?/gm, '');
@@ -420,10 +420,10 @@ async function performSmartSearch() {
             
             html += `
                 <div class="suggestion-item" onclick="window.openPostDetail('${p.id}'); document.getElementById('search-suggestions').style.display='none';">
-                    <div class="suggestion-icon">📝</div>
+                    <div class="suggestion-icon">ğŸ“</div>
                     <div class="suggestion-content">
                         <div class="suggestion-title">${window.escapeHtml(cleanText)}</div>
-                        <div class="suggestion-subtitle">@${window.escapeHtml(author)} tarafından paylaşıldı</div>
+                        <div class="suggestion-subtitle">@${window.escapeHtml(author)} tarafÄ±ndan paylaÅŸÄ±ldÄ±</div>
                     </div>
                 </div>
             `;
@@ -431,7 +431,7 @@ async function performSmartSearch() {
     }
     
     if(!html) {
-        html = '<div style="padding:15px 20px; color:#64748b; font-size:14px; text-align:center;">Sonuç bulunamadı.</div>';
+        html = '<div style="padding:15px 20px; color:#64748b; font-size:14px; text-align:center;">SonuÃ§ bulunamadÄ±.</div>';
     }
     searchSuggestions.innerHTML = html;
 }
@@ -445,20 +445,20 @@ window.openPostDetail = async function(postId) {
     
     document.body.classList.add('modal-open');
     modal.style.display = 'flex';
-    container.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Yükleniyor...</div>';
+    container.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">YÃ¼kleniyor...</div>';
     
     try {
         const postRef = doc(db, "posts", postId);
         const postSnap = await getDoc(postRef);
-        if(!postSnap.exists()) { container.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Gönderi bulunamadı veya silinmiş.</div>'; return; }
+        if(!postSnap.exists()) { container.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">GÃ¶nderi bulunamadÄ± veya silinmiÅŸ.</div>'; return; }
         
         const postData = postSnap.data();
         let originalAuthor = postData.author; if(postData.isRepost) originalAuthor = postData.originalPostAuthor;
         await window.fetchMissingUsers([originalAuthor]);
         
         const authorData = allUsersData[originalAuthor] || {};
-        const vHtml = authorData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
-        const avatarImg = authorData.avatarUrl ? `<img src="${window.sanitizeUrl(authorData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+        const vHtml = authorData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">â˜‘ï¸</span>' : '';
+        const avatarImg = authorData.avatarUrl ? `<img src="${window.sanitizeUrl(authorData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `ğŸ‘¤`;
         const fullName = window.escapeHtml(authorData.fullName || originalAuthor);
         
         let mediaHtmlDetail = '';
@@ -490,11 +490,11 @@ window.openPostDetail = async function(postId) {
                 </div>
                 ${mediaHtmlDetail}
                 <div style="font-size:16px; line-height:1.6; color:#334155; margin-bottom:15px; word-wrap:break-word;">
-                    ${window.escapeHtml(cleanContent).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="#" onclick="window.closePostDetail(); window.setCategory('#$1');" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`)}
+                    ${window.escapeHtml(cleanContent).replace(/#([a-zA-Z0-9ÄŸÃ¼ÅŸÄ±Ã¶Ã§ÄÃœÅÄ°Ã–Ã‡_]+)/g, `<a href="#" onclick="window.closePostDetail(); window.setCategory('#$1');" style="color:#3b82f6; font-weight:500; text-decoration:none;">#$1</a>`)}
                 </div>
                 <div style="display:flex; gap:15px; color:#64748b; font-weight:600; padding-top:15px; border-top:1px solid #f1f5f9;">
-                    <span>❤️ ${postData.likes ? postData.likes.length : 0} Beğeni</span>
-                    <span>💬 ${postData.comments ? postData.comments.length : 0} Yorum</span>
+                    <span>â¤ï¸ ${postData.likes ? postData.likes.length : 0} BeÄŸeni</span>
+                    <span>ğŸ’¬ ${postData.comments ? postData.comments.length : 0} Yorum</span>
                 </div>
             </div>
         `;
@@ -505,4 +505,104 @@ window.closePostDetail = function() {
     const modal = document.getElementById('post-detail-modal');
     if(modal) modal.style.display = 'none';
     document.body.classList.remove('modal-open');
-};
+};// ============================================================================
+// YATAY KAYDIRMA (SCROLL) MANTIĞI
+// ============================================================================
+
+    const container = document.getElementById('category-pills-container');
+const leftBtn = document.getElementById('pill-scroll-left');
+const rightBtn = document.getElementById('pill-scroll-right');
+
+if(container) {
+    container.addEventListener('wheel', (evt) => {
+        if (evt.deltaY !== 0) {
+            evt.preventDefault();
+            container.scrollLeft += evt.deltaY;
+        }
+    }, { passive: false });
+
+    const scrollAmount = 200;
+    
+    const updateButtons = () => {
+        if(!leftBtn || !rightBtn) return;
+        if (container.scrollLeft > 0) {
+            leftBtn.style.display = 'flex';
+        } else {
+            leftBtn.style.display = 'none';
+        }
+        if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 5) {
+            rightBtn.style.display = 'none';
+        } else {
+            rightBtn.style.display = 'flex';
+        }
+    };
+
+    if(leftBtn) {
+        leftBtn.addEventListener('click', () => {
+            container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        });
+    }
+    
+    if(rightBtn) {
+        rightBtn.addEventListener('click', () => {
+            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        });
+    }
+
+    container.addEventListener('scroll', updateButtons);
+    window.addEventListener('resize', updateButtons);
+    
+    const observer = new MutationObserver(() => updateButtons());
+    observer.observe(container, { childList: true, subtree: true });
+    
+    setTimeout(updateButtons, 500);
+
+    let isDown = false;
+    let isDragging = false;
+    let startX;
+    let scrollLeft;
+
+    container.addEventListener('mousedown', (e) => {
+        isDown = true;
+        isDragging = false;
+        startX = e.pageX - container.offsetLeft;
+        scrollLeft = container.scrollLeft;
+    });
+
+    container.addEventListener('mouseleave', () => {
+        isDown = false;
+        if(isDragging) container.classList.remove('dragging');
+        isDragging = false;
+    });
+
+    container.addEventListener('mouseup', () => {
+        isDown = false;
+        if(isDragging) container.classList.remove('dragging');
+        setTimeout(() => isDragging = false, 10);
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - container.offsetLeft;
+        const walk = (x - startX) * 2; 
+        
+        if (Math.abs(walk) > 5) {
+            isDragging = true;
+            container.classList.add('dragging');
+        }
+        
+        if (isDragging) {
+            container.scrollLeft = scrollLeft - walk;
+        }
+    });
+
+    // Tıklamayı isDragging durumuna göre engelle
+    container.addEventListener('click', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, { capture: true });
+}
+
