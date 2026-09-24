@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
 
     // Mesajlar sayfası (chat.html) için özel scroll container
-    const inboxList = document.getElementById('inbox-list');
+    const inboxList = document.querySelector('.inbox-list');
     if (inboxList) {
         inboxList.addEventListener('scroll', () => {
             handleNavScroll(inboxList.scrollTop);

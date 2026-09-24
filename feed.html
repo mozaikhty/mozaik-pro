@@ -11,7 +11,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=18">
+    <link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
     <script>
@@ -40,7 +40,7 @@
             <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Koleksiyonum</a>
             <div class="sidebar-divider"></div>
             <div class="sidebar-bottom-menu">
-                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">âš™ï¸ Ayarlar ve Görünüm</a>
+                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
                 <a href="#" class="sidebar-bottom-item" style="color: #ef4444; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
             </div>
         </div>
@@ -70,13 +70,13 @@
                 <div class="input-form">
                     <textarea id="post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..."></textarea>
                     <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">✓ Fotoğraf Eklendi</div>
-                    <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">ğŸ“ <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
+                    <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">📍 <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
                     <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
                     
                     <div class="input-actions">
                         <div class="action-icons">
-                            <label for="image-input" class="icon-btn" title="Medya">ğŸ–¼ï¸</label>
-                            <div class="icon-btn" title="Konum" onclick="window.addLocation(false)">ğŸ“</div>
+                            <label for="image-input" class="icon-btn" title="Medya">🖼️</label>
+                            <div class="icon-btn" title="Konum" onclick="window.addLocation(false)">📍</div>
                         </div>
                         <div style="display:flex; align-items:center;">
                             <span class="char-counter" id="inline-char-count" style="margin-right: 15px;">280</span>
@@ -94,7 +94,7 @@
 
         <aside class="sidebar-right">
             <div class="search-box-right">
-                <span>ğŸ”</span>
+                    <span>🔍</span>
                 <input type="text" placeholder="Arama yapın..." onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
             </div>
 
@@ -143,24 +143,24 @@
         
         <div class="story-footer" id="story-footer">
             <div id="story-quick-reactions" style="display:flex; justify-content:space-evenly; width:100%; margin-bottom: 5px;">
-                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😂')">😂</span>
-                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('ğŸ˜')">ğŸ˜</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😍')">😍</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('👏')">👏</span>
                 <span class="quick-reaction-btn" onclick="window.sendQuickReaction('🔥')">🔥</span>
                 <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😢')">😢</span>
-                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('ğŸ‘')">ğŸ‘</span>
+            <span class="quick-reaction-btn" onclick="window.sendQuickReaction('👏')">👏</span>
                 <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😮')">😮</span>
             </div>
             <div class="story-footer-row">
                 <input type="text" id="story-reply-input" class="story-reply-input" placeholder="Mesaj gönder..." onfocus="window.pauseStory()" onblur="window.resumeStory()" onkeypress="if(event.key === 'Enter') window.sendStoryReply()">
-                <button class="story-action-btn" onclick="window.sendStoryReply()" title="Gönder" style="font-size: 20px;">âœˆï¸</button>
-                <button class="story-action-btn" id="story-like-btn" onclick="window.likeStory()" title="Hikayeyi Beğen">ğŸ¤</button>
+                <button class="story-action-btn" onclick="window.sendStoryReply()" title="Gönder" style="font-size: 20px;">✈️</button>
+                <button class="story-action-btn" id="story-like-btn" onclick="window.likeStory()" title="Hikayeyi Beğen">🤍</button>
                 <button class="story-action-btn" onclick="window.openStoryShareModal()" title="Hikayeyi Paylaş">📤</button>
             </div>
         </div>
         
         <div class="story-footer-owner" id="story-footer-owner" style="display:none;">
             <button class="story-view-count-btn" onclick="window.openStoryDetailsModal()" title="Detayları İncele">
-                ğŸ‘ï¸ <span id="story-view-count">0</span> Görüntüleyenler
+                👁️ <span id="story-view-count">0</span> Görüntüleyenler
             </button>
         </div>
     </div>
@@ -177,7 +177,7 @@
             </div>
             <div id="story-details-list" style="max-height:300px; overflow-y:auto; padding: 10px;"></div>
             <div style="padding: 15px; border-top: 1px solid #e2e8f0; text-align: center;">
-                <button onclick="window.deleteCurrentStory()" style="background:#ef4444; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">ğŸ—‘ï¸ Hikayeyi Sil</button>
+                <button onclick="window.deleteCurrentStory()" style="background:#ef4444; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">🗑️ Hikayeyi Sil</button>
             </div>
         </div>
     </div>
@@ -223,10 +223,10 @@
 
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
                     <input type="file" id="story-image-input" accept="image/*,video/mp4,video/webm" style="display:none;" onchange="window.loadEditorImage(event)">
-                    <label for="story-image-input" style="flex:1; text-align:center; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;">ğŸ“ Seç</label>
+                    <label for="story-image-input" style="flex:1; text-align:center; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;">🖼️ Seç</label>
                     <button id="story-camera-btn" style="flex:1; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;" onclick="window.openStoryCamera()">📸 Çek</button>
                     <select id="story-privacy-select" style="flex:2; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; font-size:13px; outline:none;">
-                        <option value="public">ğŸŒ Herkes</option>
+                        <option value="public">🌍 Herkes</option>
                         <option value="followers">👥 Takipçiler</option>
                         <option value="close_friends">💚 Yakın Arkadaşlar</option>
                     </select>
@@ -259,7 +259,7 @@
             <video id="local-video" class="local-video" autoplay playsinline muted></video>
         </div>
         <div class="call-controls">
-            <button class="call-action-btn btn-accept" id="accept-call-btn">ğŸ“</button>
+            <button class="call-action-btn btn-accept" id="accept-call-btn">📞</button>
             <button class="call-action-btn btn-end" id="end-call-btn">🎥</button>
         </div>
     </div>
@@ -276,12 +276,12 @@
                     <textarea id="modal-post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..." style="width:100%; border:none; font-size:18px; outline:none; resize:none; min-height:120px; font-family:inherit; color:#0f172a; background:transparent;"></textarea>
                     <input type="file" id="modal-image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
                     <div id="modal-image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">✓ Fotoğraf Eklendi</div>
-                    <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">ğŸ“ <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">✖</span></div>
+                    <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">📍 <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">✖</span></div>
                     
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px;">
                         <div class="action-icons">
-                            <label for="modal-image-input" class="icon-btn" title="Medya">ğŸ–¼ï¸</label>
-                            <label onclick="window.addLocation(true)" class="icon-btn" title="Konum">ğŸ“</label>
+                            <label for="modal-image-input" class="icon-btn" title="Medya">🖼️</label>
+                            <label onclick="window.addLocation(true)" class="icon-btn" title="Konum">📍</label>
                         </div>
                         <div class="char-counter" id="modal-char-count">280</div>
                     </div>
@@ -352,6 +352,6 @@
     <script type="module" src="feed.js?v=7"></script>
     <script type="module" src="webrtc.js?v=7"></script>
     <script type="module" src="story.js?v=7"></script>
-    <script src="ui.js?v=18"></script>
+    <script src="ui.js?v=19"></script>
 </body>
 </html>
