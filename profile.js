@@ -117,7 +117,7 @@ window.toggleLike = async function(postId, isLiked, postAuthor, event) {
     if (window.isActionLocked && window.isActionLocked('like_' + postId)) return; 
     
     if (event && event.type === 'dblclick' && !isLiked) {
-        const heart = document.getElementById('heart-' + postId);
+        const heart = event.currentTarget.parentNode.querySelector('.dblclick-heart');
         if(heart) {
             heart.style.transform = 'translate(-50%, -50%) scale(1.5)';
             setTimeout(() => { heart.style.transform = 'translate(-50%, -50%) scale(0)'; }, 800);
