@@ -134,24 +134,4 @@ document.getElementById('register-btn').onclick = async function(e) {
         btn.disabled = false; btn.innerText = "Kayıt Ol ve Katıl"; 
     }
 };
-
-const forgotModal = document.getElementById('forgot-modal');
-document.getElementById('open-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'flex'; });
-document.getElementById('close-forgot-modal').addEventListener('click', () => { forgotModal.style.display = 'none'; });
-
-document.getElementById('send-reset-btn').addEventListener('click', async () => {
-    const email = document.getElementById('forgot-email').value.trim();
-    if(!email) return alert("Lütfen e-posta adresinizi girin.");
-    const btn = document.getElementById('send-reset-btn'); btn.disabled = true; btn.innerText = "Gönderiliyor...";
-    try {
-        await sendPasswordResetEmail(auth, email);
-        forgotModal.style.display = 'none';
-        showSuccess("Eğer bu e-posta sistemde kayıtlıysa, şifre sıfırlama linki gönderilmiştir.");
-    } catch(error) { 
-        console.error("Şifre sıfırlama hatası:", error.code || "Bilinmeyen hata");
-        // Güvenlik: Hangi e-postanın kayıtlı olduğunu ifşa etmemek için aynı mesajı göster
-        forgotModal.style.display = 'none';
-        showSuccess("Eğer bu e-posta sistemde kayıtlıysa, şifre sıfırlama linki gönderilmiştir.");
-    } 
-    finally { btn.disabled = false; btn.innerText = "Sıfırlama Linki Gönder"; document.getElementById('forgot-email').value = ''; }
-});
+
