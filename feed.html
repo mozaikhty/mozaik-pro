@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -11,37 +11,37 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
     <script>
         try {
             if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
-        } catch(e) { console.warn("Gizli mod veya eriÅŸim engeli nedeniyle tema okunamadÄ±."); }
+        } catch(e) { console.warn("Gizli mod veya erişim engeli nedeniyle tema okunamadı."); }
     </script>
     <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header-mobile">
             <div class="sidebar-top-icons">
-                <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">ğŸ‘¤</div>
+                <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
                 <div class="sidebar-extra-icons">
-                    <div class="s-icon-btn" title="BaÅŸka hesap ekle">+</div>
+                    <div class="s-icon-btn" title="Başka hesap ekle">+</div>
                 </div>
             </div>
-            <div class="sidebar-name-mobile" id="sidebar-name-mobile">YÃ¼kleniyor...</div>
+            <div class="sidebar-name-mobile" id="sidebar-name-mobile">Yükleniyor...</div>
             <div class="sidebar-handle-mobile" id="sidebar-handle-mobile">@bekleniyor</div>
             <div class="sidebar-stats-mobile">
-                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> AÄŸÄ±m</div>
-                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> TakipÃ§iler</div>
+                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Ağım</div>
+                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçiler</div>
             </div>
         </div>
         <div class="sidebar-menu-mobile">
-            <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">ğŸ‘¤ Profil</a>
-            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">ğŸ”– Koleksiyonum</a>
+            <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
+            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Koleksiyonum</a>
             <div class="sidebar-divider"></div>
             <div class="sidebar-bottom-menu">
-                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">âš™ï¸ Ayarlar ve GÃ¶rÃ¼nÃ¼m</a>
-                <a href="#" class="sidebar-bottom-item" style="color: #ef4444; margin-top: 10px;" onclick="window.logoutUser()">ğŸšª Ã‡Ä±kÄ±ÅŸ Yap</a>
+                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">âš™ï¸ Ayarlar ve Görünüm</a>
+                <a href="#" class="sidebar-bottom-item" style="color: #ef4444; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
             </div>
         </div>
     </div>
@@ -53,24 +53,24 @@
         <main class="feed-main">
             <div class="header-sticky">
                 <div class="mobile-header-top">
-                    <div id="mobile-avatar-header" style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">ğŸ‘¤</div>
+                    <div id="mobile-avatar-header" style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">👤</div>
                     <div class="mobile-logo-text">Mozaik.</div>
                     <div style="width:36px;"></div>
                 </div>
                 <div class="feed-tabs">
-                    <div class="feed-tab active" id="tab-discover" onclick="window.switchFeedTab('discover')">Ã–ne Ã‡Ä±kanlar</div>
-                    <div class="feed-tab" id="tab-following" onclick="window.switchFeedTab('following')">AÄŸÄ±m</div>
+                    <div class="feed-tab active" id="tab-discover" onclick="window.switchFeedTab('discover')">Öne Çıkanlar</div>
+                    <div class="feed-tab" id="tab-following" onclick="window.switchFeedTab('following')">Ağım</div>
                 </div>
             </div>
 
             <div class="stories-container" id="stories-container"></div>
 
             <div class="post-input-box" id="desktop-post-box">
-                <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">ğŸ‘¤</div>
+                <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
                 <div class="input-form">
-                    <textarea id="post-text" maxlength="280" placeholder="DÃ¼ÅŸÃ¼ncelerinizi aktarÄ±n..."></textarea>
-                    <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">âœ“ FotoÄŸraf Eklendi</div>
-                    <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">ğŸ“ <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">âœ–</span></div>
+                    <textarea id="post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..."></textarea>
+                    <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">✓ Fotoğraf Eklendi</div>
+                    <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">ğŸ“ <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
                     <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
                     
                     <div class="input-actions">
@@ -80,14 +80,14 @@
                         </div>
                         <div style="display:flex; align-items:center;">
                             <span class="char-counter" id="inline-char-count" style="margin-right: 15px;">280</span>
-                            <button class="share-btn" id="share-btn">YayÄ±nla</button>
+                            <button class="share-btn" id="share-btn">Yayınla</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="feed-container">
-                <div style="padding: 40px; text-align: center; color: #64748b;">Ä°Ã§erikler yÃ¼kleniyor...</div>
+                <div style="padding: 40px; text-align: center; color: #64748b;">İçerikler yükleniyor...</div>
             </div> 
             
         </main>
@@ -95,18 +95,18 @@
         <aside class="sidebar-right">
             <div class="search-box-right">
                 <span>ğŸ”</span>
-                <input type="text" placeholder="Arama yapÄ±n..." onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
+                <input type="text" placeholder="Arama yapın..." onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
             </div>
 
             <div class="who-to-follow">
-                <div class="wtf-title">GÃ¼ndem ve Ã–neriler</div>
+                <div class="wtf-title">Gündem ve Öneriler</div>
                 <div id="who-to-follow-list">
-                    <div style="font-size:14px; color:#64748b;">Ã–neriler yÃ¼kleniyor...</div>
+                    <div style="font-size:14px; color:#64748b;">Öneriler yükleniyor...</div>
                 </div>
             </div>
             
             <div style="font-size: 12px; color: #94a3b8; margin-top: 20px; text-align:center;">
-                Â© 2026 Mozaik Platform
+                © 2026 Mozaik Platform
             </div>
         </aside>
 
@@ -122,13 +122,13 @@
             <div class="story-user-info">
                 <div style="width:40px; height:40px; border-radius:50%; overflow:hidden; border:2px solid white; display:flex; justify-content:center; align-items:center; background:#e2e8f0; font-size:20px;" id="story-viewer-avatar-container"></div>
                 <div>
-                    <div style="font-weight:700; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,0.5);" id="story-viewer-name">YÃ¼kleniyor</div>
+                    <div style="font-weight:700; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,0.5);" id="story-viewer-name">Yükleniyor</div>
                     <div style="font-size:12px; opacity:0.8; text-shadow:0 1px 2px rgba(0,0,0,0.5);" id="story-viewer-time"></div>
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap: 20px;">
-                <button id="story-mute-btn" title="Sesi AÃ§/Kapat" style="background:none; border:none; color:white; font-size:20px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5);" onclick="window.toggleStoryMute()">ğŸ”‡</button>
-                <button title="Yeni Hikaye PaylaÅŸ" style="background:none; border:none; color:white; font-size:28px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5);" onclick="window.openAddStoryModal()">+</button>
+                <button id="story-mute-btn" title="Sesi Aç/Kapat" style="background:none; border:none; color:white; font-size:20px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5);" onclick="window.toggleStoryMute()">🔇</button>
+                <button title="Yeni Hikaye Paylaş" style="background:none; border:none; color:white; font-size:28px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5);" onclick="window.openAddStoryModal()">+</button>
                 <button title="Kapat" style="background:none; border:none; color:white; font-size:36px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,0.5); padding-bottom:5px;" onclick="window.closeStoryViewer()">&times;</button>
             </div>
         </div>
@@ -143,24 +143,24 @@
         
         <div class="story-footer" id="story-footer">
             <div id="story-quick-reactions" style="display:flex; justify-content:space-evenly; width:100%; margin-bottom: 5px;">
-                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('ğŸ˜‚')">ğŸ˜‚</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😂')">😂</span>
                 <span class="quick-reaction-btn" onclick="window.sendQuickReaction('ğŸ˜')">ğŸ˜</span>
-                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('ğŸ”¥')">ğŸ”¥</span>
-                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('ğŸ˜¢')">ğŸ˜¢</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('🔥')">🔥</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😢')">😢</span>
                 <span class="quick-reaction-btn" onclick="window.sendQuickReaction('ğŸ‘')">ğŸ‘</span>
-                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('ğŸ˜®')">ğŸ˜®</span>
+                <span class="quick-reaction-btn" onclick="window.sendQuickReaction('😮')">😮</span>
             </div>
             <div class="story-footer-row">
-                <input type="text" id="story-reply-input" class="story-reply-input" placeholder="Mesaj gÃ¶nder..." onfocus="window.pauseStory()" onblur="window.resumeStory()" onkeypress="if(event.key === 'Enter') window.sendStoryReply()">
-                <button class="story-action-btn" onclick="window.sendStoryReply()" title="GÃ¶nder" style="font-size: 20px;">âœˆï¸</button>
-                <button class="story-action-btn" id="story-like-btn" onclick="window.likeStory()" title="Hikayeyi BeÄŸen">ğŸ¤</button>
-                <button class="story-action-btn" onclick="window.openStoryShareModal()" title="Hikayeyi PaylaÅŸ">ğŸ“¤</button>
+                <input type="text" id="story-reply-input" class="story-reply-input" placeholder="Mesaj gönder..." onfocus="window.pauseStory()" onblur="window.resumeStory()" onkeypress="if(event.key === 'Enter') window.sendStoryReply()">
+                <button class="story-action-btn" onclick="window.sendStoryReply()" title="Gönder" style="font-size: 20px;">âœˆï¸</button>
+                <button class="story-action-btn" id="story-like-btn" onclick="window.likeStory()" title="Hikayeyi Beğen">ğŸ¤</button>
+                <button class="story-action-btn" onclick="window.openStoryShareModal()" title="Hikayeyi Paylaş">📤</button>
             </div>
         </div>
         
         <div class="story-footer-owner" id="story-footer-owner" style="display:none;">
-            <button class="story-view-count-btn" onclick="window.openStoryDetailsModal()" title="DetaylarÄ± Ä°ncele">
-                ğŸ‘ï¸ <span id="story-view-count">0</span> GÃ¶rÃ¼ntÃ¼leyenler
+            <button class="story-view-count-btn" onclick="window.openStoryDetailsModal()" title="Detayları İncele">
+                ğŸ‘ï¸ <span id="story-view-count">0</span> Görüntüleyenler
             </button>
         </div>
     </div>
@@ -168,12 +168,12 @@
     <div class="modal-overlay" id="story-details-modal" style="z-index: 5020;">
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
-                <h3 style="margin:0; font-size:16px;">Hikaye DetaylarÄ±</h3>
+                <h3 style="margin:0; font-size:16px;">Hikaye Detayları</h3>
                 <button class="close-btn" onclick="window.closeStoryDetailsModal()">&times;</button>
             </div>
             <div class="feed-tabs" style="margin:0; box-shadow:none; border-radius:0; border-left:none; border-right:none;">
-                <div class="feed-tab active" id="tab-story-views" onclick="window.switchStoryDetailsTab('views')">GÃ¶rÃ¼ntÃ¼leyenler</div>
-                <div class="feed-tab" id="tab-story-likes" onclick="window.switchStoryDetailsTab('likes')">BeÄŸenenler</div>
+                <div class="feed-tab active" id="tab-story-views" onclick="window.switchStoryDetailsTab('views')">Görüntüleyenler</div>
+                <div class="feed-tab" id="tab-story-likes" onclick="window.switchStoryDetailsTab('likes')">Beğenenler</div>
             </div>
             <div id="story-details-list" style="max-height:300px; overflow-y:auto; padding: 10px;"></div>
             <div style="padding: 15px; border-top: 1px solid #e2e8f0; text-align: center;">
@@ -185,7 +185,7 @@
     <div class="modal-overlay" id="story-share-modal" style="z-index: 5020;">
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
-                <h3 style="margin:0; font-size:16px;">Hikayeyi Ä°let</h3>
+                <h3 style="margin:0; font-size:16px;">Hikayeyi İlet</h3>
                 <button class="close-btn" onclick="window.closeStoryShareModal()">&times;</button>
             </div>
             <div id="story-share-list" style="max-height:300px; overflow-y:auto; padding: 10px;"></div>
@@ -195,7 +195,7 @@
     <div class="modal-overlay" id="add-story-modal" style="z-index: 5020;">
         <div class="modal-content" style="max-width: 400px; width:90%; padding:15px;">
             <div class="modal-header" style="padding-bottom:10px; border-bottom:1px solid #f1f5f9; margin-bottom:15px;">
-                <h3 style="margin:0; font-size:16px;">Durumunu PaylaÅŸ</h3>
+                <h3 style="margin:0; font-size:16px;">Durumunu Paylaş</h3>
                 <button class="close-btn" onclick="document.getElementById('add-story-modal').style.display='none'">&times;</button>
             </div>
             
@@ -206,7 +206,7 @@
             </div>
 
             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:15px;">
-                <textarea id="story-text-input" style="width:100%; border:1px solid #cbd5e1; padding:10px; border-radius:8px; resize:none; font-family:inherit; outline:none; font-size:15px;" placeholder="Hikayene bir ÅŸeyler yaz... SÃ¼rÃ¼kleyebilirsin." oninput="window.updateEditorText(this.value)"></textarea>
+                <textarea id="story-text-input" style="width:100%; border:1px solid #cbd5e1; padding:10px; border-radius:8px; resize:none; font-family:inherit; outline:none; font-size:15px;" placeholder="Hikayene bir şeyler yaz... Sürükleyebilirsin." oninput="window.updateEditorText(this.value)"></textarea>
                 
                 <div style="display:flex; justify-content:space-between; align-items:center; gap: 5px;">
                     <button id="story-text-bg-btn" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:5px 10px; border-radius:6px; cursor:pointer;" title="Arka Plan" onclick="window.toggleTextBackground()">A</button>
@@ -223,12 +223,12 @@
 
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
                     <input type="file" id="story-image-input" accept="image/*,video/mp4,video/webm" style="display:none;" onchange="window.loadEditorImage(event)">
-                    <label for="story-image-input" style="flex:1; text-align:center; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;">ğŸ“ SeÃ§</label>
-                    <button id="story-camera-btn" style="flex:1; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;" onclick="window.openStoryCamera()">ğŸ“¸ Ã‡ek</button>
+                    <label for="story-image-input" style="flex:1; text-align:center; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;">ğŸ“ Seç</label>
+                    <button id="story-camera-btn" style="flex:1; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; color:#334155;" onclick="window.openStoryCamera()">📸 Çek</button>
                     <select id="story-privacy-select" style="flex:2; background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 5px; border-radius:8px; font-weight:600; font-size:13px; outline:none;">
                         <option value="public">ğŸŒ Herkes</option>
-                        <option value="followers">ğŸ‘¥ TakipÃ§iler</option>
-                        <option value="close_friends">ğŸ’š YakÄ±n ArkadaÅŸlar</option>
+                        <option value="followers">👥 Takipçiler</option>
+                        <option value="close_friends">💚 Yakın Arkadaşlar</option>
                     </select>
                 </div>
                 
@@ -239,28 +239,28 @@
                 </div>
 
                 <div class="slider-group">
-                    <label>Medya BÃ¼yÃ¼klÃ¼ÄŸÃ¼</label>
+                    <label>Medya Büyüklüğü</label>
                     <input type="range" id="img-scale-slider" min="0.5" max="3" step="0.1" value="1" disabled oninput="window.updateScale('image', this.value)">
                 </div>
                 <div class="slider-group">
-                    <label>YazÄ± BÃ¼yÃ¼klÃ¼ÄŸÃ¼</label>
+                    <label>Yazı Büyüklüğü</label>
                     <input type="range" id="text-scale-slider" min="0.5" max="3" step="0.1" value="1" disabled oninput="window.updateScale('text', this.value)">
                 </div>
             </div>
 
-            <button id="submit-story-btn" style="width:100%; background:#2c3e50; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:15px; transition:0.2s;" onmouseover="this.style.background='#1a252f'" onmouseout="this.style.background='#2c3e50'">Hikayemi YayÄ±nla</button>
+            <button id="submit-story-btn" style="width:100%; background:#2c3e50; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:15px; transition:0.2s;" onmouseover="this.style.background='#1a252f'" onmouseout="this.style.background='#2c3e50'">Hikayemi Yayınla</button>
         </div>
     </div>
 
     <div class="call-overlay" id="call-overlay">
-        <h2 class="call-status-text" id="call-status-text">AranÄ±yor...</h2>
+        <h2 class="call-status-text" id="call-status-text">Aranıyor...</h2>
         <div class="video-container" id="video-container">
             <video id="remote-video" class="remote-video" autoplay playsinline></video>
             <video id="local-video" class="local-video" autoplay playsinline muted></video>
         </div>
         <div class="call-controls">
             <button class="call-action-btn btn-accept" id="accept-call-btn">ğŸ“</button>
-            <button class="call-action-btn btn-end" id="end-call-btn">ğŸ“µ</button>
+            <button class="call-action-btn btn-end" id="end-call-btn">🎥</button>
         </div>
     </div>
 
@@ -268,15 +268,15 @@
         <div class="modal-content" style="max-width: 600px; width:90%;">
             <div class="modal-header" style="border-bottom:none; margin-bottom:0;">
                 <button class="close-btn" onclick="window.closeMainPostModal()">&times;</button>
-                <button class="share-btn" id="modal-share-btn" style="padding: 8px 20px;">YayÄ±nla</button>
+                <button class="share-btn" id="modal-share-btn" style="padding: 8px 20px;">Yayınla</button>
             </div>
             <div class="input-form" style="display:flex; gap:15px; margin-top:10px;">
-                <div class="input-avatar" id="modal-avatar">ğŸ‘¤</div>
+                <div class="input-avatar" id="modal-avatar">👤</div>
                 <div style="flex:1;">
-                    <textarea id="modal-post-text" maxlength="280" placeholder="DÃ¼ÅŸÃ¼ncelerinizi aktarÄ±n..." style="width:100%; border:none; font-size:18px; outline:none; resize:none; min-height:120px; font-family:inherit; color:#0f172a; background:transparent;"></textarea>
+                    <textarea id="modal-post-text" maxlength="280" placeholder="Düşüncelerinizi aktarın..." style="width:100%; border:none; font-size:18px; outline:none; resize:none; min-height:120px; font-family:inherit; color:#0f172a; background:transparent;"></textarea>
                     <input type="file" id="modal-image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
-                    <div id="modal-image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">âœ“ FotoÄŸraf Eklendi</div>
-                    <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">ğŸ“ <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">âœ–</span></div>
+                    <div id="modal-image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">✓ Fotoğraf Eklendi</div>
+                    <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">ğŸ“ <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">✖</span></div>
                     
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px;">
                         <div class="action-icons">
@@ -293,7 +293,7 @@
     <div class="modal-overlay" id="post-detail-modal">
         <div class="modal-content" id="post-detail-content-box">
             <div class="modal-header">
-                <h3 style="margin:0; font-size:18px; color:#0f172a;">GÃ¶nderi DetayÄ±</h3>
+                <h3 style="margin:0; font-size:18px; color:#0f172a;">Gönderi Detayı</h3>
                 <button class="close-btn" onclick="window.closePostDetail()">&times;</button>
             </div>
             <div id="post-detail-container" style="padding-bottom: 20px;"></div>
@@ -303,7 +303,7 @@
     <div class="modal-overlay" id="share-dm-modal">
         <div class="modal-content" style="padding:0;">
             <div class="modal-header" style="padding: 20px; margin:0;">
-                <h3 style="margin:0; font-size:16px;">Direkt Mesaj ile Ä°let</h3>
+                <h3 style="margin:0; font-size:16px;">Direkt Mesaj ile İlet</h3>
                 <button class="close-btn" onclick="document.getElementById('share-dm-modal').style.display='none'">&times;</button>
             </div>
             <div id="share-users-list" style="max-height:300px; overflow-y:auto; padding: 10px;"></div>
@@ -323,13 +323,13 @@
     <div class="modal-overlay" id="edit-post-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin:0; font-size:16px;">Ä°Ã§eriÄŸi DÃ¼zenle</h3>
+                <h3 style="margin:0; font-size:16px;">İçeriği Düzenle</h3>
                 <button class="close-btn" onclick="document.getElementById('edit-post-modal').style.display='none'">&times;</button>
             </div>
             <textarea id="edit-post-input" style="width:100%; height:120px; padding:15px; box-sizing:border-box; border-radius:8px; border:1px solid #cbd5e1; resize:none; font-family:inherit; outline:none; font-size:15px; color:#0f172a; background:transparent;"></textarea>
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-                <button style="padding:8px 20px; border:none; background:#f1f5f9; border-radius:6px; font-weight:600; cursor:pointer; color:#334155;" onclick="document.getElementById('edit-post-modal').style.display='none'">Ä°ptal</button>
-                <button id="save-edited-post-btn" style="padding:8px 20px; border:none; background:#2c3e50; color:white; border-radius:6px; font-weight:600; cursor:pointer;">GÃ¼ncelle</button>
+                <button style="padding:8px 20px; border:none; background:#f1f5f9; border-radius:6px; font-weight:600; cursor:pointer; color:#334155;" onclick="document.getElementById('edit-post-modal').style.display='none'">İptal</button>
+                <button id="save-edited-post-btn" style="padding:8px 20px; border:none; background:#2c3e50; color:white; border-radius:6px; font-weight:600; cursor:pointer;">Güncelle</button>
             </div>
         </div>
     </div>
@@ -341,9 +341,9 @@
                 <button class="close-btn" onclick="document.getElementById('support-modal').style.display='none'">&times;</button>
             </div>
             <div style="padding: 20px;">
-                <p style="font-size: 14px; color: #64748b; margin-bottom: 15px;">KarÅŸÄ±laÅŸtÄ±ÄŸÄ±nÄ±z sorunu veya Ã¶nerinizi detaylÄ±ca yazÄ±n. Ekibimiz en kÄ±sa sÃ¼rede inceleyecektir.</p>
-                <textarea id="support-message-input" class="modal-input" style="height:120px; resize:none; width:100%; border:1px solid #cbd5e1; padding:10px; border-radius:8px; font-family:inherit;" placeholder="MesajÄ±nÄ±z..."></textarea>
-                <button id="send-support-btn" class="desktop-post-btn" style="width:100%; margin-top:10px;" onclick="window.sendSupportMessage()">GÃ¶nder</button>
+                <p style="font-size: 14px; color: #64748b; margin-bottom: 15px;">Karşılaştığınız sorunu veya önerinizi detaylıca yazın. Ekibimiz en kısa sürede inceleyecektir.</p>
+                <textarea id="support-message-input" class="modal-input" style="height:120px; resize:none; width:100%; border:1px solid #cbd5e1; padding:10px; border-radius:8px; font-family:inherit;" placeholder="Mesajınız..."></textarea>
+                <button id="send-support-btn" class="desktop-post-btn" style="width:100%; margin-top:10px;" onclick="window.sendSupportMessage()">Gönder</button>
             </div>
         </div>
     </div>
@@ -352,6 +352,6 @@
     <script type="module" src="feed.js?v=7"></script>
     <script type="module" src="webrtc.js?v=7"></script>
     <script type="module" src="story.js?v=7"></script>
-    <script src="ui.js?v=17"></script>
+    <script src="ui.js?v=18"></script>
 </body>
 </html>
