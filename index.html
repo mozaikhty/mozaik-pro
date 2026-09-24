@@ -3,118 +3,515 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mozaik - Giriş Yap</title>
-<link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2c3e50">
+    <title>Mozaik - Dünyana Bağlan</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .login-box { background: white; padding: 40px 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 380px; text-align: center; max-height: 90vh; overflow-y: auto; }
-        .logo { font-size: 32px; font-weight: bold; color: #2980b9; margin-bottom: 10px; letter-spacing: 2px; }
-        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
-        input, select { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; background: #f9f9f9; font-family: inherit; }
-        input:focus, select:focus { border-color: #2980b9; background: white; }
-        .input-group { text-align: left; margin-bottom: 5px; }
-        .input-label { font-size: 12px; font-weight: bold; color: #555; margin-bottom: 5px; display: block; margin-left: 5px; }
-        button { width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
-        button:hover { background: #333; }
-        button:disabled { background: #888; cursor: not-allowed; }
-        .toggle-link { margin-top: 20px; font-size: 13px; color: #666; padding-bottom: 20px; }
-        .toggle-link a { color: #2980b9; text-decoration: none; font-weight: bold; cursor: pointer; }
-        .toggle-link a:hover { text-decoration: underline; }
-        .forgot-pass { margin-top: 15px; font-size: 12px; }
-        .forgot-pass a { color: #e74c3c; text-decoration: none; font-weight: bold; cursor: pointer; }
-        .error-msg { color: #e74c3c; font-size: 13px; margin-bottom: 15px; display: none; font-weight: bold; }
-        .success-msg { color: #2ecc71; font-size: 13px; margin-bottom: 15px; display: none; font-weight: bold; }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; width: auto; padding: 0; margin: 0; }
-        .close-btn:hover { background: none; color: #000; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --error: #ef4444;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        /* İKİ SÜTUNLU YAPI */
+        .auth-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* SOL SÜTUN - KAHRAMAN ALANI */
+        .auth-hero {
+            flex: 1.2;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 60%);
+            animation: pulse 15s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        .hero-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            margin-bottom: 40px;
+            z-index: 1;
+            border: 4px solid rgba(255,255,255,0.1);
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 0 0 20px 0;
+            letter-spacing: -1.5px;
+            z-index: 1;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            max-width: 420px;
+            line-height: 1.6;
+            z-index: 1;
+        }
+
+        /* SAĞ SÜTUN - FORM ALANI */
+        .auth-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            background: var(--card-bg);
+            max-width: 650px;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: -20px 0 50px rgba(0,0,0,0.05);
+            z-index: 2;
+            overflow-y: auto;
+        }
+
+        .form-wrapper {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .mobile-logo {
+            display: none;
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            margin: 0 auto 30px auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .form-header {
+            margin-bottom: 35px;
+            text-align: left;
+        }
+
+        .form-header h2 {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .form-header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 16px;
+        }
+
+        /* FORM ELEMANLARI */
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+        .input-row .input-group {
+            flex: 1;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            background: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+        }
+
+        input::placeholder {
+            color: #94a3b8;
+        }
+
+        select {
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+        }
+
+        /* Şifre Göster/Gizle Butonu */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: var(--text-main);
+        }
+
+        /* BUTONLAR */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--text-main);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+
+        .submit-btn:hover {
+            background: #1e293b;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        .toggle-link a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .toggle-link a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .forgot-pass {
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .forgot-pass a {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .forgot-pass a:hover {
+            color: var(--text-main);
+        }
+
+        /* MESAJLAR */
+        .error-msg, .success-msg {
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .error-msg {
+            background: #fef2f2;
+            color: var(--error);
+            border: 1px solid #fca5a5;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+        }
+
+        .success-msg {
+            background: #f0fdf4;
+            color: var(--success);
+            border: 1px solid #86efac;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+        }
+
+        /* MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 35px; border-radius: 24px; width: 90%; max-width: 420px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); animation: modalIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close-btn { background: #f1f5f9; border: none; font-size: 20px; cursor: pointer; color: #64748b; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .close-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+        /* MOBİL UYUM */
+        @media (max-width: 900px) {
+            .auth-container { flex-direction: column; }
+            .auth-hero { display: none; } /* Mobilde hero alanını gizle, sadece form kalsın */
+            .auth-content { max-width: 100%; padding: 40px 20px; border-radius: 0; box-shadow: none; justify-content: flex-start; }
+            .mobile-logo { display: block; }
+            .form-header { text-align: center; }
+            .form-wrapper { margin-top: 20px; }
+        }
+        
+        @media (max-width: 480px) {
+            .input-row { flex-direction: column; gap: 0; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="login-box">
-        <div class="logo">MOZAİK</div>
-        <div class="subtitle" id="form-subtitle">Dünyana bağlan.</div>
-
-        <div id="error-message" class="error-msg"></div>
-        <div id="success-message" class="success-msg"></div>
-
-        <div id="login-section">
-            <input type="text" id="login-email" placeholder="Kullanıcı Adı veya E-posta" required>
-            <input type="password" id="login-pass" placeholder="Şifre" required>
-            <button id="login-btn">Giriş Yap</button>
-            <div class="forgot-pass">Şifreni mi unuttun? <a id="open-forgot-modal">Sıfırla</a></div>
-            <div class="toggle-link">Hesabın yok mu? <a id="show-register">Kayıt Ol</a></div>
+    <div class="auth-container">
+        <!-- SOL SÜTUN (DESKTOP HERO) -->
+        <div class="auth-hero">
+            <img src="icon-512.png" alt="Mozaik Logo" class="hero-logo">
+            <h1 class="hero-title">Mozaik'e Hoş Geldin</h1>
+            <p class="hero-subtitle">İlham veren hikayeleri keşfet, yeni insanlarla tanış ve kendi dünyanı özgürce paylaş.</p>
         </div>
 
-        <div id="register-section" style="display: none;">
-            
-            <div class="input-group">
-                <label class="input-label">Kullanıcı Adı (Benzersiz)</label>
-                <input type="text" id="reg-username" placeholder="Örn: ahmet123 (Boşluksuz)" required>
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label">Görünür İsim (Ad Soyad)</label>
-                <input type="text" id="reg-fullname" placeholder="Örn: Ahmet Yılmaz" required>
-            </div>
+        <!-- SAĞ SÜTUN (FORM) -->
+        <div class="auth-content">
+            <div class="form-wrapper">
+                
+                <img src="icon-512.png" alt="Mozaik Logo" class="mobile-logo">
+                
+                <div id="error-message" class="error-msg"></div>
+                <div id="success-message" class="success-msg"></div>
 
-            <div class="input-group">
-                <label class="input-label">E-posta Adresi</label>
-                <input type="email" id="reg-email" placeholder="E-posta Adresi" required>
-            </div>
+                <!-- GİRİŞ YAP FORMU -->
+                <div id="login-section">
+                    <div class="form-header">
+                        <h2>Giriş Yap</h2>
+                        <p>Hesabına eriş ve keşfetmeye devam et.</p>
+                    </div>
 
-            <div class="input-group">
-                <label class="input-label">Doğum Tarihi</label>
-                <input type="date" id="reg-birthdate" required>
-            </div>
+                    <div class="input-group">
+                        <label class="input-label">Kullanıcı Adı veya E-posta</label>
+                        <input type="text" id="login-email" placeholder="ornek@mail.com" required>
+                    </div>
 
-            <div class="input-group">
-                <label class="input-label">Cinsiyet</label>
-                <select id="reg-gender" required>
-                    <option value="" disabled selected>Seçiniz...</option>
-                    <option value="Kadın">Kadın</option>
-                    <option value="Erkek">Erkek</option>
-                    <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
-                </select>
-            </div>
+                    <div class="input-group">
+                        <label class="input-label">Şifre</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="login-pass" placeholder="••••••••" required>
+                            <button type="button" class="toggle-password" onclick="togglePass('login-pass', this)" title="Şifreyi Göster">
+                                👁️
+                            </button>
+                        </div>
+                        <div class="forgot-pass"><a id="open-forgot-modal">Şifreni mi unuttun?</a></div>
+                    </div>
 
-            <div class="input-group">
-                <label class="input-label">Yaşadığınız Şehir / Ülke</label>
-                <input type="text" id="reg-location" placeholder="Örn: İstanbul, Türkiye" required>
-            </div>
+                    <button id="login-btn" class="submit-btn">Giriş Yap</button>
+                    
+                    <div class="toggle-link">
+                        Hesabın yok mu? <a id="show-register">Hemen Kaydol</a>
+                    </div>
+                </div>
 
-            <div class="input-group">
-                <label class="input-label">Şifre (En az 6 hane, Harf ve Rakam)</label>
-                <input type="password" id="reg-pass" placeholder="Şifre belirleyin" required>
-            </div>
+                <!-- KAYIT OL FORMU (SIGN UP) -->
+                <div id="register-section" style="display: none;">
+                    <div class="form-header">
+                        <h2>Yeni Hesap Oluştur</h2>
+                        <p>Mozaik dünyasına katılmak için bilgilerini gir.</p>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Görünür İsim (Ad Soyad)</label>
+                            <input type="text" id="reg-fullname" placeholder="Örn: Ahmet Yılmaz" required>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Kullanıcı Adı (Benzersiz)</label>
+                            <input type="text" id="reg-username" placeholder="Örn: ahmet123" required>
+                        </div>
+                    </div>
 
-            <div class="input-group">
-                <label class="input-label">Şifreyi Tekrar Girin</label>
-                <input type="password" id="reg-pass-confirm" placeholder="Şifrenizi doğrulayın" required>
-            </div>
+                    <div class="input-group">
+                        <label class="input-label">E-posta Adresi</label>
+                        <input type="email" id="reg-email" placeholder="ornek@mail.com" required>
+                    </div>
 
-            <button id="register-btn">Kayıt Ol ve Katıl</button>
-            <div class="toggle-link">Zaten hesabın var mı? <a id="show-login">Giriş Yap</a></div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Doğum Tarihi</label>
+                            <input type="date" id="reg-birthdate" required>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Cinsiyet</label>
+                            <select id="reg-gender" required>
+                                <option value="" disabled selected>Seçiniz...</option>
+                                <option value="Kadın">Kadın</option>
+                                <option value="Erkek">Erkek</option>
+                                <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Yaşadığınız Şehir / Ülke</label>
+                        <input type="text" id="reg-location" placeholder="Örn: İstanbul, Türkiye" required>
+                    </div>
+
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label class="input-label">Şifre (En az 6 hane)</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="reg-pass" placeholder="Şifre belirleyin" required>
+                                <button type="button" class="toggle-password" onclick="togglePass('reg-pass', this)" title="Şifreyi Göster">
+                                    👁️
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label">Şifreyi Tekrar Girin</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="reg-pass-confirm" placeholder="Şifrenizi doğrulayın" required>
+                                <button type="button" class="toggle-password" onclick="togglePass('reg-pass-confirm', this)" title="Şifreyi Göster">
+                                    👁️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="register-btn" class="submit-btn">Kayıt Ol ve Katıl</button>
+                    
+                    <div class="toggle-link">
+                        Zaten hesabın var mı? <a id="show-login">Giriş Yap</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- ŞİFRE SIFIRLAMA MODALI -->
     <div class="modal-overlay" id="forgot-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="margin:0; font-size:18px;">Şifremi Unuttum</h3>
+                <h3 style="margin:0; font-size:20px; font-weight:800;">Şifremi Unuttum</h3>
                 <button class="close-btn" id="close-forgot-modal">&times;</button>
             </div>
-            <p style="font-size:13px; color:#666; margin-bottom:15px;">Kayıtlı e-posta adresinizi girin. Size bir şifre sıfırlama bağlantısı göndereceğiz.</p>
-            <input type="email" id="forgot-email" placeholder="E-posta Adresiniz">
-            <button id="send-reset-btn" style="background:#2980b9;">Sıfırlama Linki Gönder</button>
+            <p style="font-size:14px; color:var(--text-muted); margin-bottom:20px; line-height:1.5;">Kayıtlı e-posta adresinizi girin. Size bir şifre sıfırlama bağlantısı göndereceğiz.</p>
+            <div class="input-group">
+                <input type="email" id="forgot-email" placeholder="E-posta Adresiniz" style="margin-bottom:0;">
+            </div>
+            <button id="send-reset-btn" class="submit-btn" style="margin-top:15px; background:var(--primary);">Sıfırlama Linki Gönder</button>
         </div>
     </div>
 
+    <!-- UI Helper Scripts -->
+    <script>
+        // Şifre Gizle/Göster Fonksiyonu
+        function togglePass(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = '🙈';
+                btn.title = 'Şifreyi Gizle';
+            } else {
+                input.type = 'password';
+                btn.innerHTML = '👁️';
+                btn.title = 'Şifreyi Göster';
+            }
+        }
+    </script>
+
+    <!-- Asıl Authentication Mantığı -->
     <script type="module" src="index.js?v=7"></script>
 </body>
 </html>
