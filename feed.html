@@ -12,10 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     
     <link rel="stylesheet" href="style.css?v=31">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body style="background-color: #0b1121; color: #e5e7eb;">
+<body>
     <script>
         try {
             if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
@@ -65,7 +63,7 @@
                 </div>
             </div>
 
-            <div class="stories-container" id="old-stories-container"></div>
+            <div class="stories-container" id="stories-container"></div>
 
             <div class="post-input-box" id="desktop-post-box">
                 <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
@@ -88,7 +86,7 @@
                 </div>
             </div>
 
-            <div id="old-feed-container">
+            <div id="feed-container">
                 <div style="padding: 40px; text-align: center; color: #64748b;">İçerikler yükleniyor...</div>
             </div> 
             
@@ -358,211 +356,5 @@
     <script type="module" src="webrtc.js?v=7"></script>
     <script type="module" src="story.js?v=7"></script>
     <script src="ui.js?v=29"></script>
-
-    
-    <style>
-        /* ESKİ UI'ı GİZLE (MODALLARA DOKUNMADAN) */
-        #sidebar-container, 
-        .feed-main, 
-        .search-box-right, 
-        #bottom-nav-container, 
-        .mobile-sidebar, 
-        .mobile-sidebar-overlay, 
-        .fab-button,
-        .header-desktop,
-        .stories-wrapper,
-        .mood-card-container,
-        .main-feed-container,
-        #old-stories-container,
-        #old-feed-container {
-            display: none !important;
-        }
-    </style>
-
-
-
-    <!-- YENİ MOZAİK UI (MOCK) -->
-    <div id="new-mozaik-ui" class="bg-app text-gray-200 font-sans pb-24" style="background-color: #0b1121; min-height: 100vh;">
-        <!-- Üst Menü (Header) -->
-        <header class="header-sticky sticky top-0 z-50 bg-app/90 backdrop-blur-md border-b border-gray-800" style="background-color: rgba(11, 17, 33, 0.9);">
-            <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-                <!-- Logo -->
-                <div class="flex items-center space-x-1 text-2xl font-bold text-white tracking-wide">
-                    <span>M</span>
-                    <div class="flex grid grid-cols-2 gap-0.5" style="display:grid; gap:2px;">
-                        <div class="w-2 h-2 bg-pink-500 rounded-sm" style="width:8px; height:8px;"></div>
-                        <div class="w-2 h-2 bg-blue-500 rounded-sm" style="width:8px; height:8px;"></div>
-                        <div class="w-2 h-2 bg-cyan-400 rounded-sm" style="width:8px; height:8px;"></div>
-                        <div class="w-2 h-2 bg-purple-500 rounded-sm" style="width:8px; height:8px;"></div>
-                    </div>
-                    <span>zaik</span>
-                </div>
-
-                <!-- Ortadaki Menü -->
-                <nav class="hidden md:flex space-x-8 text-sm font-medium">
-                    <a href="#" id="tab-main" onclick="window.switchFeedTab('main')" class="new-tab-btn text-white border-b-2 border-cyan-400 pb-5 pt-5" style="border-bottom-color: #06b6d4;">Ana Akış</a>
-                    <a href="#" id="tab-discover" onclick="window.switchFeedTab('discover')" class="new-tab-btn text-gray-400 hover:text-white pb-5 pt-5 border-b-2 border-transparent" style="border-bottom-color: transparent;">Keşfet</a>
-                    <a href="#" id="tab-following" onclick="window.switchFeedTab('following')" class="new-tab-btn text-gray-400 hover:text-white pb-5 pt-5 border-b-2 border-transparent" style="border-bottom-color: transparent;">Takip</a>
-                </nav>
-
-                <!-- Sağ İkonlar -->
-                <div class="flex items-center space-x-6 text-xl">
-                    <i class="fa-solid fa-magnifying-glass cursor-pointer hover:text-white" onclick="window.location.href='search.html'"></i>
-                    <i class="fa-regular fa-square-plus cursor-pointer hover:text-white" onclick="window.openMainPostModal()"></i>
-                    <i class="fa-regular fa-comment-dots cursor-pointer hover:text-white" onclick="window.location.href='chat.html'"></i>
-                </div>
-            </div>
-        </header>
-
-        <!-- Ana İçerik -->
-        <main class="max-w-6xl mx-auto px-4 pt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- SOL SÜTUN (Ana Akış & Hikayeler) -->
-            <div class="lg:col-span-2 space-y-6">
-                
-                <!-- Hikayeler (Stories) -->
-                <div id="stories-container" class="flex space-x-4 overflow-x-auto pb-2" style="scrollbar-width: thin;">
-</div>
-
-                <!-- Ruh Hali (Mood) -->
-                <div class="bg-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4" style="background-color: #151e32;">
-                    <div>
-                        <h3 class="text-white font-semibold flex items-center gap-2">
-                            <i class="fa-solid fa-sparkles text-cyan" style="color: #06b6d4;"></i> Bugünün ruh hali
-                        </h3>
-                        <p class="text-xs text-gray-400 mt-1">Mozaik'te bugün en çok görülen ruh halleri</p>
-                    </div>
-                    <div class="flex space-x-4 text-center text-xs overflow-x-auto pb-1" style="scrollbar-width: none;">
-                        <div><div class="text-2xl">😀</div><div class="text-gray-300 mt-1">Mutlu</div><div class="text-gray-500">%28</div></div>
-                        <div><div class="text-2xl">😌</div><div class="text-gray-300 mt-1">Sakin</div><div class="text-gray-500">%17</div></div>
-                        <div><div class="text-2xl">💜</div><div class="text-gray-300 mt-1">Aşık</div><div class="text-gray-500">%12</div></div>
-                        <div><div class="text-2xl">🔥</div><div class="text-gray-300 mt-1">Enerjik</div><div class="text-gray-500">%11</div></div>
-                    </div>
-                </div>
-
-                <div id="feed-container" class="space-y-6">
-<div style="padding: 40px; text-align: center; color: #64748b;">Yükleniyor...</div>
-</div>
-
-            <!-- SAĞ SÜTUN (Bileşenler / Widgetlar) -->
-            <div class="hidden lg:flex flex-col space-y-4">
-                
-                <!-- Senin Mozaikin -->
-                <div class="bg-card rounded-2xl p-4 bg-cover bg-center relative overflow-hidden group cursor-pointer" style="background-color: #151e32; background-image: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
-                    <div class="absolute inset-0 transition" style="background-color: rgba(0,0,0,0.6);"></div>
-                    <div class="relative z-10">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i class="fa-solid fa-face-smile text-cyan-400" style="color: #22d3ee;"></i>
-                            <span class="font-bold text-sm text-white">Senin Mozaik'in</span>
-                        </div>
-                        <p class="text-xs text-gray-300">Bugün 3 paylaşımın var.</p>
-                        <p class="text-xs text-white mt-8">Hayatını mozaik gibi<br>bir araya getir. ✨</p>
-                    </div>
-                </div>
-
-                <!-- Günün Görevi -->
-                <div class="bg-card rounded-2xl p-4 border" style="background-color: #151e32; border-color: rgba(88, 28, 135, 0.5);">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center" style="background-color: rgba(168, 85, 247, 0.2); color: #c084fc;">
-                            <i class="fa-solid fa-cube text-xs"></i>
-                        </div>
-                        <span class="font-bold text-sm text-white">Günün Görevi</span>
-                    </div>
-                    <p class="text-sm text-gray-300">Bugün çocukluğundan bir fotoğraf paylaş. 📸</p>
-                    <p class="text-xs text-gray-500 mt-2"><i class="fa-solid fa-location-dot"></i> 421 kişi paylaştı</p>
-                </div>
-
-                <!-- Konum Keşfet -->
-                <div class="bg-card rounded-2xl p-0 overflow-hidden relative cursor-pointer" style="background-color: #151e32;">
-                    <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="w-full h-32 object-cover opacity-60">
-                    <div class="absolute top-3 left-3 bg-cyan-500 text-white w-8 h-8 rounded-full flex items-center justify-center" style="background-color: #06b6d4;"><i class="fa-solid fa-location-dot"></i></div>
-                    <div class="absolute bottom-3 left-3">
-                        <p class="text-sm font-bold text-white">Konum Keşfet</p>
-                        <p class="text-xs text-gray-300">Girne'de neler paylaşılıyor<br>keşfetmek için tıkla.</p>
-                    </div>
-                </div>
-
-                <!-- Mozaik Topluluğu -->
-                <div class="bg-card rounded-2xl p-4" style="background-color: #151e32;">
-                    <div class="flex items-center gap-2 mb-3">
-                        <i class="fa-solid fa-user-group text-blue-400" style="color: #60a5fa;"></i>
-                        <div>
-                            <p class="font-bold text-sm text-white">Mozaik Topluluğu</p>
-                            <p class="text-xs text-gray-400">8 arkadaşınla özel grup.</p>
-                        </div>
-                    </div>
-                    <div class="flex -space-x-2 overflow-hidden mb-3">
-                        <img class="inline-block h-8 w-8 rounded-full ring-2" style="border-color: #151e32;" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt=""/>
-                        <img class="inline-block h-8 w-8 rounded-full ring-2" style="border-color: #151e32;" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100" alt=""/>
-                        <img class="inline-block h-8 w-8 rounded-full ring-2" style="border-color: #151e32;" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" alt=""/>
-                        <img class="inline-block h-8 w-8 rounded-full ring-2" style="border-color: #151e32;" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" alt=""/>
-                    </div>
-                    <p class="text-xs text-gray-300">Birlikte daha güzel. 💙</p>
-                </div>
-
-                <!-- Önerilen Hesaplar -->
-                <div class="bg-card rounded-2xl p-4" style="background-color: #151e32;">
-                    <h4 class="font-bold text-sm text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-star text-cyan-400" style="color: #22d3ee;"></i> Önerilen Hesaplar</h4>
-                    <div class="space-y-4" id="who-to-follow-list">
-                        <!-- Öneri 1 -->
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-2">
-                                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100" class="w-8 h-8 rounded-full object-cover">
-                                <div>
-                                    <p class="text-xs font-bold text-white">sağlıklıyaşamkulübü</p>
-                                    <p class="text-[10px] text-gray-400">Sağlıklı Yaşam Kulübü</p>
-                                </div>
-                            </div>
-                            <button class="border border-gray-600 text-xs px-3 py-1 rounded-full hover:bg-gray-700 transition" style="color:white;">Takip Et</button>
-                        </div>
-                        <!-- Öneri 2 -->
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center font-bold text-white">Y</div>
-                                <div>
-                                    <p class="text-xs font-bold text-white">yemeksepeti</p>
-                                    <p class="text-[10px] text-gray-400">Lezzet Rotası</p>
-                                </div>
-                            </div>
-                            <button class="border border-gray-600 text-xs px-3 py-1 rounded-full hover:bg-gray-700 transition" style="color:white;">Takip Et</button>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </main>
-
-        <!-- Alt Navigasyon (Bottom Bar) - Sadece mobilde sabit kalır -->
-        <div class="bottom-nav fixed bottom-0 w-full backdrop-blur-md border-t border-gray-800 lg:hidden" id="mobile-bottom-nav" style="background-color: rgba(11, 17, 33, 0.95); z-index: 50;">
-            <div class="flex justify-around items-center h-16 relative">
-                <a href="#" class="flex flex-col items-center text-cyan-400" style="color: #06b6d4;">
-                    <i class="fa-solid fa-house text-lg"></i>
-                    <span class="text-[10px] mt-1">Ana Sayfa</span>
-                </a>
-                <a href="search.html" class="flex flex-col items-center text-gray-400" style="color: #9ca3af;">
-                    <i class="fa-regular fa-compass text-lg"></i>
-                    <span class="text-[10px] mt-1">Keşfet</span>
-                </a>
-                
-                <!-- Ortadaki Ekle Butonu -->
-                <div class="relative -top-5">
-                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center cursor-pointer transform rotate-45 hover:scale-105 transition" onclick="window.openMainPostModal()" style="background-color: #06b6d4; box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.3);">
-                        <i class="fa-solid fa-plus text-white text-2xl -rotate-45"></i>
-                    </div>
-                </div>
-                
-                <a href="notifications.html" class="flex flex-col items-center text-gray-400 relative" style="color: #9ca3af;">
-                    <i class="fa-regular fa-bell text-lg"></i>
-                    <span class="absolute top-0 right-1 w-2 h-2 bg-red-500 rounded-full" style="background-color: #ef4444;"></span>
-                    <span class="text-[10px] mt-1">Bildirimler</span>
-                </a>
-                <a href="#" onclick="window.goToMyProfile()" class="flex flex-col items-center text-gray-400" style="color: #9ca3af;">
-                    <i class="fa-regular fa-user text-lg"></i>
-                    <span class="text-[10px] mt-1">Profil</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
 </body>
 </html>

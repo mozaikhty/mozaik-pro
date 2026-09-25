@@ -455,12 +455,7 @@ window.renderStories = function() {
     let html = '';
     if(myStories.length === 0) {
         const myAvatar = window.allUsersData[window.myUsername]?.avatarUrl ? `<img src="${window.sanitizeUrl(window.allUsersData[window.myUsername].avatarUrl)}">` : '👤';
-        html += `<div class="flex flex-col items-center space-y-1 min-w-[72px] cursor-pointer" onclick="window.openAddStoryModal()">
-    <div class="w-16 h-16 rounded-full border border-gray-600 flex items-center justify-center relative bg-card" style="background-color: #151e32;">
-        <i class="fa-solid fa-plus text-2xl text-gray-400"></i>
-    </div>
-    <span class="text-xs text-gray-400">Hikayen</span>
-</div>`;
+        html += `<div class="story-item" onclick="window.openAddStoryModal()"><div class="story-avatar-wrapper add-story"><div class="story-avatar">${myAvatar}<div class="story-add-badge">+</div></div></div><div class="story-username">Sen</div></div>`;
     }
 
     window.activeStoryUsers.forEach(uObj => {
@@ -469,14 +464,7 @@ window.renderStories = function() {
         const safeName = uObj.username === window.myUsername ? 'Sen' : DOMPurify.sanitize(uData.fullName ? uData.fullName.split(' ')[0] : uObj.username);
         const allRead = uObj.stories.every(s => readStories.includes(s.id)); 
         const ringClass = allRead ? 'read' : 'unread';
-        
-    let bgStyle = ringClass === 'has-unseen' ? 'background: linear-gradient(45deg, #06b6d4, #a855f7, #ec4899);' : 'background: #475569;';
-    html += `<div class="flex flex-col items-center space-y-1 min-w-[72px] cursor-pointer" onclick="window.openStoryViewer('${window.escapeHtml(uObj.username)}')">
-    <div class="w-16 h-16 rounded-full p-0.5 relative" style="${bgStyle}">
-        ${avatar.replace('<img ', '<img class="w-full h-full rounded-full border-2 border-app object-cover" style="border-color: #0b1121;" ').replace('<div ', '<div class="w-full h-full rounded-full border-2 border-app flex items-center justify-center overflow-hidden" style="border-color: #0b1121;" ')}
-    </div>
-    <span class="text-xs text-gray-300 truncate w-full text-center">${safeName}</span>
-</div>`;
+        html += `<div class="story-item" onclick="window.openStoryViewer('${window.escapeHtml(uObj.username)}')"><div class="story-avatar-wrapper ${ringClass}"><div class="story-avatar">${avatar}</div></div><div class="story-username">${safeName}</div></div>`;
     });
     container.innerHTML = html;
 };
