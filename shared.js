@@ -396,7 +396,7 @@ window.showLikes = async function(postId, event) {
 
 
 // MOZAİK CUSTOM VIDEO PLAYER LOGIC
-window.renderCustomVideo = function(url, likeActionStr, uniqueId) {
+window.renderCustomVideo = function(url, likeActionStr, uniqueId, postId = '') {
     const safeLikeAction = likeActionStr ? likeActionStr.replace(/"/g, '&quot;') : '';
     
     return `
@@ -420,11 +420,28 @@ window.renderCustomVideo = function(url, likeActionStr, uniqueId) {
     `;
 };
 
-window.handleVideoClick = function(id, event, likeActionStr) {
-    if(event) event.stopPropagation();
-    window.toggleVideoPlay(id);
-    if (likeActionStr && likeActionStr.trim() !== '' && likeActionStr !== 'undefined') {
-        try { eval(likeActionStr); } catch(e) {}
+window.handleVideoClick = function(id, event, likeActionStr, postId) {
+    if (event) { event.stopPropagation(); event.preventDefault(); }
+    const now = Date.now();
+    if (!window.lastVideoClickTime) window.lastVideoClickTime = {};
+    const lastTime = window.lastVideoClickTime[id] || 0;
+    
+    if (now - lastTime < 300) {
+        window.lastVideoClickTime[id] = 0; // double click
+        if (likeActionStr && likeActionStr.trim() !== '' && likeActionStr !== 'undefined') {
+            try { eval(likeActionStr); } catch(e) {}
+        }
+    } else {
+        window.lastVideoClickTime[id] = now;
+        setTimeout(() => {
+            if (window.lastVideoClickTime[id] !== 0) { // single click
+                if (window.openReelsViewer && postId && postId !== 'undefined' && postId !== '') {
+                    window.openReelsViewer(postId);
+                } else {
+                    window.toggleVideoPlay(id);
+                }
+            }
+        }, 300);
     }
 };
 
@@ -560,4 +577,246 @@ window.observeVideos = function() {
     document.querySelectorAll('.mz-video').forEach(video => {
         window.videoObserver.observe(video);
     });
+};
+
+
+// ==========================================
+// REELS VIEWER SYSTEM
+// ==========================================
+window.reelsMuted = true;
+window.reelsObserver = null;
+window.reelsVideos = [];
+
+window.openReelsViewer = function(startPostId) {
+    if (!window.currentGlobalPosts) return;
+    
+    // Yalnızca video içeren gönderileri filtrele
+    const videoPosts = window.currentGlobalPosts.filter(p => p.data && p.data.media && p.data.media.some(m => m.type === 'video'));
+    if (videoPosts.length === 0) return;
+    
+    // Başlangıç indeksini bul
+    let startIndex = videoPosts.findIndex(p => p.id === startPostId);
+    if (startIndex === -1) startIndex = 0;
+    
+    let modal = document.getElementById('reels-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'reels-modal';
+        modal.className = 'reels-modal';
+        document.body.appendChild(modal);
+    }
+    
+    const safeMyUsername = (typeof myUsername !== 'undefined') ? myUsername : localStorage.getItem('mozaik_username');
+    
+    let html = `
+        <div class="reels-close-btn" onclick="window.closeReelsViewer()">✖</div>
+        <div class="reels-container" id="reels-container">
+    `;
+    
+    videoPosts.forEach(post => {
+        const d = post.data;
+        const videoMedia = d.media.find(m => m.type === 'video');
+        if (!videoMedia) return;
+        
+        const authorData = (typeof allUsersData !== 'undefined' && allUsersData[d.author]) ? allUsersData[d.author] : {};
+        const vHtml = authorData.isVerified ? '<span class="verified-badge" style="font-size:12px;">☑️</span>' : '';
+        const avatarUrl = authorData.avatarUrl ? window.sanitizeUrl(authorData.avatarUrl) : '';
+        const avatarHtml = avatarUrl ? `<img src="${avatarUrl}">` : `👤`;
+        const fullName = window.escapeHtml(authorData.fullName || d.author);
+        
+        const likes = d.likes || [];
+        const isLiked = likes.includes(safeMyUsername);
+        const likeColor = isLiked ? '#ef4444' : '#ffffff';
+        const likeIcon = isLiked ? '❤️' : '🤍';
+        
+        const comments = d.comments || [];
+        
+        html += `
+            <div class="reels-item" id="reels-item-${post.id}">
+                <video src="${window.sanitizeUrl(videoMedia.url)}" 
+                       id="rvideo-${post.id}" 
+                       loop playsinline 
+                       ${window.reelsMuted ? 'muted' : ''}
+                       onclick="window.toggleReelsPlay('${post.id}')"></video>
+                       
+                <div class="reels-play-overlay" id="rplay-${post.id}">▶</div>
+                <div class="reels-mute-overlay" id="rmute-${post.id}">${window.reelsMuted ? '🔇' : '🔊'}</div>
+                
+                <div class="reels-info">
+                    <div class="reels-author" onclick="window.closeReelsViewer(); window.location.href='profile.html?user=${window.escapeHtml(d.author)}'">
+                        ${avatarHtml}
+                        <span>${fullName} ${vHtml}</span>
+                    </div>
+                    ${d.content ? `<div class="reels-desc">${window.escapeHtml(d.content)}</div>` : ''}
+                </div>
+                
+                <div class="reels-actions">
+                    <div class="reels-action-btn" onclick="window.reelsLikePost('${post.id}', ${isLiked}, '${d.author}', event)">
+                        <span style="font-size: 28px; color: ${likeColor}; margin:0;">${likeIcon}</span>
+                        <span>${likes.length > 0 ? likes.length : 'Beğen'}</span>
+                    </div>
+                    <div class="reels-action-btn" onclick="window.closeReelsViewer(); window.openPostDetail('${post.id}')">
+                        <span style="font-size: 28px; margin:0;">💬</span>
+                        <span>${comments.length > 0 ? comments.length : 'Yorum'}</span>
+                    </div>
+                </div>
+                
+                <div class="reels-progress">
+                    <div class="reels-progress-filled" id="rprog-${post.id}"></div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    modal.innerHTML = html;
+    modal.style.display = 'flex'; window.addEventListener('keydown', window.reelsKeydown);
+    document.body.style.overflow = 'hidden'; // arkaplan scroll iptal
+    
+    // Zamanlayıcıyı kur (Videolar için progress bar)
+    if (window.reelsInterval) clearInterval(window.reelsInterval);
+    window.reelsInterval = setInterval(window.updateReelsProgress, 50);
+    
+    const container = document.getElementById('reels-container');
+    
+    // Başlangıç videosuna kaydır
+    setTimeout(() => {
+        const targetItem = document.getElementById('reels-item-' + startPostId);
+        if (targetItem) {
+            container.scrollTop = targetItem.offsetTop;
+        }
+        window.setupReelsObserver();
+    }, 50);
+};
+
+window.closeReelsViewer = function() {
+    const modal = document.getElementById('reels-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.innerHTML = '';
+    }
+    document.body.style.overflow = ''; window.removeEventListener('keydown', window.reelsKeydown);
+    if (window.reelsObserver) {
+        window.reelsObserver.disconnect();
+        window.reelsObserver = null;
+    }
+    if (window.reelsInterval) {
+        clearInterval(window.reelsInterval);
+        window.reelsInterval = null;
+    }
+    // Tüm videoları durdur
+    document.querySelectorAll('.reels-item video').forEach(v => {
+        v.pause();
+    });
+};
+
+window.setupReelsObserver = function() {
+    if (window.reelsObserver) window.reelsObserver.disconnect();
+    
+    window.reelsVideos = Array.from(document.querySelectorAll('.reels-item video'));
+    
+    window.reelsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+                // Video görünür
+                video.muted = window.reelsMuted;
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Reels Oynatma hatası (autoplay):", error);
+                    });
+                }
+            } else {
+                // Video görünür değil, durdur ve başa sar
+                video.pause();
+                video.currentTime = 0;
+            }
+        });
+    }, {
+        root: document.getElementById('reels-container'),
+        threshold: [0.0, 0.6, 1.0]
+    });
+    
+    window.reelsVideos.forEach(video => {
+        window.reelsObserver.observe(video);
+    });
+};
+
+window.toggleReelsPlay = function(postId) {
+    const video = document.getElementById('rvideo-' + postId);
+    const playOverlay = document.getElementById('rplay-' + postId);
+    const muteOverlay = document.getElementById('rmute-' + postId);
+    
+    if (!video) return;
+    
+    if (video.paused) {
+        video.play();
+        window.showReelsOverlay(playOverlay, '▶');
+    } else {
+        // Zaten oynuyorsa sesi aç/kapa yapalım (Instagram / TikTok tarzı)
+        video.muted = !video.muted;
+        window.reelsMuted = video.muted;
+        window.showReelsOverlay(muteOverlay, video.muted ? '🔇' : '🔊');
+        
+        // Sesi tüm videolara uygula
+        window.reelsVideos.forEach(v => {
+            v.muted = window.reelsMuted;
+        });
+    }
+};
+
+window.showReelsOverlay = function(element, text) {
+    if(!element) return;
+    element.innerText = text;
+    element.style.opacity = '1';
+    element.style.transform = 'translate(-50%, -50%) scale(1.2)';
+    setTimeout(() => {
+        element.style.opacity = '0';
+        element.style.transform = 'translate(-50%, -50%) scale(1)';
+    }, 500);
+};
+
+window.updateReelsProgress = function() {
+    window.reelsVideos.forEach(video => {
+        if (!video.paused && video.duration) {
+            const postId = video.id.replace('rvideo-', '');
+            const pbar = document.getElementById('rprog-' + postId);
+            if (pbar) {
+                const percent = (video.currentTime / video.duration) * 100;
+                pbar.style.width = percent + '%';
+            }
+        }
+    });
+};
+
+window.reelsLikePost = async function(postId, isCurrentlyLiked, postAuthor, event) {
+    event.stopPropagation();
+    // Normal beğeni fonksiyonunu çağır (feed.js içindeki window.handleMediaClick'i taklit eder veya direkt toggleLike)
+    if (typeof window.toggleLike === 'function') {
+        window.toggleLike(postId, isCurrentlyLiked, postAuthor, event);
+        // Beğeniyi iyimser olarak UI'da güncelle (Reels'i kapatmadan)
+        const btn = event.currentTarget;
+        if (!isCurrentlyLiked) {
+            btn.innerHTML = '<span style="font-size: 28px; color: #ef4444; margin:0;">❤️</span><span>...</span>';
+        } else {
+            btn.innerHTML = '<span style="font-size: 28px; color: #ffffff; margin:0;">🤍</span><span>...</span>';
+        }
+    }
+};
+
+
+window.reelsKeydown = function(e) {
+    const container = document.getElementById('reels-container');
+    if (!container) return;
+    const itemHeight = window.innerHeight;
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        container.scrollBy({ top: itemHeight, behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        container.scrollBy({ top: -itemHeight, behavior: 'smooth' });
+    } else if (e.key === 'Escape') {
+        window.closeReelsViewer();
+    }
 };

@@ -606,7 +606,7 @@ window.deleteComment = async function(postId, commentId) {
     }
 };
 
-function renderFeed() {
+function renderFeed() { window.currentGlobalPosts = globalPosts;
     const feedContainer = document.getElementById('feed-container'); feedContainer.innerHTML = ''; let displayedPosts = 0;
     globalPosts.forEach(post => {
         const postData = post.data; const isOwner = postData.author === myUsername; let originalAuthor = postData.author; if(postData.isRepost) { originalAuthor = postData.originalPostAuthor; }
@@ -632,13 +632,13 @@ function renderFeed() {
         const likeAction = `window.handleMediaClick('${post.id}', ${isLiked}, '${originalAuthor}', event)`;
         if (postData.media && postData.media.length > 1) {
             let slides = postData.media.map(m => {
-                let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), likeAction, "feed-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="${likeAction}">`;
+                let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), likeAction, "feed-" + Math.random().toString(36).substr(2,9), post.id)}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:400px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="${likeAction}">`;
                 return `<div style="flex: 0 0 100%; scroll-snap-align: start; position:relative;">${tag}<div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
             }).join('');
             mediaHtml = `<div class="post-image-container"><div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%;">${slides}</div></div>`;
         } else if (postData.media && postData.media.length === 1) {
             let m = postData.media[0];
-            let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), likeAction, "feed-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}">`;
+            let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), likeAction, "feed-" + Math.random().toString(36).substr(2,9), post.id)}` : `<img src="${window.sanitizeUrl(m.url)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}">`;
             mediaHtml = `<div class="post-image-container" style="position:relative;">${tag}<div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
         } else if (postData.imageUrl) {
             mediaHtml = `<div class="post-image-container" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}"><div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
