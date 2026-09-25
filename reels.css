@@ -2,7 +2,7 @@
 /* REELS VIEWER (Stand-alone) */
 /* ========================================= */
 body {
-    background: #000;
+    background: #000 !important;
 }
 .reels-back-btn {
     position: absolute;

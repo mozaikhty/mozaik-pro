@@ -91,8 +91,8 @@ async function initReels() {
                     if(el) {
                         const vHtml = authorData.isVerified ? '<span class="verified-badge" style="font-size:12px; margin-left:4px;">☑️</span>' : '';
                         const avatarUrl = authorData.avatarUrl ? authorData.avatarUrl : ''; 
-                        const avatarHtml = avatarUrl ? \`<img src="\${avatarUrl}">\` : \`👤\`;
-                        el.innerHTML = \`\${avatarHtml}<span>\${escapeHtml(authorData.fullName || p.data.author)} \${vHtml}</span>\`;
+                        const avatarHtml = avatarUrl ? `<img src="${avatarUrl}">` : `👤`;
+                        el.innerHTML = `${avatarHtml}<span>${escapeHtml(authorData.fullName || p.data.author)} ${vHtml}</span>`;
                     }
                 }
             });
@@ -102,7 +102,7 @@ async function initReels() {
         
     } catch (e) {
         console.error("Reels yükleme hatası:", e);
-        container.innerHTML = '<div class="reels-loader" style="color:#ef4444;">Videolar yüklenemedi.</div>';
+        container.innerHTML = '<div class="reels-loader" style="flex-direction:column; gap:20px;"><div style="color:#ef4444;">Video yüklenemedi.</div><button onclick="window.history.back()" style="padding:10px 20px; background:#ef4444; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">‹ Geri dön</button></div>';
     }
 }
 
@@ -111,7 +111,7 @@ function renderReels() {
     container.innerHTML = '';
     
     if (reelsPosts.length === 0) {
-        container.innerHTML = '<div class="reels-loader">Gösterilecek video bulunamadı.</div>';
+        container.innerHTML = '<div class="reels-loader" style="flex-direction:column; gap:20px;"><div>Gösterilecek video bulunamadı.</div><button onclick="window.history.back()" style="padding:10px 20px; background:#3b82f6; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">‹ Geri dön</button></div>';
         return;
     }
     
@@ -132,7 +132,7 @@ function generateReelsHTML(post) {
     const authorData = allUsersData[d.author] || {};
     const vHtml = authorData.isVerified ? '<span class="verified-badge" style="font-size:12px; margin-left:4px;">☑️</span>' : '';
     const avatarUrl = authorData.avatarUrl ? authorData.avatarUrl : ''; 
-    const avatarHtml = avatarUrl ? \`<img src="\${avatarUrl}">\` : \`👤\`;
+    const avatarHtml = avatarUrl ? `<img src="${avatarUrl}">` : `👤`;
     
     const likes = d.likes || [];
     const isLiked = myUsername && likes.includes(myUsername);
@@ -141,40 +141,40 @@ function generateReelsHTML(post) {
     
     const comments = d.comments || [];
     
-    return \`
-        <div class="reels-item" id="reels-item-\${post.id}">
-            <video src="\${videoMedia.url}" 
-                   id="rvideo-\${post.id}" 
+    return `
+        <div class="reels-item" id="reels-item-${post.id}">
+            <video src="${videoMedia.url}" 
+                   id="rvideo-${post.id}" 
                    loop playsinline 
-                   \${isMuted ? 'muted' : ''}
-                   onclick="toggleReelsPlay('\${post.id}')"></video>
+                   ${isMuted ? 'muted' : ''}
+                   onclick="toggleReelsPlay('${post.id}')"></video>
                    
-            <div class="reels-play-overlay" id="rplay-\${post.id}">▶</div>
-            <div class="reels-mute-overlay" id="rmute-\${post.id}">\${isMuted ? '🔇' : '🔊'}</div>
+            <div class="reels-play-overlay" id="rplay-${post.id}">▶</div>
+            <div class="reels-mute-overlay" id="rmute-${post.id}">${isMuted ? '🔇' : '🔊'}</div>
             
             <div class="reels-info">
-                <div class="reels-author" id="rauthor-\${post.id}" onclick="window.location.href='profile.html?user=\${escapeHtml(d.author)}'">
-                    \${avatarHtml}
-                    <span>\${escapeHtml(d.author)} \${vHtml}</span>
+                <div class="reels-author" id="rauthor-${post.id}" onclick="window.location.href='profile.html?user=${escapeHtml(d.author)}'">
+                    ${avatarHtml}
+                    <span>${escapeHtml(d.author)} ${vHtml}</span>
                 </div>
-                \${d.content ? \`<div class="reels-desc">\${escapeHtml(d.content)}</div>\` : ''}
+                ${d.content ? `<div class="reels-desc">${escapeHtml(d.content)}</div>` : ''}
             </div>
             
             <div class="reels-actions">
-                <div class="reels-action-btn" onclick="toggleLike('\${post.id}', \${isLiked}, '\${escapeHtml(d.author)}', event)">
-                    <span id="rlike-icon-\${post.id}" style="font-size: 28px; color: \${likeColor}; margin:0;">\${likeIcon}</span>
-                    <span id="rlike-count-\${post.id}">\${likes.length > 0 ? likes.length : 'Beğen'}</span>
+                <div class="reels-action-btn" onclick="toggleLike('${post.id}', ${isLiked}, '${escapeHtml(d.author)}', event)">
+                    <span id="rlike-icon-${post.id}" style="font-size: 28px; color: ${likeColor}; margin:0;">${likeIcon}</span>
+                    <span id="rlike-count-${post.id}">${likes.length > 0 ? likes.length : 'Beğen'}</span>
                 </div>
-                <div class="reels-action-btn" onclick="window.location.href='feed.html?post=\${post.id}'">
+                <div class="reels-action-btn" onclick="window.location.href='feed.html?post=${post.id}'">
                     <span style="font-size: 28px; margin:0;">💬</span>
-                    <span>\${comments.length > 0 ? comments.length : 'Yorum'}</span>
+                    <span>${comments.length > 0 ? comments.length : 'Yorum'}</span>
                 </div>
                 <div class="reels-action-btn reels-mute-btn" onclick="toggleMute(event)" style="font-size:24px;">
-                    \${isMuted ? '🔇' : '🔊'}
+                    ${isMuted ? '🔇' : '🔊'}
                 </div>
             </div>
         </div>
-    \`;
+    `;
 }
 
 function setupObserver() {
@@ -277,13 +277,13 @@ window.toggleLike = async function(postId, isCurrentlyLiked, postAuthor, event) 
         iconEl.style.color = '#ffffff';
         count = Math.max(0, count - 1);
         countEl.innerText = count > 0 ? count : 'Beğen';
-        event.currentTarget.setAttribute('onclick', \`toggleLike('\${postId}', false, '\${postAuthor}', event)\`);
+        event.currentTarget.setAttribute('onclick', `toggleLike('${postId}', false, '${postAuthor}', event)`);
     } else {
         iconEl.innerText = '❤️';
         iconEl.style.color = '#ef4444';
         count++;
         countEl.innerText = count;
-        event.currentTarget.setAttribute('onclick', \`toggleLike('\${postId}', true, '\${postAuthor}', event)\`);
+        event.currentTarget.setAttribute('onclick', `toggleLike('${postId}', true, '${postAuthor}', event)`);
     }
     
     const postRef = doc(db, "posts", postId);
