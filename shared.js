@@ -398,24 +398,16 @@ window.showLikes = async function(postId, event) {
 // MOZAİK CUSTOM VIDEO PLAYER LOGIC
 window.renderCustomVideo = function(url, likeActionStr, uniqueId, postId = '') {
     const safeLikeAction = likeActionStr ? likeActionStr.replace(/"/g, '&quot;') : '';
-    
+    const isMuted = localStorage.getItem('mozaik_video_muted') !== 'false';
     return `
-        <div class="mz-video-player" id="player-${uniqueId}" data-video-id="${uniqueId}">
-            <video class="mz-video" id="video-${uniqueId}" src="${url}" playsinline loop ${localStorage.getItem('mozaik_video_muted') !== 'false' ? 'muted' : ''}></video>
-            <div class="mz-video-overlay" id="overlay-${uniqueId}" onclick="window.handleVideoClick('${uniqueId}', event, \`${safeLikeAction}\`)" aria-label="Videoyu Oynat/Durdur" role="button" tabindex="0">
-                <div class="mz-big-play">▶</div>
-            </div>
-            <div class="mz-video-controls" onclick="event.stopPropagation()">
-                <button class="mz-control-btn mz-control-play" onclick="window.toggleVideoPlay('${uniqueId}', event)" aria-label="Oynat/Durdur">▶</button>
-                <div class="mz-progress-container" onclick="window.seekVideo('${uniqueId}', event)" aria-label="Video İlerleme Çubuğu" role="slider" tabindex="0">
-                    <div class="mz-progress-bar" id="pbar-${uniqueId}">
-                        <div class="mz-progress-filled" id="pfill-${uniqueId}"></div>
-                    </div>
-                </div>
-                <div class="mz-time" id="time-${uniqueId}">00:00 / 00:00</div>
-                <button class="mz-control-btn mz-control-mute" onclick="window.toggleVideoMute('${uniqueId}', event)" aria-label="Sesi Aç/Kapat">${localStorage.getItem('mozaik_video_muted') !== 'false' ? '🔇' : '🔊'}</button>
-                <button class="mz-control-btn mz-control-fullscreen" onclick="window.toggleVideoFullscreen('${uniqueId}', event)" aria-label="Tam Ekran">⛶</button>
-            </div>
+        <div class="mz-video-player" id="player-${uniqueId}" data-video-id="${uniqueId}" style="position:relative; width:100%; border-radius:8px; overflow:hidden; background:#000;">
+            <video class="mz-video auto-play-video" disablePictureInPicture controlsList="nodownload noplaybackrate" id="video-${uniqueId}" src="${url}" playsinline loop ${isMuted ? 'muted' : ''} style="width:100%; max-height:400px; object-fit:contain; display:block; pointer-events:none;"></video>
+            
+            <!-- Video tiklama overlay'i: Reels'i açar -->
+            <div class="mz-video-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; cursor:pointer; pointer-events:auto;" onclick="event.stopPropagation(); event.preventDefault(); window.openReelsViewer('${postId}')"></div>
+            
+            <!-- Sağ alttaki sadece ses kontrol butonu -->
+            <button class="mz-control-btn mz-control-mute" onclick="event.stopPropagation(); event.preventDefault(); window.toggleVideoMute('${uniqueId}', event)" style="position:absolute; bottom:10px; right:10px; z-index:2; background:rgba(0,0,0,0.6); border:none; color:white; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px;">${isMuted ? '🔇' : '🔊'}</button>
         </div>
     `;
 };
