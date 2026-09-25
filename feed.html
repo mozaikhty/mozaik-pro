@@ -65,7 +65,7 @@
                 </div>
             </div>
 
-            <div class="stories-container" id="stories-container"></div>
+            <div class="stories-container" id="old-stories-container"></div>
 
             <div class="post-input-box" id="desktop-post-box">
                 <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
@@ -88,7 +88,7 @@
                 </div>
             </div>
 
-            <div id="feed-container">
+            <div id="old-feed-container">
                 <div style="padding: 40px; text-align: center; color: #64748b;">İçerikler yükleniyor...</div>
             </div> 
             
@@ -360,7 +360,7 @@
     <script src="ui.js?v=29"></script>
 
     <style>
-        .mobile-sidebar-overlay, .mobile-sidebar, .app-container, .fab-button, #bottom-nav-container {
+        .mobile-sidebar-overlay, .mobile-sidebar, .mozaik-layout, .fab-button, #bottom-nav-container, .header-desktop, .stories-wrapper, .mood-card-container, .main-feed-container, #old-stories-container, #old-feed-container {
             display: none !important;
         }
     </style>
@@ -369,7 +369,7 @@
     <!-- YENİ MOZAİK UI (MOCK) -->
     <div id="new-mozaik-ui" class="bg-app text-gray-200 font-sans pb-24" style="background-color: #0b1121; min-height: 100vh;">
         <!-- Üst Menü (Header) -->
-        <header class="sticky top-0 z-50 bg-app/90 backdrop-blur-md border-b border-gray-800" style="background-color: rgba(11, 17, 33, 0.9);">
+        <header class="header-sticky sticky top-0 z-50 bg-app/90 backdrop-blur-md border-b border-gray-800" style="background-color: rgba(11, 17, 33, 0.9);">
             <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                 <!-- Logo -->
                 <div class="flex items-center space-x-1 text-2xl font-bold text-white tracking-wide">
@@ -385,16 +385,16 @@
 
                 <!-- Ortadaki Menü -->
                 <nav class="hidden md:flex space-x-8 text-sm font-medium">
-                    <a href="#" class="text-white border-b-2 border-cyan-400 pb-5 pt-5" style="border-bottom-color: #06b6d4;">Ana Akış</a>
-                    <a href="#" class="text-gray-400 hover:text-white pt-5">Keşfet</a>
-                    <a href="#" class="text-gray-400 hover:text-white pt-5">Takip</a>
+                    <a href="#" id="tab-main" onclick="window.switchFeedTab('main')" class="new-tab-btn text-white border-b-2 border-cyan-400 pb-5 pt-5" style="border-bottom-color: #06b6d4;">Ana Akış</a>
+                    <a href="#" id="tab-discover" onclick="window.switchFeedTab('discover')" class="new-tab-btn text-gray-400 hover:text-white pb-5 pt-5 border-b-2 border-transparent" style="border-bottom-color: transparent;">Keşfet</a>
+                    <a href="#" id="tab-following" onclick="window.switchFeedTab('following')" class="new-tab-btn text-gray-400 hover:text-white pb-5 pt-5 border-b-2 border-transparent" style="border-bottom-color: transparent;">Takip</a>
                 </nav>
 
                 <!-- Sağ İkonlar -->
                 <div class="flex items-center space-x-6 text-xl">
-                    <i class="fa-solid fa-magnifying-glass cursor-pointer hover:text-white"></i>
-                    <i class="fa-regular fa-square-plus cursor-pointer hover:text-white"></i>
-                    <i class="fa-regular fa-comment-dots cursor-pointer hover:text-white"></i>
+                    <i class="fa-solid fa-magnifying-glass cursor-pointer hover:text-white" onclick="window.location.href='search.html'"></i>
+                    <i class="fa-regular fa-square-plus cursor-pointer hover:text-white" onclick="window.openMainPostModal()"></i>
+                    <i class="fa-regular fa-comment-dots cursor-pointer hover:text-white" onclick="window.location.href='chat.html'"></i>
                 </div>
             </div>
         </header>
@@ -406,47 +406,8 @@
             <div class="lg:col-span-2 space-y-6">
                 
                 <!-- Hikayeler (Stories) -->
-                <div class="flex space-x-4 overflow-x-auto pb-2" style="scrollbar-width: thin;">
-                    <!-- Hikaye Ekle -->
-                    <div class="flex flex-col items-center space-y-1 min-w-[72px] cursor-pointer">
-                        <div class="w-16 h-16 rounded-full border border-gray-600 flex items-center justify-center relative bg-card" style="background-color: #151e32;">
-                            <i class="fa-solid fa-plus text-2xl text-gray-400"></i>
-                        </div>
-                        <span class="text-xs text-gray-400">Hikayen</span>
-                    </div>
-                    
-                    <!-- Hikaye Öğeleri -->
-                    <div class="flex flex-col items-center space-y-1 min-w-[72px] cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-0.5 story-gradient relative" style="background: linear-gradient(45deg, #06b6d4, #a855f7, #ec4899);">
-                            <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100" class="w-full h-full rounded-full border-2 border-app object-cover" style="border-color: #0b1121;">
-                        </div>
-                        <span class="text-xs text-gray-300 truncate w-full text-center">ahmetdincer</span>
-                    </div>
-                    <div class="flex flex-col items-center space-y-1 min-w-[72px] cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-0.5 story-gradient relative" style="background: linear-gradient(45deg, #06b6d4, #a855f7, #ec4899);">
-                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100" class="w-full h-full rounded-full border-2 border-app object-cover" style="border-color: #0b1121;">
-                        </div>
-                        <span class="text-xs text-gray-300 truncate w-full text-center">zeynepylmz</span>
-                    </div>
-                    <div class="flex flex-col items-center space-y-1 min-w-[72px] cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-0.5 story-gradient relative" style="background: linear-gradient(45deg, #06b6d4, #a855f7, #ec4899);">
-                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100" class="w-full h-full rounded-full border-2 border-app object-cover" style="border-color: #0b1121;">
-                        </div>
-                        <span class="text-xs text-gray-300 truncate w-full text-center">berk.ates</span>
-                    </div>
-                    <div class="flex flex-col items-center space-y-1 min-w-[72px] cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-0.5 story-gradient relative" style="background: linear-gradient(45deg, #06b6d4, #a855f7, #ec4899);">
-                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" class="w-full h-full rounded-full border-2 border-app object-cover" style="border-color: #0b1121;">
-                        </div>
-                        <span class="text-xs text-gray-300 truncate w-full text-center">melis.aa</span>
-                    </div>
-                    <div class="flex flex-col items-center space-y-1 min-w-[72px] cursor-pointer">
-                        <div class="w-16 h-16 rounded-full p-0.5 story-gradient relative" style="background: linear-gradient(45deg, #06b6d4, #a855f7, #ec4899);">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" class="w-full h-full rounded-full border-2 border-app object-cover" style="border-color: #0b1121;">
-                        </div>
-                        <span class="text-xs text-gray-300 truncate w-full text-center">erenkoc</span>
-                    </div>
-                </div>
+                <div id="stories-container" class="flex space-x-4 overflow-x-auto pb-2" style="scrollbar-width: thin;">
+</div>
 
                 <!-- Ruh Hali (Mood) -->
                 <div class="bg-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4" style="background-color: #151e32;">
@@ -464,79 +425,9 @@
                     </div>
                 </div>
 
-                <!-- Post 1 -->
-                <article class="bg-card rounded-2xl p-4 space-y-4" style="background-color: #151e32;">
-                    <div class="flex justify-between items-start">
-                        <div class="flex items-center space-x-3">
-                            <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100" class="w-10 h-10 rounded-full object-cover">
-                            <div>
-                                <h4 class="font-bold text-white text-sm">Ahmet Dinçer <i class="fa-solid fa-circle-check text-blue-500 text-xs"></i></h4>
-                                <p class="text-xs text-gray-400">2 saat önce • <i class="fa-solid fa-location-dot"></i> Girne, KKTC</p>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-ellipsis text-gray-400 cursor-pointer"></i>
-                    </div>
-                    <p class="text-sm">Bazen en güzel anlar, planlanmayanlarda saklı...<br>Girne'de gün batımı her zaman iyi bir fikir. 🌅</p>
-                    <img src="https://images.unsplash.com/photo-1596395819057-cbbfafbc968c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" class="w-full h-64 object-cover rounded-xl">
-                    <div class="flex justify-between items-center text-gray-400 text-sm">
-                        <div class="flex items-center space-x-3">
-                            <div class="flex -space-x-1">
-                                <span class="z-20 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-[10px] text-white">❤️</span>
-                                <span class="z-10 bg-yellow-500 rounded-full w-5 h-5 flex items-center justify-center text-[10px] text-white">😮</span>
-                            </div>
-                            <span class="text-white">1.2K</span>
-                        </div>
-                        <div class="flex space-x-4">
-                            <span><i class="fa-regular fa-comment"></i> 36</span>
-                            <span><i class="fa-solid fa-share"></i> 12</span>
-                            <span><i class="fa-regular fa-bookmark"></i></span>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Post 2 (Grid Fotoğraflı) -->
-                <article class="bg-card rounded-2xl p-4 space-y-4" style="background-color: #151e32;">
-                    <div class="flex justify-between items-start">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-full story-gradient p-0.5" style="background: linear-gradient(45deg, #06b6d4, #a855f7, #ec4899);">
-                                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100" class="w-full h-full rounded-full border-2 border-app object-cover" style="border-color: #0b1121;">
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-white text-sm">zeynepylmz</h4>
-                                <p class="text-xs text-gray-400">4 saat önce • <i class="fa-solid fa-location-dot"></i> Girne Üniversitesi</p>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-ellipsis text-gray-400 cursor-pointer"></i>
-                    </div>
-                    <p class="text-sm">Küçük şeyler, büyük mutluluklar... 💙<br>Bugün derslerden sonra sahilde biraz nefes aldık. 🌊</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <img src="https://images.unsplash.com/photo-1511884642898-4c92249e20b6?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="w-full h-40 object-cover rounded-tl-xl">
-                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="w-full h-40 object-cover rounded-tr-xl">
-                        <div class="bg-gray-200 rounded-bl-xl p-4 flex flex-col justify-center items-center text-center text-gray-800" style="background-color: #e5e7eb;">
-                            <p class="font-serif italic">"Daha iyi bir versiyonum için..."</p>
-                            <i class="fa-regular fa-heart mt-2"></i>
-                        </div>
-                        <div class="relative">
-                            <img src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="w-full h-40 object-cover rounded-br-xl">
-                            <span class="absolute top-2 right-2 px-2 py-1 rounded text-xs" style="background-color: rgba(0,0,0,0.6); color: white;">4/4</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center text-gray-400 text-sm">
-                        <div class="flex items-center space-x-3">
-                            <div class="flex -space-x-1">
-                                <span class="z-20 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-[10px] text-white">❤️</span>
-                            </div>
-                            <span class="text-white">856</span>
-                        </div>
-                        <div class="flex space-x-4">
-                            <span><i class="fa-regular fa-comment"></i> 24</span>
-                            <span><i class="fa-solid fa-share"></i> 8</span>
-                            <span><i class="fa-regular fa-bookmark"></i></span>
-                        </div>
-                    </div>
-                </article>
-
-            </div>
+                <div id="feed-container" class="space-y-6">
+<div style="padding: 40px; text-align: center; color: #64748b;">Yükleniyor...</div>
+</div>
 
             <!-- SAĞ SÜTUN (Bileşenler / Widgetlar) -->
             <div class="hidden lg:flex flex-col space-y-4">
@@ -597,7 +488,7 @@
                 <!-- Önerilen Hesaplar -->
                 <div class="bg-card rounded-2xl p-4" style="background-color: #151e32;">
                     <h4 class="font-bold text-sm text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-star text-cyan-400" style="color: #22d3ee;"></i> Önerilen Hesaplar</h4>
-                    <div class="space-y-4">
+                    <div class="space-y-4" id="who-to-follow-list">
                         <!-- Öneri 1 -->
                         <div class="flex justify-between items-center">
                             <div class="flex items-center gap-2">
@@ -627,30 +518,30 @@
         </main>
 
         <!-- Alt Navigasyon (Bottom Bar) - Sadece mobilde sabit kalır -->
-        <div class="fixed bottom-0 w-full backdrop-blur-md border-t border-gray-800 lg:hidden" style="background-color: rgba(11, 17, 33, 0.95); z-index: 50;">
+        <div class="bottom-nav fixed bottom-0 w-full backdrop-blur-md border-t border-gray-800 lg:hidden" id="mobile-bottom-nav" style="background-color: rgba(11, 17, 33, 0.95); z-index: 50;">
             <div class="flex justify-around items-center h-16 relative">
                 <a href="#" class="flex flex-col items-center text-cyan-400" style="color: #06b6d4;">
                     <i class="fa-solid fa-house text-lg"></i>
                     <span class="text-[10px] mt-1">Ana Sayfa</span>
                 </a>
-                <a href="#" class="flex flex-col items-center text-gray-400" style="color: #9ca3af;">
+                <a href="search.html" class="flex flex-col items-center text-gray-400" style="color: #9ca3af;">
                     <i class="fa-regular fa-compass text-lg"></i>
                     <span class="text-[10px] mt-1">Keşfet</span>
                 </a>
                 
                 <!-- Ortadaki Ekle Butonu -->
                 <div class="relative -top-5">
-                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center cursor-pointer transform rotate-45 hover:scale-105 transition" style="background-color: #06b6d4; box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.3);">
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center cursor-pointer transform rotate-45 hover:scale-105 transition" onclick="window.openMainPostModal()" style="background-color: #06b6d4; box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.3);">
                         <i class="fa-solid fa-plus text-white text-2xl -rotate-45"></i>
                     </div>
                 </div>
                 
-                <a href="#" class="flex flex-col items-center text-gray-400 relative" style="color: #9ca3af;">
+                <a href="notifications.html" class="flex flex-col items-center text-gray-400 relative" style="color: #9ca3af;">
                     <i class="fa-regular fa-bell text-lg"></i>
                     <span class="absolute top-0 right-1 w-2 h-2 bg-red-500 rounded-full" style="background-color: #ef4444;"></span>
                     <span class="text-[10px] mt-1">Bildirimler</span>
                 </a>
-                <a href="#" class="flex flex-col items-center text-gray-400" style="color: #9ca3af;">
+                <a href="#" onclick="window.goToMyProfile()" class="flex flex-col items-center text-gray-400" style="color: #9ca3af;">
                     <i class="fa-regular fa-user text-lg"></i>
                     <span class="text-[10px] mt-1">Profil</span>
                 </a>

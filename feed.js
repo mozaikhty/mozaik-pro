@@ -32,9 +32,17 @@ window.logoutUser = function() { signOut(auth).then(() => { window.location.href
 
 window.switchFeedTab = function(tabName) {
     currentFeedTab = tabName;
-    document.querySelectorAll('.feed-tabs .feed-tab').forEach(t => t.classList.remove('active'));
-    if(tabName === 'discover') document.getElementById('tab-discover').classList.add('active');
-    if(tabName === 'following') document.getElementById('tab-following').classList.add('active');
+    document.querySelectorAll('.new-tab-btn').forEach(t => {
+        t.classList.remove('text-white', 'border-cyan-400');
+        t.style.borderBottomColor = 'transparent';
+        t.classList.add('text-gray-400');
+    });
+    const activeTab = document.getElementById('tab-' + tabName) || document.getElementById('tab-main');
+    if (activeTab) {
+        activeTab.classList.remove('text-gray-400');
+        activeTab.classList.add('text-white', 'border-cyan-400');
+        activeTab.style.borderBottomColor = '#06b6d4';
+    }
     renderFeed();
 };
 
@@ -139,7 +147,20 @@ function renderWhoToFollow() {
     eligibleUsers.forEach(uid => {
         const uData = allUsersData[uid]; const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
         const fullName = window.escapeHtml(uData.fullName || uid); const vHtml = uData.isVerified ? '<span class="verified-badge">☑️</span>' : '';
-        html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px; cursor:pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" class="user-row" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'"><div style="display:flex; align-items:center; gap:10px; overflow:hidden;"><div style="width:40px; height:40px; border-radius:8px; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:20px; flex-shrink:0; border: 1px solid #cbd5e1;">${avatarHtml}</div><div style="overflow:hidden;"><div style="font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f172a;">${fullName} ${vHtml}</div><div style="color:#64748b; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@${window.escapeHtml(uid)}</div></div></div><button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}')" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; flex-shrink:0; transition:0.2s; font-size:13px;">Ekle</button></div>`;
+        
+        const twAvatar = uData.avatarUrl 
+            ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" class="w-8 h-8 rounded-full object-cover">` 
+            : `<div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white bg-gray-700">${fullName.charAt(0)}</div>`;
+        html += `<div class="flex justify-between items-center cursor-pointer hover:bg-gray-800 p-2 rounded-lg transition" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'">
+            <div class="flex items-center gap-2">
+                ${twAvatar}
+                <div>
+                    <p class="text-xs font-bold text-white">${window.escapeHtml(uid)} ${vHtml.replace('class="verified-badge"', 'class="text-blue-500 text-xs"')}</p>
+                    <p class="text-[10px] text-gray-400">${fullName}</p>
+                </div>
+            </div>
+            <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}')" class="border border-gray-600 text-xs px-3 py-1 rounded-full hover:bg-gray-700 transition" style="color:white;">Takip Et</button>
+        </div>`;
     });
     container.innerHTML = html;
 }
@@ -668,44 +689,87 @@ function renderFeed() { window.currentGlobalPosts = globalPosts;
             mediaHtml = `<div class="post-image-container" style="position:relative;"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="post-image" style="cursor:pointer;" onclick="${likeAction}"><div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
         }
 
-        const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.onclick = () => window.openPostDetail(post.id); 
+        
+        const likeCount = likesArray.length;
+        const commentCount = postData.comments || 0;
+        const shareCount = postData.shares || 0;
+        
+        let customMediaHtml = '';
+        if (postData.media && postData.media.length > 0) {
+            if (postData.media.length === 1) {
+                let m = postData.media[0];
+                customMediaHtml = m.type === 'video' 
+                    ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), likeAction, "feed-" + Math.random().toString(36).substr(2,9), post.id).replace('<video ', '<video class="w-full h-64 object-cover rounded-xl" ')}`
+                    : `<img src="${window.sanitizeUrl(m.url)}" class="w-full h-64 object-cover rounded-xl cursor-pointer" onclick="${likeAction}">`;
+            } else {
+                let slides = postData.media.map(m => {
+                    return m.type === 'video' 
+                        ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), likeAction, "feed-" + Math.random().toString(36).substr(2,9), post.id).replace('<video ', '<video class="w-full h-64 object-cover rounded-xl flex-shrink-0" ')}`
+                        : `<img src="${window.sanitizeUrl(m.url)}" class="w-full h-64 object-cover rounded-xl cursor-pointer flex-shrink-0" onclick="${likeAction}">`;
+                }).join('');
+                customMediaHtml = `<div class="flex overflow-x-auto gap-2 snap-x">${slides}</div>`;
+            }
+            customMediaHtml = `<div class="relative">${customMediaHtml}<div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+        } else if (postData.imageUrl) {
+            customMediaHtml = `<div class="relative"><img src="${window.sanitizeUrl(postData.imageUrl)}" class="w-full h-64 object-cover rounded-xl cursor-pointer" onclick="${likeAction}"><div class="dblclick-heart" id="heart-${post.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); font-size:60px; color:white; text-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:none; transition:transform 0.3s ease;">❤️</div></div>`;
+        }
+
+        const isBookmarked = window.myBookmarks && window.myBookmarks.includes(post.id);
+        const bookmarkClass = isBookmarked ? 'fa-solid text-cyan-400' : 'fa-regular';
+
+        let reactionsHtml = '';
+        if (likeCount > 0) {
+            reactionsHtml = `<div class="flex -space-x-1">
+                ${isLiked ? '<span class="z-20 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center text-[10px] text-white">❤️</span>' : ''}
+                ${likeCount > 1 ? '<span class="z-10 bg-yellow-500 rounded-full w-5 h-5 flex items-center justify-center text-[10px] text-white">👍</span>' : ''}
+            </div>
+            <span class="text-white ml-2">${likeCount}</span>`;
+        }
+
+        postDiv.className = 'w-full';
+        postDiv.onclick = () => window.openPostDetail(post.id); 
 
         postDiv.innerHTML = `
-            <div style="width:100%; display:flex; flex-direction:column;">
+            <article class="bg-card rounded-2xl p-4 space-y-4" style="background-color: #151e32;">
                 ${repostHtml}
-                <div style="display:flex; gap:15px;">
-                    <div class="post-left">
-                        <div class="post-avatar-img" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'" style="cursor:pointer;">${avatarImg}</div>
-                    </div>
-                    <div class="post-right">
-                        <div class="post-header-info">
-                            <div class="author-group" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
-                                <span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${window.escapeHtml(originalAuthor)}</span> <span class="post-time">· ${timeAgo}</span> ${locationHtml} ${editedHtml}
-                            </div>
-                            <div style="position:relative;">
-                                <button class="post-options-btn" onclick="window.toggleDropdown('${post.id}', event)">•••</button>
-                                <div id="dropdown-${post.id}" class="dropdown-menu">
-                                    ${(isOwner || (postData.isRepost && postData.author === myUsername)) ? `
-                                        <div class="dropdown-item danger" onclick="event.stopPropagation(); window.deletePost('${post.id}')">Sil</div>
-                                        ${!postData.isRepost ? `<div class="dropdown-item" onclick="event.stopPropagation(); window.openEditModal('${post.id}', '${safeContentForEdit}')">Düzenle</div>` : ''}
-                                        <div class="dropdown-item" onclick="event.stopPropagation(); window.pinPost('${post.id}')">Sabitle</div>
-                                    ` : `<div class="dropdown-item" onclick="event.stopPropagation(); alert('Bildirildi.')">Bildir</div>`}
-                                </div>
-                            </div>
+                <div class="flex justify-between items-start">
+                    <div class="flex items-center space-x-3 cursor-pointer" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
+                        <div class="w-10 h-10 rounded-full overflow-hidden">${avatarImg.replace('<img ', '<img class="w-full h-full object-cover" ')}</div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm">${fullName} ${vHtml.replace('class="verified-badge"', 'class="text-blue-500 text-xs"')}</h4>
+                            <p class="text-xs text-gray-400">${timeAgo} ${locationHtml ? '• ' + locationHtml : ''} ${editedHtml}</p>
                         </div>
-                        <div class="post-content">${DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`)}</div>
-                        ${mediaHtml}
-                        <div class="post-footer-actions">
-                            <div class="action-item" onclick="event.stopPropagation(); window.openPostDetail('${post.id}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
-                            <div class="action-item repost-box" onclick="window.repostPost('${post.id}', '${originalAuthor}', event)" title="Ağınıza Ekle"><span class="action-icon">🔁</span> </div>
-                            <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${originalAuthor}', event)" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${post.id}', event)">${likesArray.length || ''}</span></div>
-                            <div class="action-item ${myBookmarks.includes(post.id) ? 'liked' : ''}" onclick="window.toggleBookmark('${post.id}', ${myBookmarks.includes(post.id)}, event)" title="Kaydet"><span class="action-icon">${myBookmarks.includes(post.id) ? '🔖' : '📑'}</span></div>
-                            <div class="action-item" onclick="window.openShareModal('${post.id}', event)" title="İlet"><span class="action-icon">📤</span></div>
+                    </div>
+                    <div style="position:relative;">
+                        <i class="fa-solid fa-ellipsis text-gray-400 cursor-pointer" onclick="event.stopPropagation(); window.toggleDropdown('${post.id}', event)"></i>
+                        <div id="dropdown-${post.id}" class="dropdown-menu absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl z-50 hidden">
+                            ${(isOwner || (postData.isRepost && postData.author === myUsername)) ? `
+                                <div class="p-3 text-red-500 cursor-pointer hover:bg-gray-700" onclick="event.stopPropagation(); window.deletePost('${post.id}')">Sil</div>
+                                ${!postData.isRepost ? `<div class="p-3 text-white cursor-pointer hover:bg-gray-700" onclick="event.stopPropagation(); window.openEditModal('${post.id}', '${safeContentForEdit}')">Düzenle</div>` : ''}
+                            ` : ''}
+                            <div class="p-3 text-white cursor-pointer hover:bg-gray-700" onclick="event.stopPropagation(); window.openReportModal('${post.id}')">Şikayet Et</div>
                         </div>
                     </div>
                 </div>
-            </div>
+                
+                <p class="text-sm text-gray-200 break-words">${window.escapeHtml(postData.content || '').replace(/\n/g, '<br>')}</p>
+                
+                ${customMediaHtml}
+                
+                <div class="flex justify-between items-center text-gray-400 text-sm mt-3 border-t border-gray-700 pt-3">
+                    <div class="flex items-center space-x-3 cursor-pointer" onclick="event.stopPropagation(); window.toggleLike('${post.id}', ${isLiked})">
+                        ${reactionsHtml}
+                        ${likeCount === 0 ? '<i class="fa-regular fa-heart"></i>' : ''}
+                    </div>
+                    <div class="flex space-x-4">
+                        <span class="cursor-pointer" onclick="event.stopPropagation(); window.openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i> ${commentCount}</span>
+                        <span class="cursor-pointer" onclick="event.stopPropagation(); window.openShareModal('${post.id}')"><i class="fa-solid fa-share"></i> ${shareCount}</span>
+                        <span class="cursor-pointer" onclick="event.stopPropagation(); window.toggleBookmark('${post.id}', event)"><i class="${bookmarkClass} fa-bookmark"></i></span>
+                    </div>
+                </div>
+            </article>
         `;
+
         feedContainer.appendChild(postDiv);
     });
     window.initVideoPlayers(); window.observeVideos();
