@@ -288,7 +288,6 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
                 let isVideo = (file.type || '').startsWith('video/');
                 if (!isVideo && file.name && (file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov'))) {
                     isVideo = true;
-                    console.log("File type empty but extension is video. Forcing isVideo=true");
                 }
 
                 if (!isVideo) {
@@ -299,7 +298,6 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
 
                 const safeName = (file.name || 'video.mp4').replace(/[^a-zA-Z0-9.]/g, "");
                 const fileName = `posts/${auth.currentUser.uid}_${Date.now()}_${safeName}`;
-                console.log("storagePath:", fileName);
                 
                 const storageRef = ref(storage, fileName);
                 
@@ -324,12 +322,10 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
                                      "Code: " + innerErr?.code + "\n" +
                                      "Msg: " + innerErr?.message + "\n" +
                                      "SrvResp: " + innerErr?.serverResponse + "\n" +
-                                     "CustomData: " + JSON.stringify(innerErr?.customData || {}) + "\n" +
                                      "File: " + file?.name + " (" + file?.type + ") " + file?.size + " bytes";
                     alert(debugStr);
                     throw innerErr;
                 }
-            });
             }
         }
         
