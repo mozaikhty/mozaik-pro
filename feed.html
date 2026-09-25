@@ -15,7 +15,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body style="background-color: #0b1121; color: #e5e7eb;">
     <script>
         try {
             if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
@@ -359,11 +359,26 @@
     <script type="module" src="story.js?v=7"></script>
     <script src="ui.js?v=29"></script>
 
+    
     <style>
-        .mobile-sidebar-overlay, .mobile-sidebar, .mozaik-layout, .fab-button, #bottom-nav-container, .header-desktop, .stories-wrapper, .mood-card-container, .main-feed-container, #old-stories-container, #old-feed-container {
+        /* ESKİ UI'ı GİZLE (MODALLARA DOKUNMADAN) */
+        #sidebar-container, 
+        .feed-main, 
+        .search-box-right, 
+        #bottom-nav-container, 
+        .mobile-sidebar, 
+        .mobile-sidebar-overlay, 
+        .fab-button,
+        .header-desktop,
+        .stories-wrapper,
+        .mood-card-container,
+        .main-feed-container,
+        #old-stories-container,
+        #old-feed-container {
             display: none !important;
         }
     </style>
+
 
 
     <!-- YENİ MOZAİK UI (MOCK) -->
