@@ -12,6 +12,7 @@ import { auth, db } from './firebase-config.js';
 // GLOBAL BAN CHECK
 // =====================================
 window.initVideoObserver = function() {
+    if(window.videoObserver) { window.videoObserver.disconnect(); window.videoObserver = null; }
     if(!window.videoObserver) {
         window.videoObserver = new IntersectionObserver((entries) => {
             let activeVideo = null;
@@ -40,11 +41,15 @@ window.initVideoObserver = function() {
                 const btn = document.querySelector(`#player-${uniqueId} .mz-control-mute`);
                 if (btn) btn.innerText = globalMuted ? '🔇' : '🔊';
 
-                activeVideo.play().catch(() => {
-                    // Tarayıcı autoplay kısıtlamasına takılırsa sessiz oynat
-                    activeVideo.muted = true;
-                    if (btn) btn.innerText = '🔇';
-                    activeVideo.play().catch(()=>{});
+                activeVideo.play().catch((err) => {
+                    console.warn("AUTOPLAY BLOCKED OR ABORTED:", err.name, err.message);
+                    // Sadece NotAllowedError (Autoplay policy) ise sessize al.
+                    // AbortError ise sessize alma, çünkü video zaten yükleniyor veya iptal edildi.
+                    if (err.name === 'NotAllowedError') {
+                        activeVideo.muted = true;
+                        if (btn) btn.innerText = '🔇';
+                        activeVideo.play().catch(()=>{});
+                    }
                 });
             }
         }, { threshold: 0.6 }); // %60 görünürlük
@@ -574,27 +579,7 @@ window.initVideoPlayers = function() {
     });
 };
 
-// Autoplay logic via Intersection Observer
-window.videoObserver = null;
-if (typeof IntersectionObserver !== 'undefined') {
-    window.videoObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const video = entry.target;
-            if (entry.isIntersecting) {
-                // Sadece daha önce manuel olarak durdurulmamışsa otomatik oynat (veya autoplay'i basit tut)
-                video.play().catch(e => {
-                    // Tarayıcı sesli autoplay'i engellediyse, sessize alıp tekrar dene
-                    video.muted = true;
-                    video.play().catch(err => {});
-                    const btn = document.querySelector(`#player-${video.id.replace('video-','')} .mz-control-mute`);
-                    if(btn) btn.innerText = '🔇';
-                });
-            } else {
-                video.pause();
-            }
-        });
-    }, { threshold: 0.6 });
-}
+
 
 window.observeVideos = function() {
     if (!window.videoObserver) return;
