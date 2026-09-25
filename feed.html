@@ -10,106 +10,180 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-    
-    <link rel="stylesheet" href="style.css?v=31">
-</head>
-<body>
-    <script>
-        try {
-            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
-        } catch(e) { console.warn("Gizli mod veya erişim engeli nedeniyle tema okunamadı."); }
-    </script>
-    <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
-    <div class="mobile-sidebar" id="mobile-sidebar">
-        <div class="sidebar-header-mobile">
-            <div class="sidebar-top-icons">
-                <div class="sidebar-avatar-mobile" id="sidebar-avatar-mobile" onclick="window.goToMyProfile()">👤</div>
-                <div class="sidebar-extra-icons">
-                    <div class="s-icon-btn" title="Başka hesap ekle">+</div>
+
+    <div class="mozaik-layout">
+        <!-- HEADER -->
+        <div class="header-sticky" style="display:flex; flex-direction:column; padding:0; gap:0;">
+            <div class="global-header-top" style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:15px; border-bottom:1px solid rgba(241, 245, 249, 0.05); overflow-x: auto;">
+                <div class="logo-desktop" style="margin:0; padding:0; color:#0f172a; display:flex; align-items:center; gap:5px; flex-shrink:0;">
+                    <span style="font-size:22px; font-weight:900; letter-spacing:-1px;">Mozaik</span>
+                </div>
+                
+                <div class="header-nav-center" style="display:flex; align-items:center; gap:20px; font-size:15px; font-weight:600; color:#64748b; margin-left:auto; margin-right:auto;">
+                    <a href="feed.html" style="color:#00f2fe; display:flex; flex-direction:column; align-items:center; gap:5px; position:relative; text-decoration:none;">
+                        Ana Akış
+                        <span style="position:absolute; bottom:-10px; width:100%; height:2px; background:linear-gradient(90deg, #00f2fe, #b026ff); border-radius:2px;"></span>
+                    </a>
+                    <a href="search.html" style="text-decoration:none; color:inherit;">Keşfet</a>
+                    <a href="feed.html?tab=following" style="text-decoration:none; color:inherit;">Takip</a>
+                </div>
+                
+                <div class="header-actions-right" style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+                    <a href="search.html" style="font-size:20px; text-decoration:none; color:inherit; display:flex; align-items:center;">🔍</a>
+                    <button onclick="window.openMainPostModal()" style="width:28px; height:28px; border-radius:50%; background:transparent; border:1.5px solid currentColor; color:inherit; font-size:18px; display:flex; justify-content:center; align-items:center; cursor:pointer;">+</button>
+                    <a href="chat.html" style="font-size:20px; text-decoration:none; color:inherit; display:flex; align-items:center;">💬</a>
                 </div>
             </div>
-            <div class="sidebar-name-mobile" id="sidebar-name-mobile">Yükleniyor...</div>
-            <div class="sidebar-handle-mobile" id="sidebar-handle-mobile">@bekleniyor</div>
-            <div class="sidebar-stats-mobile">
-                <div onclick="window.showMyFollowing()" style="cursor:pointer;"><b id="sidebar-following-count">0</b> Ağım</div>
-                <div onclick="window.showMyFollowers()" style="cursor:pointer;"><b id="sidebar-followers-count">0</b> Takipçiler</div>
-            </div>
         </div>
-        <div class="sidebar-menu-mobile">
-            <a href="#" class="sidebar-menu-item" id="sidebar-profile-link" onclick="window.goToMyProfile()">👤 Profil</a>
-            <a href="feed.html?tab=bookmarks" class="sidebar-menu-item">🔖 Koleksiyonum</a>
-            <div class="sidebar-divider"></div>
-            <div class="sidebar-bottom-menu">
-                <a href="#" class="sidebar-bottom-item" onclick="window.openSettingsModal()">⚙️ Ayarlar ve Görünüm</a>
-                <a href="#" class="sidebar-bottom-item" style="color: #ef4444; margin-top: 10px;" onclick="window.logoutUser()">🚪 Çıkış Yap</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="app-container">
         
-        <div id="sidebar-container"></div>
+        <style>
+            body.dark-mode .global-header-top { border-bottom-color: rgba(255, 255, 255, 0.05) !important; }
+            body.dark-mode .global-header-top .logo-desktop { color: #ffffff !important; }
+            body.dark-mode .header-nav-center a:not([href="feed.html"]) { color: #94a3b8 !important; }
+            body.dark-mode .header-actions-right { color: #ffffff !important; }
+            .global-header-top::-webkit-scrollbar { display: none; }
+        </style>
 
-        <main class="feed-main">
-            <div class="header-sticky">
-                <div class="mobile-header-top">
-                    <div id="mobile-avatar-header" style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; overflow:hidden; cursor:pointer;" onclick="window.openMobileSidebar()">👤</div>
-                    <div class="mobile-logo-text">Mozaik.</div>
-                    <div style="width:36px;"></div>
-                </div>
-                <div class="feed-tabs">
-                    <div class="feed-tab active" id="tab-discover" onclick="window.switchFeedTab('discover')">Öne Çıkanlar</div>
-                    <div class="feed-tab" id="tab-following" onclick="window.switchFeedTab('following')">Ağım</div>
-                </div>
+        <!-- STORIES -->
+        <div class="stories-container" id="stories-container"></div>
+
+        <!-- MOOD CARD -->
+        <div class="mood-container" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; overflow-x: auto; white-space: nowrap;">
+            <div style="display:flex; flex-direction:column; min-width:120px;">
+                <div style="font-weight:700; font-size:16px; display:flex; align-items:center; gap:8px;"><span style="color:#00f2fe; font-size:20px;">✨</span> Bugünün ruh hali</div>
+                <div style="font-size:12px; margin-top:2px;" class="mood-subtitle">Mozaik'te bugün en çok görülen ruh halleri</div>
             </div>
+            
+            <div style="display:flex; gap:20px; align-items:center;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                    <div class="emoji-circle" style="font-size:28px;">🙂</div>
+                    <div style="font-size:12px; font-weight:500;">Mutlu</div>
+                    <div style="font-size:11px;" class="mood-percent">%28</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                    <div class="emoji-circle" style="font-size:28px;">😌</div>
+                    <div style="font-size:12px; font-weight:500;">Sakin</div>
+                    <div style="font-size:11px;" class="mood-percent">%17</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                    <div class="emoji-circle" style="font-size:28px;">💜</div>
+                    <div style="font-size:12px; font-weight:500;">Aşık</div>
+                    <div style="font-size:11px;" class="mood-percent">%12</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                    <div class="emoji-circle" style="font-size:28px;">🔥</div>
+                    <div style="font-size:12px; font-weight:500;">Enerjik</div>
+                    <div style="font-size:11px;" class="mood-percent">%11</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                    <div class="emoji-circle" style="font-size:28px;">😞</div>
+                    <div style="font-size:12px; font-weight:500;">Yorgun</div>
+                    <div style="font-size:11px;" class="mood-percent">%9</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                    <div class="emoji-circle" style="font-size:28px;">🤢</div>
+                    <div style="font-size:12px; font-weight:500;">Kafası karışık</div>
+                    <div style="font-size:11px;" class="mood-percent">%8</div>
+                </div>
+                <div style="font-size:18px; margin-left:5px; color:#64748b; cursor:pointer;">&gt;</div>
+            </div>
+        </div>
+        
+        <style>
+            .mood-container::-webkit-scrollbar { display: none; }
+            body.dark-mode .mood-subtitle, body.dark-mode .mood-percent { color: #64748b !important; }
+        </style>
 
-            <div class="stories-container" id="stories-container"></div>
-
-            <div class="post-input-box" id="desktop-post-box">
-                <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
-                <div class="input-form">
-                    <textarea id="post-text" maxlength="1000" placeholder="Düşüncelerinizi aktarın..."></textarea>
-                    <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">✓ Fotoğraf Eklendi</div>
-                    <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">📍 <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
-                    <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
-                    
-                    <div class="input-actions">
-                        <div class="action-icons">
-                            <label for="image-input" class="icon-btn" title="Medya">🖼️</label>
-                            <div class="icon-btn" title="Konum" onclick="window.addLocation(false)">📍</div>
-                        </div>
-                        <div style="display:flex; align-items:center;">
-                            <span class="char-counter" id="inline-char-count" style="margin-right: 15px;">280</span>
-                            <button class="share-btn" id="share-btn">Yayınla</button>
-                        </div>
+        <div class="mozaik-columns">
+            <div class="mozaik-feed">
+                <!-- POST INPUT FORM MUST REMAIN IN DOM SO APP.JS DOESN'T BREAK -->
+                <div class="post-input-box" id="desktop-post-box" style="display:none;">
+                    <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
+                    <div class="input-form">
+                        <textarea id="post-text" maxlength="1000" placeholder="Düşüncelerinizi aktarın..."></textarea>
+                        <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
+                        <button class="share-btn" id="share-btn">Yayınla</button>
                     </div>
                 </div>
-            </div>
 
-            <div id="feed-container">
-                <div style="padding: 40px; text-align: center; color: #64748b;">İçerikler yükleniyor...</div>
-            </div> 
-            
-        </main>
-
-        <aside class="sidebar-right">
-            <div class="search-box-right">
-                    <span>🔍</span>
-                <input type="text" placeholder="Arama yapın..." onkeypress="if(event.key === 'Enter') { window.location.href='search.html'; }">
-            </div>
-
-            <div class="who-to-follow">
-                <div class="wtf-title">Gündem ve Öneriler</div>
-                <div id="who-to-follow-list">
-                    <div style="font-size:14px; color:#64748b;">Öneriler yükleniyor...</div>
+                <div id="feed-container">
+                    <div style="padding: 40px; text-align: center; color: #64748b;">İçerikler yükleniyor...</div>
                 </div>
             </div>
             
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 20px; text-align:center;">
-                © 2026 Mozaik Platform
-            </div>
-        </aside>
+            <div class="mozaik-sidebar">
+                <aside class="sidebar-right">
+                    
+                    <div class="who-to-follow" style="margin-top:0;">
+                        <div class="wtf-title" style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #00f2fe, #4facfe); display:flex; justify-content:center; align-items:center; font-size:16px;">😊</div>
+                            Senin Mozaik'in
+                        </div>
+                        <div style="font-size:13px; color:#64748b; margin-bottom:10px;">Bugün 3 paylaşımın var.</div>
+                        <div style="height:80px; border-radius:12px; background:linear-gradient(to right, rgba(0,242,254,0.1), rgba(79,172,254,0.1)); border:1px solid rgba(0,242,254,0.2); display:flex; justify-content:center; align-items:center; color:#3b82f6; font-size:13px; font-weight:bold; cursor:pointer;">
+                            Hayatını mozaik gibi bir araya getir. ✨
+                        </div>
+                    </div>
 
+                    <div class="who-to-follow" style="margin-top:20px;">
+                        <div class="wtf-title" style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:30px; height:30px; border-radius:8px; background:linear-gradient(135deg, #818cf8, #c084fc); display:flex; justify-content:center; align-items:center; font-size:16px;">🎲</div>
+                            Günün Görevi
+                        </div>
+                        <div style="font-size:14px; font-weight:600; color:#f8fafc;">Bugün çocukluğundan bir fotoğraf paylaş. 📸</div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:5px; display:flex; align-items:center; justify-content:space-between; gap:5px;">
+                            <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:8px; height:8px; background:#10b981; border-radius:50%;"></span> 421 kişi paylaştı</div>
+                            <span style="font-size:16px;">&gt;</span>
+                        </div>
+                    </div>
+
+                    <div class="who-to-follow" style="margin-top:20px;">
+                        <div class="wtf-title" style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #00f2fe, #4facfe); display:flex; justify-content:center; align-items:center; font-size:16px;">📍</div>
+                            Konum Keşfet
+                        </div>
+                        <div style="margin-top:10px; border-radius:12px; overflow:hidden; position:relative; height:100px; background:#1e293b; display:flex; justify-content:center; align-items:center;">
+                            <span style="font-size:32px; z-index:2; text-shadow:0 2px 10px rgba(0,0,0,0.5);">📍</span>
+                            <div style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0.5; background:url('https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80') center/cover;"></div>
+                        </div>
+                        <div style="font-size:13px; color:#94a3b8; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                            Girne'de neler paylaşılıyor keşfetmek için tıkla. <span style="font-size:16px;">&gt;</span>
+                        </div>
+                    </div>
+
+                    <div class="who-to-follow" style="margin-top:20px;">
+                        <div class="wtf-title" style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #3b82f6, #2563eb); display:flex; justify-content:center; align-items:center; font-size:16px;">👥</div>
+                            Mozaik Topluluğu
+                        </div>
+                        <div style="font-size:12px; color:#64748b; margin-top:-5px; margin-bottom:10px;">8 arkadaşınla özel grup.</div>
+                        <div style="display:flex; gap:5px; margin-bottom:10px;">
+                            <div style="flex:1; height:60px; border-radius:8px; background:#334155;"></div>
+                            <div style="flex:1; height:60px; border-radius:8px; background:#475569;"></div>
+                            <div style="flex:1; height:60px; border-radius:8px; background:#64748b;"></div>
+                            <div style="flex:1; height:60px; border-radius:8px; background:#94a3b8;"></div>
+                        </div>
+                        <div style="font-size:13px; color:#94a3b8; display:flex; justify-content:space-between; align-items:center;">
+                            Birlikte daha güzel. 💙 <span style="font-size:16px;">&gt;</span>
+                        </div>
+                    </div>
+
+                    <div class="who-to-follow" style="margin-top:20px;">
+                        <div class="wtf-title" style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #fcd34d, #f59e0b); display:flex; justify-content:center; align-items:center; font-size:16px;">⭐</div>
+                            Önerilen Hesaplar
+                        </div>
+                        <div id="who-to-follow-list">
+                            <div style="font-size:14px; color:#64748b;">Öneriler yükleniyor...</div>
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 12px; color: #94a3b8; margin-top: 20px; text-align:center;">
+                        © 2026 Mozaik Platform
+                    </div>
+                </aside>
+            </div>
+        </div>
     </div>
 
     <button class="fab-button" onclick="window.openMainPostModal()">+</button>
