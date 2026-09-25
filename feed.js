@@ -304,15 +304,17 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
                 try {
                     await new Promise((resolve, reject) => {
                         const cType = file.type || (isVideo ? 'video/mp4' : 'image/jpeg');
-                        const uploadTask = uploadBytesResumable(storageRef, file, { contentType: cType });
-                        uploadTask.on('state_changed', 
-                            (snapshot) => {
-                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                                btn.innerText = "Yükleniyor... %" + Math.round(progress);
-                            },
-                            (error) => reject(error),
-                            () => resolve()
-                        );
+                        
+                        btn.innerText = "Video hazırlanıyor...";
+                        
+                        file.arrayBuffer().then(buffer => {
+                            const cleanBlob = new Blob([buffer], { type: cType });
+                            const uploadTaskPromise = uploadBytes(storageRef, cleanBlob, { contentType: cType });
+                            btn.innerText = "Yükleniyor... (Mobil optimize)";
+                            uploadTaskPromise.then(() => resolve()).catch((err) => reject(err));
+                        }).catch(bufferErr => {
+                            reject({ code: 'local/buffer_error', message: 'Dosya okunamadı (iCloud veya iOS format hatası): ' + bufferErr.message });
+                        });
                     });
                     const url = await getDownloadURL(storageRef);
                     mediaArray.push({ url, type: isVideo ? 'video' : 'image', storagePath: fileName });
