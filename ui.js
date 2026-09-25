@@ -145,8 +145,8 @@ function loadUIComponents() {
     `;
 
     // HTML'leri Ekrana Bas (Null Kontrolleri Eklendi)
-    const sidebarContainer = document.getElementById('sidebar-container');
-    if (sidebarContainer) sidebarContainer.innerHTML = sidebarHTML;
+    // Left sidebar removed
+    
 
     const bottomNavContainer = document.getElementById('bottom-nav-container');
     if (bottomNavContainer) bottomNavContainer.innerHTML = bottomNavHTML;

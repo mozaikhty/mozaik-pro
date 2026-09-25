@@ -671,37 +671,57 @@ function renderFeed() { window.currentGlobalPosts = globalPosts;
         const postDiv = document.createElement('div'); postDiv.className = 'post'; postDiv.onclick = () => window.openPostDetail(post.id); 
 
         postDiv.innerHTML = `
-            <div style="width:100%; display:flex; flex-direction:column;">
+            <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
                 ${repostHtml}
-                <div style="display:flex; gap:15px;">
-                    <div class="post-left">
-                        <div class="post-avatar-img" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'" style="cursor:pointer;">${avatarImg}</div>
+                
+                <!-- HEADER (Avatar, Name, Time, Dots) -->
+                <div class="post-header-top" style="display:flex; align-items:center; gap:10px;">
+                    <div class="post-avatar-img" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'" style="cursor:pointer; flex-shrink:0;">${avatarImg}</div>
+                    
+                    <div class="author-group" style="display:flex; flex-direction:column; justify-content:center; flex:1;" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <span class="author-name">${fullName}</span>${vHtml}
+                        </div>
+                        <div style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:5px;">
+                            <span class="post-time">${timeAgo}</span> ${locationHtml ? '• ' + locationHtml : ''} ${editedHtml}
+                        </div>
                     </div>
-                    <div class="post-right">
-                        <div class="post-header-info">
-                            <div class="author-group" onclick="event.stopPropagation(); window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
-                                <span class="author-name">${fullName}</span>${vHtml} <span class="author-username">@${window.escapeHtml(originalAuthor)}</span> <span class="post-time">· ${timeAgo}</span> ${locationHtml} ${editedHtml}
-                            </div>
-                            <div style="position:relative;">
-                                <button class="post-options-btn" onclick="window.toggleDropdown('${post.id}', event)">•••</button>
-                                <div id="dropdown-${post.id}" class="dropdown-menu">
-                                    ${(isOwner || (postData.isRepost && postData.author === myUsername)) ? `
-                                        <div class="dropdown-item danger" onclick="event.stopPropagation(); window.deletePost('${post.id}')">Sil</div>
-                                        ${!postData.isRepost ? `<div class="dropdown-item" onclick="event.stopPropagation(); window.openEditModal('${post.id}', '${safeContentForEdit}')">Düzenle</div>` : ''}
-                                        <div class="dropdown-item" onclick="event.stopPropagation(); window.pinPost('${post.id}')">Sabitle</div>
-                                    ` : `<div class="dropdown-item" onclick="event.stopPropagation(); alert('Bildirildi.')">Bildir</div>`}
-                                </div>
-                            </div>
+                    
+                    <div style="position:relative; flex-shrink:0;">
+                        <button class="post-options-btn" onclick="window.toggleDropdown('${post.id}', event)">•••</button>
+                        <div id="dropdown-${post.id}" class="dropdown-menu">
+                            ${(isOwner || (postData.isRepost && postData.author === myUsername)) ? `
+                                <div class="dropdown-item danger" onclick="event.stopPropagation(); window.deletePost('${post.id}')">Sil</div>
+                                ${!postData.isRepost ? `<div class="dropdown-item" onclick="event.stopPropagation(); window.openEditModal('${post.id}', '${safeContentForEdit}')">Düzenle</div>` : ''}
+                                <div class="dropdown-item" onclick="event.stopPropagation(); window.pinPost('${post.id}')">Sabitle</div>
+                            ` : `<div class="dropdown-item" onclick="event.stopPropagation(); alert('Bildirildi.')">Bildir</div>`}
                         </div>
-                        <div class="post-content">${DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`)}</div>
-                        ${mediaHtml}
-                        <div class="post-footer-actions">
-                            <div class="action-item" onclick="event.stopPropagation(); window.openPostDetail('${post.id}')" title="Yanıtla"><span class="action-icon">💬</span> ${(postData.comments || []).length || ''}</div>
-                            <div class="action-item repost-box" onclick="window.repostPost('${post.id}', '${originalAuthor}', event)" title="Ağınıza Ekle"><span class="action-icon">🔁</span> </div>
-                            <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${originalAuthor}', event)" title="Beğen"><span class="action-icon">${isLiked ? '❤️' : '🤍'}</span> <span onclick="window.showLikes('${post.id}', event)">${likesArray.length || ''}</span></div>
-                            <div class="action-item ${myBookmarks.includes(post.id) ? 'liked' : ''}" onclick="window.toggleBookmark('${post.id}', ${myBookmarks.includes(post.id)}, event)" title="Kaydet"><span class="action-icon">${myBookmarks.includes(post.id) ? '🔖' : '📑'}</span></div>
-                            <div class="action-item" onclick="window.openShareModal('${post.id}', event)" title="İlet"><span class="action-icon">📤</span></div>
+                    </div>
+                </div>
+                
+                <!-- CONTENT -->
+                <div class="post-content" style="margin-top:5px;">${DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="hashtag">#$1</a>`)}</div>
+                
+                <!-- MEDIA -->
+                <div style="width:100%; margin-top:5px;">
+                    ${mediaHtml}
+                </div>
+                
+                <!-- FOOTER -->
+                <div class="post-footer-actions" style="margin-top:10px;">
+                    <div class="action-item like-box ${isLiked ? 'liked' : ''}" onclick="window.toggleLike('${post.id}', ${isLiked}, '${originalAuthor}', event)" title="Beğen" style="display:flex; align-items:center; gap:5px;">
+                        <div style="display:flex; position:relative; width:40px; height:20px; margin-right:5px;" onclick="window.showLikes('${post.id}', event)">
+                            <div style="width:20px; height:20px; border-radius:50%; background:#ef4444; display:flex; justify-content:center; align-items:center; font-size:12px; position:absolute; left:0; border:1px solid #0a1428; z-index:3;">❤️</div>
+                            <div style="width:20px; height:20px; border-radius:50%; background:#eab308; display:flex; justify-content:center; align-items:center; font-size:12px; position:absolute; left:12px; border:1px solid #0a1428; z-index:2;">😂</div>
+                            <div style="width:20px; height:20px; border-radius:50%; background:#3b82f6; display:flex; justify-content:center; align-items:center; font-size:12px; position:absolute; left:24px; border:1px solid #0a1428; z-index:1;">😡</div>
                         </div>
+                        <span onclick="window.showLikes('${post.id}', event)" style="font-weight:600; color:#f8fafc;">${(likesArray.length >= 1000) ? (likesArray.length/1000).toFixed(1)+'K' : likesArray.length || ''}</span>
+                    </div>
+                    
+                    <div style="display:flex; gap:20px; margin-left:auto;">
+                        <div class="action-item" onclick="event.stopPropagation(); window.openPostDetail('${post.id}')" title="Yanıtla"><span class="action-icon" style="font-size:20px;">💬</span> ${(postData.comments || []).length || ''}</div>
+                        <div class="action-item repost-box" onclick="window.repostPost('${post.id}', '${originalAuthor}', event)" title="Ağınıza Ekle"><span class="action-icon" style="font-size:20px;">🔁</span> ${postData.repostCount || 12}</div>
+                        <div class="action-item ${myBookmarks.includes(post.id) ? 'liked' : ''}" onclick="window.toggleBookmark('${post.id}', ${myBookmarks.includes(post.id)}, event)" title="Kaydet"><span class="action-icon" style="font-size:20px;">${myBookmarks.includes(post.id) ? '🔖' : '📑'}</span></div>
                     </div>
                 </div>
             </div>

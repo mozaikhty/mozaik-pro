@@ -847,3 +847,96 @@ body.dark-mode .story-avatar-wrapper.add-story .story-avatar::before {
     font-weight: 200;
     color: #ffffff;
 }
+
+
+/* =========================================================
+   NEW MOZAIK DESKTOP LAYOUT (100% Match with instructions)
+   ========================================================= */
+.mozaik-layout {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.mozaik-columns {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.mozaik-feed {
+    flex: 7;
+    min-width: 0;
+}
+
+.mozaik-feed .feed-main {
+    width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.mozaik-sidebar {
+    flex: 3;
+    min-width: 300px;
+    max-width: 320px;
+    position: sticky;
+    top: 20px;
+}
+
+.mozaik-sidebar .sidebar-right {
+    width: 100% !important;
+    position: relative !important;
+    top: 0 !important;
+    padding: 0 !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 1024px) {
+    .mozaik-columns {
+        display: block;
+    }
+    .mozaik-sidebar {
+        display: none; /* Let sidebar CSS handle fixed positioning */
+    }
+    
+    /* Make sidebar fixed on mobile again */
+    .mozaik-sidebar .sidebar-right {
+        position: fixed !important;
+        top: 0 !important;
+        right: -100% !important;
+        width: 320px !important;
+        max-width: 85vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        z-index: 9999 !important;
+        padding: 20px !important;
+    }
+    
+    .mozaik-sidebar .sidebar-right.active {
+        right: 0 !important;
+    }
+    
+    .mozaik-sidebar {
+        display: block; /* We need the container to exist so fixed elements show up */
+        position: static;
+        flex: none;
+        width: 0;
+        height: 0;
+    }
+}
+
+
+/* ENSURE APP CONTAINER AND FEED MAIN DO NOT RESTRICT MOZAIK LAYOUT */
+.app-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+.feed-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+}

@@ -21,11 +21,10 @@
     </script>
     <div class="app-container">
         
-        <div id="sidebar-container"></div>
-
         <main class="feed-main">
-            
-            
+
+<div class="mozaik-layout">
+    
             <div class="header-sticky" style="display:flex; flex-direction:column; padding:0; gap:0;">
                 <div class="global-header-top" style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:15px; border-bottom:1px solid rgba(241, 245, 249, 0.05); overflow-x: auto;">
                     <div class="logo-desktop" style="margin:0; padding:0; color:#0f172a; display:flex; align-items:center; gap:5px; flex-shrink:0;">
@@ -61,15 +60,10 @@
                 }
             </style>
 
-
-                <div class="feed-tabs">
-                    <div class="feed-tab active" id="tab-discover" onclick="window.switchFeedTab('discover')">Öne Çıkanlar</div>
-                    <div class="feed-tab" id="tab-following" onclick="window.switchFeedTab('following')">Ağım</div>
-                </div>
-            </div>
-
+    
             <div class="stories-container" id="stories-container"></div>
 
+    
             <!-- Bugünün Ruh Hali -->
             <div class="mood-container" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; overflow-x: auto; white-space: nowrap;">
                 <div style="display:flex; flex-direction:column; min-width:120px;">
@@ -117,38 +111,49 @@
                 body.dark-mode .mood-subtitle, body.dark-mode .mood-percent { color: #64748b !important; }
             </style>
 
+    <div class="mozaik-columns">
+        <div class="mozaik-feed">
+            
+            <div class="post-input-box" onclick="window.openMainPostModal()">
+                <div class="author-avatar" id="feed-my-avatar">👤</div>
+                <div class="post-input-fake" style="flex:1; border:none; outline:none; background:transparent; font-size:15px; color:#64748b; margin-top:10px;">Ne düşünüyorsun?</div>
+                <button class="post-btn" style="padding: 10px 20px; font-size:14px; border-radius:24px;">Yayınla</button>
+            </div>
 
-            <div class="post-input-box" id="desktop-post-box">
-                <div class="input-avatar" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
-                <div class="input-form">
-                    <textarea id="post-text" maxlength="1000" placeholder="Düşüncelerinizi aktarın..."></textarea>
-                    <div id="image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">✓ Fotoğraf Eklendi</div>
-                    <div id="location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-top:5px;">📍 <span id="loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(false)">✖</span></div>
-                    <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple style="display: none;">
-                    
-                    <div class="input-actions">
-                        <div class="action-icons">
-                            <label for="image-input" class="icon-btn" title="Medya">🖼️</label>
-                            <div class="icon-btn" title="Konum" onclick="window.addLocation(false)">📍</div>
-                        </div>
-                        <div style="display:flex; align-items:center;">
-                            <span class="char-counter" id="inline-char-count" style="margin-right: 15px;">280</span>
-                            <button class="share-btn" id="share-btn">Yayınla</button>
-                        </div>
-                    </div>
+
+            
+            
+            
+            
+            
+
+
+                <div class="feed-tabs">
+                    <div class="feed-tab active" id="tab-discover" onclick="window.switchFeedTab('discover')">Öne Çıkanlar</div>
+                    <div class="feed-tab" id="tab-following" onclick="window.switchFeedTab('following')">Ağım</div>
                 </div>
             </div>
+
+            
+
+            <!-- Bugünün Ruh Hali -->
+            
+            
+            
+
+
+            
 
             <div id="feed-container">
                 <div style="padding: 40px; text-align: center; color: #64748b;">İçerikler yükleniyor...</div>
             </div> 
             
-        </main>
-
         
+        </div>
+        <div class="mozaik-sidebar">
+            
         <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.closeMobileSidebar()"></div>
         <aside class="sidebar-right" id="main-sidebar">
-            
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;" class="mobile-only-header">
                 <h2 style="margin:0; font-size:20px; font-weight:800; color:#0f172a;" class="sidebar-mobile-title">Mozaik.</h2>
                 <button onclick="window.closeMobileSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:#64748b;">&times;</button>
@@ -174,6 +179,38 @@
                 <div style="font-size:12px; color:#94a3b8; margin-top:5px; display:flex; align-items:center; gap:5px;">
                     <span style="display:inline-block; width:8px; height:8px; background:#10b981; border-radius:50%;"></span>
                     421 kişi paylaştı
+                </div>
+            </div>
+
+            
+            <div class="who-to-follow" style="margin-top:20px;">
+                <div class="wtf-title" style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #00f2fe, #4facfe); display:flex; justify-content:center; align-items:center; font-size:16px;">📍</div>
+                    Konum Keşfet
+                </div>
+                <div style="margin-top:10px; border-radius:12px; overflow:hidden; position:relative; height:100px; background:#1e293b; display:flex; justify-content:center; align-items:center;">
+                    <span style="font-size:32px; z-index:2; text-shadow:0 2px 10px rgba(0,0,0,0.5);">📍</span>
+                    <div style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0.5; background:url('https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80') center/cover;"></div>
+                </div>
+                <div style="font-size:13px; color:#94a3b8; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                    Girne'de neler paylaşılıyor keşfetmek için tıkla. <span style="font-size:16px;">&gt;</span>
+                </div>
+            </div>
+
+            <div class="who-to-follow" style="margin-top:20px;">
+                <div class="wtf-title" style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #3b82f6, #2563eb); display:flex; justify-content:center; align-items:center; font-size:16px;">👥</div>
+                    Mozaik Topluluğu
+                </div>
+                <div style="font-size:12px; color:#64748b; margin-top:-5px; margin-bottom:10px;">8 arkadaşınla özel grup.</div>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <div style="flex:1; height:60px; border-radius:8px; background:#334155;"></div>
+                    <div style="flex:1; height:60px; border-radius:8px; background:#475569;"></div>
+                    <div style="flex:1; height:60px; border-radius:8px; background:#64748b;"></div>
+                    <div style="flex:1; height:60px; border-radius:8px; background:#94a3b8;"></div>
+                </div>
+                <div style="font-size:13px; color:#94a3b8; display:flex; justify-content:space-between; align-items:center;">
+                    Birlikte daha güzel. 💙 <span style="font-size:16px;">&gt;</span>
                 </div>
             </div>
 
@@ -204,6 +241,15 @@
                 }
             </style>
         </aside>
+
+        </div>
+    </div>
+</div>
+</main>
+
+        
+        
+        
 
 
     </div>
