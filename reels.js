@@ -11,7 +11,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 let reelsPosts = [];
-let isMuted = true;
+let isMuted = localStorage.getItem('mozaik_video_muted') !== 'false';
 let reelsObserver = null;
 let startVideoId = new URLSearchParams(window.location.search).get('video');
 let allUsersData = {}; // Cache for user info
@@ -190,7 +190,14 @@ function setupObserver() {
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(error => {
-                        console.log("Autoplay engellendi:", error);
+                        console.log('Autoplay engellendi, sessize alinip deneniyor:', error);
+                        video.muted = true;
+                        isMuted = true;
+                        video.play().catch(e => {});
+                        document.querySelectorAll('.reels-mute-btn').forEach(btn => btn.innerText = '🔇');
+                        const postId = video.id.replace('rvideo-', '');
+                        const muteOverlay = document.getElementById('rmute-' + postId);
+                        if(muteOverlay) { muteOverlay.innerText = '🔇'; }
                     });
                 }
             } else {
@@ -226,7 +233,7 @@ window.toggleReelsPlay = function(postId) {
 
 window.toggleMute = function(event) {
     if(event) event.stopPropagation();
-    isMuted = !isMuted;
+    isMuted = !isMuted; localStorage.setItem('mozaik_video_muted', isMuted);
     
     const videos = document.querySelectorAll('.reels-item video');
     videos.forEach(v => {

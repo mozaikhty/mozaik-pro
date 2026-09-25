@@ -401,7 +401,7 @@ window.renderCustomVideo = function(url, likeActionStr, uniqueId, postId = '') {
     
     return `
         <div class="mz-video-player" id="player-${uniqueId}" data-video-id="${uniqueId}">
-            <video class="mz-video" id="video-${uniqueId}" src="${url}" playsinline loop muted></video>
+            <video class="mz-video" id="video-${uniqueId}" src="${url}" playsinline loop ${localStorage.getItem('mozaik_video_muted') !== 'false' ? 'muted' : ''}></video>
             <div class="mz-video-overlay" id="overlay-${uniqueId}" onclick="window.handleVideoClick('${uniqueId}', event, \`${safeLikeAction}\`)" aria-label="Videoyu Oynat/Durdur" role="button" tabindex="0">
                 <div class="mz-big-play">▶</div>
             </div>
@@ -413,7 +413,7 @@ window.renderCustomVideo = function(url, likeActionStr, uniqueId, postId = '') {
                     </div>
                 </div>
                 <div class="mz-time" id="time-${uniqueId}">00:00 / 00:00</div>
-                <button class="mz-control-btn mz-control-mute" onclick="window.toggleVideoMute('${uniqueId}', event)" aria-label="Sesi Aç/Kapat">🔇</button>
+                <button class="mz-control-btn mz-control-mute" onclick="window.toggleVideoMute('${uniqueId}', event)" aria-label="Sesi Aç/Kapat">${localStorage.getItem('mozaik_video_muted') !== 'false' ? '🔇' : '🔊'}</button>
                 <button class="mz-control-btn mz-control-fullscreen" onclick="window.toggleVideoFullscreen('${uniqueId}', event)" aria-label="Tam Ekran">⛶</button>
             </div>
         </div>
@@ -474,7 +474,7 @@ window.toggleVideoMute = function(id, event) {
     const btn = document.querySelector(`#player-${id} .mz-control-mute`);
     if (!video || !btn) return;
     
-    video.muted = !video.muted;
+    video.muted = !video.muted; localStorage.setItem('mozaik_video_muted', video.muted);
     if (!video.muted) {
         document.querySelectorAll('.mz-video').forEach(v => {
             if (v !== video) {
@@ -564,7 +564,13 @@ if (typeof IntersectionObserver !== 'undefined') {
             const video = entry.target;
             if (entry.isIntersecting) {
                 // Sadece daha önce manuel olarak durdurulmamışsa otomatik oynat (veya autoplay'i basit tut)
-                video.play().catch(e => {}); // muted olduğu için çalışır
+                video.play().catch(e => {
+                    // Tarayıcı sesli autoplay'i engellediyse, sessize alıp tekrar dene
+                    video.muted = true;
+                    video.play().catch(err => {});
+                    const btn = document.querySelector(`#player-${video.id.replace('video-','')} .mz-control-mute`);
+                    if(btn) btn.innerText = '🔇';
+                });
             } else {
                 video.pause();
             }
