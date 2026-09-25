@@ -202,6 +202,7 @@ function setupObserver() {
                 }
             } else {
                 video.pause();
+                video.muted = true; // İnaktif olanları zorla sustur
                 video.currentTime = 0;
             }
         });
@@ -233,24 +234,30 @@ window.toggleReelsPlay = function(postId) {
 
 window.toggleMute = function(event) {
     if(event) event.stopPropagation();
-    isMuted = !isMuted; localStorage.setItem('mozaik_video_muted', isMuted);
+    isMuted = !isMuted; 
+    localStorage.setItem('mozaik_video_muted', isMuted);
     
     const videos = document.querySelectorAll('.reels-item video');
+    // Sadece o an oynayan (aktif) videonun sesini aç, diğerlerini ZORLA sessizde bırak.
+    // Bu, aynı anda iki videonun sesli olmasını %100 engeller.
+    let activeFound = false;
     videos.forEach(v => {
-        v.muted = isMuted;
+        if (!v.paused) {
+            v.muted = isMuted;
+            activeFound = true;
+            
+            // Orta ekranda ikon göster
+            const postId = v.id.replace('rvideo-', '');
+            const muteOverlay = document.getElementById('rmute-' + postId);
+            if(muteOverlay) showOverlay(muteOverlay, isMuted ? '🔇' : '🔊');
+        } else {
+            v.muted = true; // Duraklatılmış videolar her zaman sessiz kalsın
+        }
     });
     
     document.querySelectorAll('.reels-mute-btn').forEach(btn => {
         btn.innerText = isMuted ? '🔇' : '🔊';
     });
-    
-    // Orta ekranda ikon göster
-    const activeVideo = Array.from(videos).find(v => !v.paused);
-    if(activeVideo) {
-        const postId = activeVideo.id.replace('rvideo-', '');
-        const muteOverlay = document.getElementById('rmute-' + postId);
-        if(muteOverlay) showOverlay(muteOverlay, isMuted ? '🔇' : '🔊');
-    }
 };
 
 function showOverlay(element, text) {

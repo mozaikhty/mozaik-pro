@@ -14,14 +14,40 @@ import { auth, db } from './firebase-config.js';
 window.initVideoObserver = function() {
     if(!window.videoObserver) {
         window.videoObserver = new IntersectionObserver((entries) => {
+            let activeVideo = null;
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.play().catch(() => {});
+                    activeVideo = entry.target;
                 } else {
                     entry.target.pause();
                 }
             });
-        }, { threshold: 0.5 });
+
+            if (activeVideo) {
+                // Sadece ekrandaki aktif videoyu oynat ve global ses durumunu uygula
+                const globalMuted = localStorage.getItem('mozaik_video_muted') !== 'false';
+                
+                // Diğer tüm videoları durdur ve sessize al (Garanti olsun diye)
+                document.querySelectorAll('.auto-play-video').forEach(v => {
+                    if (v !== activeVideo) {
+                        v.pause();
+                        v.muted = true;
+                    }
+                });
+
+                activeVideo.muted = globalMuted;
+                const uniqueId = activeVideo.id.replace('video-', '');
+                const btn = document.querySelector(`#player-${uniqueId} .mz-control-mute`);
+                if (btn) btn.innerText = globalMuted ? '🔇' : '🔊';
+
+                activeVideo.play().catch(() => {
+                    // Tarayıcı autoplay kısıtlamasına takılırsa sessiz oynat
+                    activeVideo.muted = true;
+                    if (btn) btn.innerText = '🔇';
+                    activeVideo.play().catch(()=>{});
+                });
+            }
+        }, { threshold: 0.6 }); // %60 görünürlük
     }
     document.querySelectorAll('.auto-play-video').forEach(vid => {
         window.videoObserver.observe(vid);
