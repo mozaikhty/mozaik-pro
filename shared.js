@@ -583,42 +583,16 @@ window.observeVideos = function() {
 // ==========================================
 // REELS VIEWER SYSTEM
 // ==========================================
-window.reelsMuted = true;
-window.reelsObserver = null;
-window.reelsVideos = [];
 
 window.openReelsViewer = function(startPostId) {
-    if (!window.currentGlobalPosts) return;
-    
-    // Yalnızca video içeren gönderileri filtrele
-    const videoPosts = window.currentGlobalPosts.filter(p => p.data && p.data.media && p.data.media.some(m => m.type === 'video'));
-    if (videoPosts.length === 0) return;
-    
-    // Başlangıç indeksini bul
-    let startIndex = videoPosts.findIndex(p => p.id === startPostId);
-    if (startIndex === -1) startIndex = 0;
-    
-    let modal = document.getElementById('reels-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'reels-modal';
-        modal.className = 'reels-modal';
-        document.body.appendChild(modal);
+    if (window.currentGlobalPosts) {
+        const videoPosts = window.currentGlobalPosts.filter(p => p.data && p.data.media && p.data.media.some(m => m.type === 'video'));
+        try {
+            sessionStorage.setItem('mozaik_reels_data', JSON.stringify(videoPosts));
+        } catch(e) {}
     }
-    
-    const safeMyUsername = (typeof myUsername !== 'undefined') ? myUsername : localStorage.getItem('mozaik_username');
-    
-    let html = `
-        <div class="reels-close-btn" onclick="window.closeReelsViewer()">✖</div>
-        <div class="reels-container" id="reels-container">
-    `;
-    
-    videoPosts.forEach(post => {
-        const d = post.data;
-        const videoMedia = d.media.find(m => m.type === 'video');
-        if (!videoMedia) return;
-        
-        const authorData = (typeof allUsersData !== 'undefined' && allUsersData[d.author]) ? allUsersData[d.author] : {};
+    window.location.href = 'reels.html?video=' + startPostId;
+};
         const vHtml = authorData.isVerified ? '<span class="verified-badge" style="font-size:12px;">☑️</span>' : '';
         const avatarUrl = authorData.avatarUrl ? window.sanitizeUrl(authorData.avatarUrl) : '';
         const avatarHtml = avatarUrl ? `<img src="${avatarUrl}">` : `👤`;
@@ -692,144 +666,11 @@ window.openReelsViewer = function(startPostId) {
     }, 50);
 };
 
-window.closeReelsViewer = function() {
-    const modal = document.getElementById('reels-modal');
-    if (modal) {
-        modal.style.display = 'none';
-        modal.innerHTML = '';
-    }
-    document.body.style.overflow = ''; window.removeEventListener('keydown', window.reelsKeydown);
-    if (window.reelsObserver) {
-        window.reelsObserver.disconnect();
-        window.reelsObserver = null;
-    }
-    if (window.reelsInterval) {
-        clearInterval(window.reelsInterval);
-        window.reelsInterval = null;
-    }
-    // Tüm videoları durdur
-    document.querySelectorAll('.reels-item video').forEach(v => {
-        v.pause();
-    });
-};
-
-window.setupReelsObserver = function() {
-    if (window.reelsObserver) window.reelsObserver.disconnect();
-    
-    window.reelsVideos = Array.from(document.querySelectorAll('.reels-item video'));
-    
-    window.reelsObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const video = entry.target;
-            if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-                // Video görünür
-                video.muted = window.reelsMuted;
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log("Reels Oynatma hatası (autoplay):", error);
-                    });
-                }
-            } else {
-                // Video görünür değil, durdur ve başa sar
-                video.pause();
-                video.currentTime = 0;
-            }
-        });
-    }, {
-        root: document.getElementById('reels-container'),
-        threshold: [0.0, 0.6, 1.0]
-    });
-    
-    window.reelsVideos.forEach(video => {
-        window.reelsObserver.observe(video);
-    });
-};
-
-window.toggleReelsPlay = function(postId) {
-    const video = document.getElementById('rvideo-' + postId);
-    const playOverlay = document.getElementById('rplay-' + postId);
-    
-    if (!video) return;
-    
-    if (video.paused) {
-        video.play();
-        window.showReelsOverlay(playOverlay, '▶');
-    } else {
-        video.pause();
-        window.showReelsOverlay(playOverlay, '⏸');
-    }
-};
-
-window.toggleReelsMute = function(postId, event) {
-    if(event) event.stopPropagation();
-    window.reelsMuted = !window.reelsMuted;
-    
-    const muteOverlay = document.getElementById('rmute-' + postId);
-    if(muteOverlay) window.showReelsOverlay(muteOverlay, window.reelsMuted ? '🔇' : '🔊');
-    
-    if(window.reelsVideos) {
-        window.reelsVideos.forEach(v => {
-            v.muted = window.reelsMuted;
-        });
-    }
-    
-    document.querySelectorAll('.reels-mute-btn').forEach(btn => {
-        btn.innerText = window.reelsMuted ? '🔇' : '🔊';
-    });
-};
-
-window.showReelsOverlay = function(element, text) {
-    if(!element) return;
-    element.innerText = text;
-    element.style.opacity = '1';
-    element.style.transform = 'translate(-50%, -50%) scale(1.2)';
-    setTimeout(() => {
-        element.style.opacity = '0';
-        element.style.transform = 'translate(-50%, -50%) scale(1)';
-    }, 500);
-};
-
-window.updateReelsProgress = function() {
-    window.reelsVideos.forEach(video => {
-        if (!video.paused && video.duration) {
-            const postId = video.id.replace('rvideo-', '');
-            const pbar = document.getElementById('rprog-' + postId);
-            if (pbar) {
-                const percent = (video.currentTime / video.duration) * 100;
-                pbar.style.width = percent + '%';
-            }
-        }
-    });
-};
-
-window.reelsLikePost = async function(postId, isCurrentlyLiked, postAuthor, event) {
-    event.stopPropagation();
-    // Normal beğeni fonksiyonunu çağır (feed.js içindeki window.handleMediaClick'i taklit eder veya direkt toggleLike)
-    if (typeof window.toggleLike === 'function') {
-        window.toggleLike(postId, isCurrentlyLiked, postAuthor, event);
-        // Beğeniyi iyimser olarak UI'da güncelle (Reels'i kapatmadan)
-        const btn = event.currentTarget;
-        if (!isCurrentlyLiked) {
-            btn.innerHTML = '<span style="font-size: 28px; color: #ef4444; margin:0;">❤️</span><span>...</span>';
-        } else {
-            btn.innerHTML = '<span style="font-size: 28px; color: #ffffff; margin:0;">🤍</span><span>...</span>';
-        }
-    }
-};
 
 
-window.reelsKeydown = function(e) {
-    const container = document.getElementById('reels-container');
-    if (!container) return;
-    const itemHeight = window.innerHeight;
-    if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        container.scrollBy({ top: itemHeight, behavior: 'smooth' });
-    } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        container.scrollBy({ top: -itemHeight, behavior: 'smooth' });
-    } else if (e.key === 'Escape') {
-        window.closeReelsViewer();
-    }
-};
+
+
+
+
+
+
