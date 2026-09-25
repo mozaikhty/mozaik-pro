@@ -268,7 +268,7 @@
         <div class="modal-content" style="max-width: 600px; width:90%;">
             <div class="modal-header" style="border-bottom:none; margin-bottom:0;">
                 <button class="close-btn" onclick="window.closeMainPostModal()">&times;</button>
-                <button class="share-btn" id="modal-share-btn" style="padding: 8px 20px;">Yayınla</button>
+                
             </div>
             <div class="input-form" style="display:flex; gap:15px; margin-top:10px;">
                 <div class="input-avatar" id="modal-avatar">👤</div>
@@ -278,12 +278,15 @@
                     <div id="modal-image-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">✓ Fotoğraf Eklendi</div>
                     <div id="modal-location-preview-text" style="display:none; color:#2c3e50; font-size:13px; font-weight:bold; margin-bottom:10px;">📍 <span id="modal-loc-text-span"></span> <span style="color:#ef4444; cursor:pointer; margin-left:5px;" onclick="window.removeLocation(true)">✖</span></div>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px; padding-bottom:15px; position: sticky; bottom: -25px; background: inherit; z-index: 10;">
                         <div class="action-icons">
                             <label for="modal-image-input" class="icon-btn" title="Medya">🖼️</label>
                             <label onclick="window.addLocation(true)" class="icon-btn" title="Konum">📍</label>
                         </div>
-                        <div class="char-counter" id="modal-char-count">1000</div>
+                        <div style="display:flex; align-items:center;">
+                            <span class="char-counter" id="modal-char-count" style="margin-right: 15px;">1000</span>
+                            <button class="share-btn" id="modal-share-btn" style="padding: 8px 20px;">Yayınla</button>
+                        </div>
                     </div>
                 </div>
             </div>
