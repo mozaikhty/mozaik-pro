@@ -25,48 +25,42 @@
 
         <main class="feed-main">
             
+            
             <div class="header-sticky" style="display:flex; flex-direction:column; padding:0; gap:0;">
-                <div class="desktop-header-top" style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:15px 20px; border-bottom:1px solid rgba(241, 245, 249, 0.1);">
-                    <div class="logo-desktop" style="margin:0; padding:0; color:#0f172a; display:flex; align-items:center; gap:10px;">
-                        <span style="font-size:24px; font-weight:900;">Mozaik.</span>
+                <div class="global-header-top" style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:15px; border-bottom:1px solid rgba(241, 245, 249, 0.05); overflow-x: auto;">
+                    <div class="logo-desktop" style="margin:0; padding:0; color:#0f172a; display:flex; align-items:center; gap:5px; flex-shrink:0;">
+                        <span style="font-size:22px; font-weight:900; letter-spacing:-1px;">Mozaik</span>
                     </div>
-                    <div class="desktop-header-nav" style="display:flex; align-items:center; gap:20px; font-size:16px; font-weight:600; color:#64748b;">
-                        <a href="feed.html" style="color:#0f172a; display:flex; align-items:center; gap:5px;"><span style="color:#4facfe;">✨</span> Ana Akış</a>
-                        <a href="search.html" style="display:flex; align-items:center; gap:5px;">🔍 Keşfet</a>
-                        <a href="feed.html?tab=following" style="display:flex; align-items:center; gap:5px;">👥 Takip</a>
+                    
+                    <div class="header-nav-center" style="display:flex; align-items:center; gap:20px; font-size:15px; font-weight:600; color:#64748b; margin-left:auto; margin-right:auto;">
+                        <a href="feed.html" style="color:#00f2fe; display:flex; flex-direction:column; align-items:center; gap:5px; position:relative; text-decoration:none;">
+                            Ana Akış
+                            <span style="position:absolute; bottom:-10px; width:100%; height:2px; background:#00f2fe; border-radius:2px;"></span>
+                        </a>
+                        <a href="search.html" style="text-decoration:none; color:inherit;">Keşfet</a>
+                        <a href="feed.html?tab=following" style="text-decoration:none; color:inherit;">Takip</a>
                     </div>
-                    <div class="desktop-header-actions" style="display:flex; align-items:center; gap:15px;">
-                        <button onclick="window.openMainPostModal()" style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, #00f2fe, #4facfe); border:none; color:white; font-size:24px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-shadow:0 4px 15px rgba(0,242,254,0.4);">+</button>
-                        <a href="chat.html" style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.7); display:flex; justify-content:center; align-items:center; cursor:pointer; text-decoration:none; color:#334155; border:1px solid rgba(226, 232, 240, 0.8);">💬</a>
-                        <a href="notifications.html" style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.7); display:flex; justify-content:center; align-items:center; cursor:pointer; text-decoration:none; color:#334155; border:1px solid rgba(226, 232, 240, 0.8);">🔔</a>
-                        <div id="header-profile-btn" onclick="window.goToMyProfile()" style="width:40px; height:40px; border-radius:50%; background:#e2e8f0; display:flex; justify-content:center; align-items:center; cursor:pointer; border:1px solid rgba(203, 213, 225, 0.5); font-size:20px;">👤</div>
+                    
+                    <div class="header-actions-right" style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+                        <a href="search.html" style="font-size:20px; text-decoration:none; color:inherit; display:flex; align-items:center;">🔍</a>
+                        <button onclick="window.openMainPostModal()" style="width:28px; height:28px; border-radius:50%; background:transparent; border:1.5px solid currentColor; color:inherit; font-size:18px; display:flex; justify-content:center; align-items:center; cursor:pointer;">+</button>
+                        <a href="chat.html" style="font-size:20px; text-decoration:none; color:inherit; display:flex; align-items:center;">💬</a>
+                        <div style="font-size:24px; cursor:pointer; margin-left:5px;" onclick="window.openMobileSidebar()">☰</div>
                     </div>
-                </div>
-                
-                <div class="mobile-header-top" style="padding:15px 20px;">
-                    <div id="mobile-avatar-header" style="width:36px; height:36px; border-radius:8px; background:#e2e8f0; overflow:hidden; cursor:pointer;" onclick="window.goToMyProfile()">👤</div>
-                    <div class="mobile-logo-text">Mozaik.</div>
-                    <div style="width:36px; height:36px; display:flex; justify-content:center; align-items:center; font-size:24px; cursor:pointer;" onclick="window.openMobileSidebar()">☰</div>
                 </div>
             </div>
             
             <style>
-                .desktop-header-top { display: flex; }
-                .mobile-header-top { display: none !important; }
-                @media (max-width: 1024px) {
-                    .desktop-header-top { display: none !important; }
-                    .mobile-header-top { display: flex !important; }
-                }
-                body.dark-mode .desktop-header-top { border-bottom-color: rgba(51, 65, 85, 0.5) !important; }
-                body.dark-mode .desktop-header-top .logo-desktop { color: #f8fafc !important; }
-                body.dark-mode .desktop-header-nav a { color: #94a3b8 !important; }
-                body.dark-mode .desktop-header-nav a[href="feed.html"] { color: #f8fafc !important; }
-                body.dark-mode .desktop-header-actions a { background: rgba(15,23,42,0.6) !important; color: #f8fafc !important; border-color: rgba(51,65,85,0.5) !important; }
-                body.dark-mode .feed-tabs { display: none !important; } /* If we use header tabs, hide old ones on desktop */
+                body.dark-mode .global-header-top { border-bottom-color: rgba(255, 255, 255, 0.05) !important; }
+                body.dark-mode .global-header-top .logo-desktop { color: #ffffff !important; }
+                body.dark-mode .header-nav-center a:not([href="feed.html"]) { color: #94a3b8 !important; }
+                body.dark-mode .header-actions-right { color: #ffffff !important; }
+                .global-header-top::-webkit-scrollbar { display: none; }
                 @media (min-width: 1025px) {
-                    .feed-tabs { display: none !important; }
+                    .header-actions-right div[onclick="window.openMobileSidebar()"] { display: none !important; }
                 }
             </style>
+
 
                 <div class="feed-tabs">
                     <div class="feed-tab active" id="tab-discover" onclick="window.switchFeedTab('discover')">Öne Çıkanlar</div>
@@ -77,45 +71,50 @@
             <div class="stories-container" id="stories-container"></div>
 
             <!-- Bugünün Ruh Hali -->
-            <div class="mood-container" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid rgba(226, 232, 240, 0.8); margin-bottom: 20px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; overflow-x: auto; white-space: nowrap;">
+            <div class="mood-container" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; overflow-x: auto; white-space: nowrap;">
                 <div style="display:flex; flex-direction:column; min-width:120px;">
-                    <div style="font-weight:800; font-size:15px; color:#0f172a; display:flex; align-items:center; gap:5px;"><span style="color:#4facfe; font-size:20px;">✨</span> Bugünün ruh hali</div>
-                    <div style="font-size:12px; color:#64748b;">Mozaik'te bugün en çok görülen ruh halleri</div>
+                    <div style="font-weight:700; font-size:16px; display:flex; align-items:center; gap:8px;"><span style="color:#00f2fe; font-size:20px;">✨</span> Bugünün ruh hali</div>
+                    <div style="font-size:12px; margin-top:2px;" class="mood-subtitle">Mozaik'te bugün en çok görülen ruh halleri</div>
                 </div>
                 
-                <div style="display:flex; gap:15px;">
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:60px;">
-                        <div style="width:40px; height:40px; border-radius:50%; background:#fef08a; display:flex; justify-content:center; align-items:center; font-size:20px; box-shadow: 0 4px 10px rgba(253, 224, 71, 0.4);">🙂</div>
-                        <div style="font-size:12px; font-weight:600; color:#475569;">Mutlu</div>
-                        <div style="font-size:11px; color:#94a3b8;">%28</div>
+                <div style="display:flex; gap:20px; align-items:center;">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                        <div class="emoji-circle" style="font-size:28px;">🙂</div>
+                        <div style="font-size:12px; font-weight:500;">Mutlu</div>
+                        <div style="font-size:11px;" class="mood-percent">%28</div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:60px;">
-                        <div style="width:40px; height:40px; border-radius:50%; background:#bfdbfe; display:flex; justify-content:center; align-items:center; font-size:20px; box-shadow: 0 4px 10px rgba(96, 165, 250, 0.4);">😌</div>
-                        <div style="font-size:12px; font-weight:600; color:#475569;">Sakin</div>
-                        <div style="font-size:11px; color:#94a3b8;">%17</div>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                        <div class="emoji-circle" style="font-size:28px;">😌</div>
+                        <div style="font-size:12px; font-weight:500;">Sakin</div>
+                        <div style="font-size:11px;" class="mood-percent">%17</div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:60px;">
-                        <div style="width:40px; height:40px; border-radius:50%; background:#e9d5ff; display:flex; justify-content:center; align-items:center; font-size:20px; box-shadow: 0 4px 10px rgba(192, 132, 252, 0.4);">💜</div>
-                        <div style="font-size:12px; font-weight:600; color:#475569;">Aşık</div>
-                        <div style="font-size:11px; color:#94a3b8;">%12</div>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                        <div class="emoji-circle" style="font-size:28px;">💜</div>
+                        <div style="font-size:12px; font-weight:500;">Aşık</div>
+                        <div style="font-size:11px;" class="mood-percent">%12</div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:60px;">
-                        <div style="width:40px; height:40px; border-radius:50%; background:#fed7aa; display:flex; justify-content:center; align-items:center; font-size:20px; box-shadow: 0 4px 10px rgba(251, 146, 60, 0.4);">🔥</div>
-                        <div style="font-size:12px; font-weight:600; color:#475569;">Enerjik</div>
-                        <div style="font-size:11px; color:#94a3b8;">%11</div>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                        <div class="emoji-circle" style="font-size:28px;">🔥</div>
+                        <div style="font-size:12px; font-weight:500;">Enerjik</div>
+                        <div style="font-size:11px;" class="mood-percent">%11</div>
                     </div>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                        <div class="emoji-circle" style="font-size:28px;">😞</div>
+                        <div style="font-size:12px; font-weight:500;">Yorgun</div>
+                        <div style="font-size:11px;" class="mood-percent">%9</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:5px; min-width:40px;">
+                        <div class="emoji-circle" style="font-size:28px;">🤢</div>
+                        <div style="font-size:12px; font-weight:500;">Kafası karışık</div>
+                        <div style="font-size:11px;" class="mood-percent">%8</div>
+                    </div>
+                    <div style="font-size:18px; margin-left:5px; color:#64748b; cursor:pointer;">&gt;</div>
                 </div>
             </div>
             
             <style>
-                body.dark-mode .mood-container {
-                    background: rgba(10, 15, 30, 0.7) !important;
-                    border: 1px solid rgba(0, 242, 254, 0.15) !important;
-                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3) !important;
-                }
-                body.dark-mode .mood-container div { color: #f8fafc !important; }
-                body.dark-mode .mood-container > div > div:nth-child(2) { color: #94a3b8 !important; }
                 .mood-container::-webkit-scrollbar { display: none; }
+                body.dark-mode .mood-subtitle, body.dark-mode .mood-percent { color: #64748b !important; }
             </style>
 
 

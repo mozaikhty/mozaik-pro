@@ -601,3 +601,249 @@ body.dark-mode .post {
         display: none !important;
     }
 }
+
+/* =========================================================
+   PIXEL-PERFECT DARK THEME (BASED ON IMAGE)
+   ========================================================= */
+body.dark-mode {
+    background: #020813 !important; /* Very deep navy/black */
+    color: #ffffff !important;
+}
+
+body.dark-mode .feed-main {
+    border-right: none !important;
+}
+
+body.dark-mode .header-sticky {
+    background: #020813 !important;
+    backdrop-filter: none !important;
+    border-bottom: none !important;
+}
+
+body.dark-mode .desktop-header-top {
+    background: #020813 !important;
+    border-bottom: none !important;
+}
+
+body.dark-mode .feed-tabs {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin-bottom: 0 !important;
+}
+
+body.dark-mode .feed-tab {
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+
+body.dark-mode .feed-tab.active {
+    background: transparent !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid #00f2fe !important;
+}
+
+body.dark-mode .stories-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 10px 0 !important;
+    gap: 20px !important;
+}
+
+body.dark-mode .story-avatar-wrapper {
+    width: 70px !important;
+    height: 70px !important;
+    padding: 2px !important;
+    background: linear-gradient(45deg, #00f2fe, #b026ff) !important;
+    box-shadow: none !important;
+}
+
+body.dark-mode .story-avatar-wrapper.add-story {
+    background: transparent !important;
+    border: 2px solid #00f2fe !important;
+}
+
+body.dark-mode .story-avatar {
+    border: 3px solid #020813 !important;
+    background: #0a1128 !important;
+}
+
+body.dark-mode .story-username {
+    color: #94a3b8 !important;
+    font-weight: 400 !important;
+    font-size: 11px !important;
+}
+
+/* Bugünün Ruh Hali */
+body.dark-mode .mood-container {
+    background: #0a1428 !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    border-radius: 16px !important;
+    padding: 15px 20px !important;
+    box-shadow: none !important;
+}
+
+body.dark-mode .mood-container .emoji-circle {
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 28px !important;
+}
+
+/* Post Cards */
+body.dark-mode .post {
+    background: #0a1428 !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    padding: 20px !important;
+}
+
+body.dark-mode .post-avatar-img {
+    border: none !important;
+}
+
+body.dark-mode .author-name {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+body.dark-mode .post-time {
+    color: #64748b !important;
+    font-size: 12px !important;
+}
+
+body.dark-mode .verified-badge {
+    color: #3b82f6 !important;
+}
+
+body.dark-mode .post-content {
+    color: #e2e8f0 !important;
+    font-size: 14px !important;
+}
+
+body.dark-mode .post-image-container {
+    border-radius: 12px !important;
+    border: none !important;
+}
+
+body.dark-mode .post-footer-actions {
+    border-top: none !important;
+    padding-top: 5px !important;
+    justify-content: space-between !important;
+}
+
+body.dark-mode .action-item {
+    color: #94a3b8 !important;
+    font-weight: 400 !important;
+}
+
+body.dark-mode .action-icon {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: 18px !important;
+}
+
+/* Sidebar Cards */
+body.dark-mode .who-to-follow {
+    background: #0a1428 !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    border-radius: 16px !important;
+    padding: 15px !important;
+    box-shadow: none !important;
+}
+
+body.dark-mode .wtf-title {
+    color: #ffffff !important;
+    border-bottom: none !important;
+    font-size: 14px !important;
+    padding-bottom: 0 !important;
+}
+
+body.dark-mode .search-box-right {
+    background: #0a1428 !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* Bottom Nav */
+body.dark-mode .bottom-nav {
+    background: #020813 !important;
+    border-top: 1px solid rgba(255,255,255,0.05) !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
+body.dark-mode .nav-item {
+    color: #64748b !important;
+}
+
+body.dark-mode .nav-item.active {
+    color: #00f2fe !important;
+    background: transparent !important;
+}
+
+
+body.dark-mode .story-avatar-wrapper {
+    width: 76px !important;
+    height: 76px !important;
+    padding: 3px !important;
+    background: linear-gradient(135deg, #00f2fe, #b026ff, #ff0844) !important;
+    box-shadow: none !important;
+    border-radius: 50% !important;
+}
+
+body.dark-mode .story-avatar-wrapper.add-story {
+    background: transparent !important;
+    border: 1px solid #00f2fe !important;
+    padding: 3px !important;
+}
+
+body.dark-mode .story-avatar {
+    border: 3px solid #020813 !important;
+    background: #0a1128 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+body.dark-mode .story-add-badge {
+    display: none !important;
+}
+
+body.dark-mode .story-avatar-wrapper.add-story .story-avatar {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    font-size: 32px !important;
+    color: #ffffff !important;
+    font-weight: 200 !important;
+}
+
+body.dark-mode .story-username {
+    color: #94a3b8 !important;
+    font-weight: 500 !important;
+    font-size: 12px !important;
+    margin-top: 5px !important;
+}
+
+body.dark-mode .story-add-badge {
+    display: flex !important;
+    background: #00f2fe !important;
+    color: #020813 !important;
+    border: 2px solid #020813 !important;
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 14px !important;
+    bottom: 2px !important;
+    right: 2px !important;
+}
+
+/* Let's make sure the plus icon in the center is just text */
+body.dark-mode .story-avatar-wrapper.add-story .story-avatar::before {
+    content: '+';
+    font-size: 32px;
+    font-weight: 200;
+    color: #ffffff;
+}

@@ -42,13 +42,33 @@ function loadUIComponents() {
 
     // === ALT MENÜ ===
     const bottomNavHTML = `
-        <div class="bottom-nav">
-            <a href="feed.html" class="nav-item ${page === 'feed.html' ? 'active' : ''}">🏠</a>
-            <a href="search.html" class="nav-item ${page === 'search.html' ? 'active' : ''}">🔍</a>
-            <a href="chat.html" class="nav-item ${page === 'chat.html' ? 'active' : ''}">✉️</a>
-            <a href="notifications.html" class="nav-item ${page === 'notifications.html' ? 'active' : ''}">🔔</a>
+        <div class="bottom-nav" style="display: flex; justify-content: space-around; align-items: center; padding: 10px 0; padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));">
+            <a href="feed.html" class="nav-item ${page === 'feed.html' ? 'active' : ''}" style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; text-decoration:none;">
+                <span style="font-size:22px;">🏠</span>
+                Ana Sayfa
+            </a>
+            <a href="search.html" class="nav-item ${page === 'search.html' ? 'active' : ''}" style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; text-decoration:none;">
+                <span style="font-size:22px;">🧭</span>
+                Keşfet
+            </a>
+            
+            <a href="#" onclick="window.openMainPostModal?.()" style="display:flex; justify-content:center; align-items:center; margin-top:-20px; text-decoration:none;">
+                <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, #00f2fe, #b026ff); display:flex; justify-content:center; align-items:center; color:white; font-size:28px; box-shadow:0 4px 15px rgba(0,242,254,0.3);">
+                    +
+                </div>
+            </a>
+            
+            <a href="notifications.html" class="nav-item ${page === 'notifications.html' ? 'active' : ''}" style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; text-decoration:none; position:relative;">
+                <span style="font-size:22px;">🔔</span>
+                <span style="position:absolute; top:0; right:15px; width:8px; height:8px; background:#ef4444; border-radius:50%;"></span>
+                Bildirimler
+            </a>
+            <a href="profile.html" class="nav-item ${page === 'profile.html' ? 'active' : ''}" style="display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; text-decoration:none;" onclick="event.preventDefault(); window.goToMyProfile?.()">
+                <span style="font-size:22px;">👤</span>
+                Profil
+            </a>
         </div>
-    `;
+`;
 
     // === AYARLAR MODALI ===
     const settingsModalHTML = `
