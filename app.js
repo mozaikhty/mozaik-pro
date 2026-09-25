@@ -12,7 +12,7 @@ import { auth } from './firebase-config.js';
  */
 window.compressImage = function(file, maxWidth = 1200, maxHeight = 1200, quality = 0.7) {
     return new Promise((resolve, reject) => {
-        if (!file || !file.type.startsWith('image/')) return resolve(file);
+        if (!file || !(file.type || '').startsWith('image/')) return resolve(file);
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = event => {

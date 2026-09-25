@@ -283,7 +283,7 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
             btn.innerText = "Yükleniyor...";
             for (let rawFile of files) {
                 let file = rawFile;
-                let isVideo = file.type.startsWith('video/');
+                let isVideo = (file.type || '').startsWith('video/');
                 if (!isVideo) {
                     file = await window.compressImage(rawFile, 1200, 1200, 0.75, 800 * 1024); 
                 }
@@ -342,7 +342,7 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         btn.disabled = false; btn.innerText = "Yayınla"; 
         
         // Hata kodlarına göre anlaşılır mesajlar
-        let errMsg = "Video yüklenirken bir hata oluştu. Lütfen tekrar deneyin.";
+        let errMsg = "Video yüklenirken bir hata oluştu. Lütfen tekrar deneyin. Detay: " + (e.message || e.toString());
         if (e.code === 'storage/unauthorized') errMsg = "Güvenlik engeli: App Check (reCAPTCHA) doğrulaması başarısız veya Firebase Storage yetkiniz yok (storage/unauthorized). Boyut sınırlarıyla ilgili bir sorun YOK.";
         else if (e.code === 'storage/canceled') errMsg = "Yükleme iptal edildi.";
         else if (e.code === 'storage/retry-limit-exceeded' || e.message?.includes('network')) errMsg = "Video yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.";
