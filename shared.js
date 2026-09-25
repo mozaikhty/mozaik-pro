@@ -659,6 +659,9 @@ window.openReelsViewer = function(startPostId) {
                         <span style="font-size: 28px; margin:0;">💬</span>
                         <span>${comments.length > 0 ? comments.length : 'Yorum'}</span>
                     </div>
+                    <div class="reels-action-btn reels-mute-btn" onclick="window.toggleReelsMute('${post.id}', event)" style="margin-top:20px; font-size:24px;">
+                        ${window.reelsMuted ? '🔇' : '🔊'}
+                    </div>
                 </div>
                 
                 <div class="reels-progress">
@@ -746,7 +749,6 @@ window.setupReelsObserver = function() {
 window.toggleReelsPlay = function(postId) {
     const video = document.getElementById('rvideo-' + postId);
     const playOverlay = document.getElementById('rplay-' + postId);
-    const muteOverlay = document.getElementById('rmute-' + postId);
     
     if (!video) return;
     
@@ -754,16 +756,27 @@ window.toggleReelsPlay = function(postId) {
         video.play();
         window.showReelsOverlay(playOverlay, '▶');
     } else {
-        // Zaten oynuyorsa sesi aç/kapa yapalım (Instagram / TikTok tarzı)
-        video.muted = !video.muted;
-        window.reelsMuted = video.muted;
-        window.showReelsOverlay(muteOverlay, video.muted ? '🔇' : '🔊');
-        
-        // Sesi tüm videolara uygula
+        video.pause();
+        window.showReelsOverlay(playOverlay, '⏸');
+    }
+};
+
+window.toggleReelsMute = function(postId, event) {
+    if(event) event.stopPropagation();
+    window.reelsMuted = !window.reelsMuted;
+    
+    const muteOverlay = document.getElementById('rmute-' + postId);
+    if(muteOverlay) window.showReelsOverlay(muteOverlay, window.reelsMuted ? '🔇' : '🔊');
+    
+    if(window.reelsVideos) {
         window.reelsVideos.forEach(v => {
             v.muted = window.reelsMuted;
         });
     }
+    
+    document.querySelectorAll('.reels-mute-btn').forEach(btn => {
+        btn.innerText = window.reelsMuted ? '🔇' : '🔊';
+    });
 };
 
 window.showReelsOverlay = function(element, text) {
