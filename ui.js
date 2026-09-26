@@ -255,7 +255,8 @@ if (document.readyState === 'loading') {
             setTimeout(() => {
                 const initY = window.scrollY || (scrollableContainers.length > 0 ? scrollableContainers[0].scrollTop : 0);
                 this.lastScrollY = initY;
-                if (initY > 10) {
+                // Sadece mobilde scroll varsa gizle
+                if (window.innerWidth <= 1024 && initY > 10) {
                     this.setBottomNavState(true);
                     this.setHeaderState('hidden');
                 }
@@ -296,6 +297,12 @@ if (document.readyState === 'loading') {
         }
 
         handleScroll(currentY) {
+            // MASAÜSTÜNDE SABİT KALMASI İÇİN
+            if (window.innerWidth > 1024) {
+                this.setHeaderState('expanded');
+                return;
+            }
+
             // 1. Alt Navigasyon Mantığı (Bağımsız)
             if (currentY > 50) this.setBottomNavState(true);
             else if (currentY <= 10) this.setBottomNavState(false);
