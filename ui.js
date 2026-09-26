@@ -131,50 +131,51 @@ function loadUIComponents() {
     if (!document.getElementById('toast-container')) {
         document.body.insertAdjacentHTML('beforeend', toastHTML);
 
-    // === MOBİL YAN PANEL ===
+    // === MOBİL YAN PANEL OVERLAY ===
     const mobilePanelHTML = `
-        <div id="mobile-side-panel-overlay" class="fixed inset-0 z-[6000] hidden bg-black/40 transition-opacity duration-300 opacity-0" onclick="window.closeMobilePanel(event)">
-            <div id="mobile-side-panel" class="absolute top-0 right-0 h-full w-[85%] max-w-[400px] bg-white dark:bg-[#0b1121] shadow-[-10px_0_30px_rgba(0,0,0,0.1)] transform translate-x-full transition-transform duration-300 flex flex-col" onclick="event.stopPropagation()">
-                <div class="flex items-center justify-between p-5 border-b border-slate-200 dark:border-gray-800">
-                    <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
-                    <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel()">&times;</button>
-                </div>
-                <div class="flex-1 overflow-y-auto p-5">
-                    <!-- İçerik alanı (Kullanıcı daha sonra belirleyecek) -->
-                </div>
-            </div>
-        </div>
+        <div id="mobile-side-panel-overlay" class="fixed inset-0 z-[6000] hidden bg-black/40 transition-opacity duration-300 opacity-0" onclick="window.closeMobilePanel(event)"></div>
     `;
     if (!document.getElementById('mobile-side-panel-overlay')) {
         document.body.insertAdjacentHTML('beforeend', mobilePanelHTML);
     }
-
-    }
-}
-
-// === GLOBAL TOAST FONKSİYONU ===
-window.showToast = function(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if(!container) return; // Sayfada toast container yoksa hata fırlatmasını engeller
-
-    const toast = document.createElement('div');
-    toast.className = 'toast-msg toast-' + type;
     
-    let icon = '✅';
-    if(type === 'error') icon = '❌';
-    if(type === 'info') icon = 'ℹ️';
+    // Sağ sütun varsa mobilde kapatma butonu ekle
+    const rightSidebar = document.getElementById('right-sidebar');
+    if (rightSidebar && !document.getElementById('mobile-panel-close-btn')) {
+        rightSidebar.insertAdjacentHTML('afterbegin', `
+            <div id="mobile-panel-close-btn" class="flex lg:hidden items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-gray-800">
+                <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
+                <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
+            </div>
+        `);
+    }
 
-    // Güvenlik: Mesajı escape et (XSS önlemi)
-    const safeMessage = window.escapeHtml ? window.escapeHtml(message) : message;
-    toast.innerHTML = '<span>' + icon + '</span> <span>' + safeMessage + '</span>';
-    container.appendChild(toast);
+});
 
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 400); 
-    }, 3000);
+window.openMobilePanel = function(event) {
+    if(event) event.stopPropagation();
+    const overlay = document.getElementById('mobile-side-panel-overlay');
+    const sidebar = document.getElementById('right-sidebar');
+    if(overlay && sidebar) {
+        overlay.classList.remove('hidden');
+        void overlay.offsetWidth;
+        overlay.classList.remove('opacity-0');
+        document.body.classList.add('mobile-panel-open');
+        document.body.style.overflow = 'hidden';
+    }
 };
+
+window.closeMobilePanel = function(event) {
+    if(event) event.stopPropagation();
+    const overlay = document.getElementById('mobile-side-panel-overlay');
+    if(overlay) {
+        overlay.classList.add('opacity-0');
+        document.body.classList.remove('mobile-panel-open');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 300);
+    }
 
 // === DİĞER FONKSİYONLAR ===
 window.openSettingsModal = function() {

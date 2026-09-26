@@ -1469,3 +1469,32 @@ header {
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 }
+
+
+/* Mobil Panel İçin Responsive Sağ Sütun */
+@media (max-width: 1024px) {
+    .responsive-right-sidebar {
+        display: flex !important;
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        width: 85% !important;
+        max-width: 400px !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background-color: #ffffff !important;
+        z-index: 7000 !important;
+        overflow-y: auto !important;
+        padding: 20px !important;
+        transform: translateX(100%) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        flex-direction: column !important;
+        box-shadow: -10px 0 30px rgba(0,0,0,0.1) !important;
+    }
+    body.dark-mode .responsive-right-sidebar {
+        background-color: #0b1121 !important;
+    }
+    body.mobile-panel-open .responsive-right-sidebar {
+        transform: translateX(0) !important;
+    }
+}
