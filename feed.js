@@ -454,13 +454,13 @@ window.openPostDetail = async function(postId) {
     let mediaHtmlDetail = '';
     if (postData.media && postData.media.length > 1) {
         let slides = postData.media.map((m, idx) => {
-            let tag = m.type === 'video' ? `<div class="mt-3">` + window.renderCustomVideo(window.sanitizeUrl(m.url), '', postId + '-' + idx, postId) + `</div>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain">`;
+            let tag = m.type === 'video' ? `<video controls playsinline onclick="event.stopPropagation()" src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain">`;
             return `<div style="flex: 0 0 100%; scroll-snap-align: start;">${tag}</div>`;
         }).join('');
         mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
     } else if (postData.media && postData.media.length === 1) {
         let m = postData.media[0];
-        mediaHtmlDetail = m.type === 'video' ? `<div class="mt-3">` + window.renderCustomVideo(window.sanitizeUrl(m.url), '', postId, postId) + `</div>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
+        mediaHtmlDetail = m.type === 'video' ? `<video controls playsinline onclick="event.stopPropagation()" src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
     } else if (postData.imageUrl) {
         mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
     }
