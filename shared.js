@@ -29,7 +29,8 @@ window.initVideoObserver = function() {
                 const globalMuted = localStorage.getItem('mozaik_video_muted') !== 'false';
                 
                 // Diğer tüm videoları durdur ve sessize al (Garanti olsun diye)
-                document.querySelectorAll('.auto-play-video').forEach(v => {
+                const feedCont = document.getElementById('feed-container');
+                (feedCont ? feedCont.querySelectorAll('.auto-play-video') : []).forEach(v => {
                     if (v !== activeVideo) {
                         v.pause();
                     }
@@ -57,6 +58,8 @@ window.initVideoObserver = function() {
         window.videoObserver.observe(vid);
     });
 };
+
+window.initVideoObserver();
 
 window.handleMediaClick = function(postId, isLiked, postAuthor, event) {
     event.stopPropagation(); // Post detayına gitmesini engelle
@@ -574,9 +577,12 @@ window.initVideoPlayers = function() {
 
 window.observeVideos = function() {
     if (!window.videoObserver) return;
-    document.querySelectorAll('.mz-video').forEach(video => {
-        window.videoObserver.observe(video);
-    });
+    const feedContainer = document.getElementById('feed-container');
+    if (feedContainer) {
+        feedContainer.querySelectorAll('.mz-video').forEach(video => {
+            window.videoObserver.observe(video);
+        });
+    }
 };
 
 
