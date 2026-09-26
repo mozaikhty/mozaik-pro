@@ -474,8 +474,17 @@ window.openPostDetail = async function(postId) {
     } catch(e) { console.error(e); }
 };
 
-window.closePostDetail = function() {
+window.closePostDetail = function() { document.body.classList.remove('modal-open');
     const modal = document.getElementById('post-detail-modal');
     if(modal) modal.style.display = 'none';
     document.body.classList.remove('modal-open');
 };
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const pdm = document.getElementById('post-detail-modal');
+        if (pdm && pdm.style.display === 'flex') {
+            window.closePostDetail();
+        }
+    }
+});

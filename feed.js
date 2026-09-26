@@ -20,7 +20,7 @@ document.addEventListener('click', function(event) {
     }
     if (event.target.classList.contains('modal-overlay') && event.target.id !== 'story-viewer-overlay') {
         event.target.style.display = 'none';
-        if(event.target.id === 'post-detail-modal') { window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; }
+        if(event.target.id === 'post-detail-modal') { window.closePostDetail(); return; }
         if(event.target.id === 'story-details-modal' || event.target.id === 'story-share-modal') { if(window.resumeStory) window.resumeStory(); }
     }
 });
@@ -416,7 +416,7 @@ window.sendPostAsMessage = async function(targetUser) {
 };
 
 function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
-window.closePostDetail = function() { document.getElementById('post-detail-modal').style.display = 'none'; window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; window.history.replaceState({}, document.title, window.location.pathname); };
+window.closePostDetail = function() { document.body.classList.remove('modal-open'); document.getElementById('post-detail-modal').style.display = 'none'; window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; window.history.replaceState({}, document.title, window.location.pathname); };
 
 window.openPostDetail = async function(postId) {
     window.currentOpenPostId = postId; activeReplyParentId = null; 
@@ -454,18 +454,18 @@ window.openPostDetail = async function(postId) {
     let mediaHtmlDetail = '';
     if (postData.media && postData.media.length > 1) {
         let slides = postData.media.map(m => {
-            let tag = m.type === 'video' ? `<video src="${window.sanitizeUrl(m.url)}" controls class="w-full max-h-[60vh] rounded-xl object-contain"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain">`;
+            let tag = m.type === 'video' ? `<video onclick="event.stopPropagation()" src="${window.sanitizeUrl(m.url)}" controls class="w-full max-h-[60vh] rounded-xl object-contain"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain">`;
             return `<div style="flex: 0 0 100%; scroll-snap-align: start;">${tag}</div>`;
         }).join('');
         mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
     } else if (postData.media && postData.media.length === 1) {
         let m = postData.media[0];
-        mediaHtmlDetail = m.type === 'video' ? `<video src="${window.sanitizeUrl(m.url)}" controls class="w-full max-h-[60vh] rounded-xl object-contain mb-4"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
+        mediaHtmlDetail = m.type === 'video' ? `<video onclick="event.stopPropagation()" src="${window.sanitizeUrl(m.url)}" controls class="w-full max-h-[60vh] rounded-xl object-contain mb-4"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
     } else if (postData.imageUrl) {
         mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
     }
 
-    const postContent = DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="text-cyan-500 hover:underline">#$1</a>`);
+    const postContent = DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="text-cyan-500 hover:underline" onclick="event.stopPropagation()">#$1</a>`);
 
     let html = `
         ${repostLabel}
@@ -650,21 +650,22 @@ function renderFeed() {
         let mediaHtml = '';
         if (postData.media && postData.media.length > 1) {
             let slides = postData.media.map(m => {
-                let tag = m.type === 'video' ? `<video src="${window.sanitizeUrl(m.url)}" controls class="w-full h-[400px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full h-[400px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800">`;
+                let tag = m.type === 'video' ? `<video onclick="event.stopPropagation()" src="${window.sanitizeUrl(m.url)}" controls class="w-full h-[400px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full h-[400px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800">`;
                 return `<div style="flex: 0 0 100%; scroll-snap-align: start; position:relative;">${tag}</div>`;
             }).join('');
             mediaHtml = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%;">${slides}</div>`;
         } else if (postData.media && postData.media.length === 1) {
             let m = postData.media[0];
-            mediaHtml = m.type === 'video' ? `<video src="${window.sanitizeUrl(m.url)}" controls class="w-full max-h-[500px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[500px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800">`;
+            mediaHtml = m.type === 'video' ? `<video onclick="event.stopPropagation()" src="${window.sanitizeUrl(m.url)}" controls class="w-full max-h-[500px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[500px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800">`;
         } else if (postData.imageUrl) {
             mediaHtml = `<img src="${window.sanitizeUrl(postData.imageUrl)}" class="w-full max-h-[500px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-800">`;
         }
 
-        const postContent = DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="text-cyan-600 dark:text-cyan-400 hover:underline">#$1</a>`);
+        const postContent = DOMPurify.sanitize(postData.content || '').replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="text-cyan-600 dark:text-cyan-400 hover:underline" onclick="event.stopPropagation()">#$1</a>`);
 
-        const article = document.createElement('article'); 
-        article.className = 'rounded-2xl p-5 space-y-3 shadow-sm dark:shadow-none border border-slate-200 dark:border-gray-800 bg-white dark:bg-[#151e32] transition duration-300';
+        const article = document.createElement('article');
+        article.className = 'rounded-2xl p-5 space-y-3 shadow-sm dark:shadow-none border border-slate-200 dark:border-gray-800 bg-white dark:bg-[#151e32] transition duration-300 cursor-pointer';
+        article.setAttribute('onclick', `window.openPostDetail('${post.id}')`);
         
         article.innerHTML = `
             ${repostHtml}
@@ -737,3 +738,12 @@ function renderFeed() {
         }
     }
 }
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const pdm = document.getElementById('post-detail-modal');
+        if (pdm && pdm.style.display === 'flex') {
+            window.closePostDetail();
+        }
+    }
+});
