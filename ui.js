@@ -40,9 +40,6 @@ function loadUIComponents() {
         </div>
     `;
 
-    // === ALT MENÜ ===
-    const bottomNavHTML = ``; // feed.html içinde statik
-
     // === AYARLAR MODALI ===
     const settingsModalHTML = `
         <div class="modal-overlay" id="settings-modal" style="z-index: 5000; display:none;">
@@ -69,60 +66,44 @@ function loadUIComponents() {
     // === TOAST (BİLDİRİM) TASARIMI ===
     const toastHTML = `
         <style>
-            #toast-container {
-                position: fixed;
-                bottom: 30px;
-                right: 30px;
-                z-index: 9999;
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-                pointer-events: none;
-            }
-            .toast-msg {
-                min-width: 250px;
-                max-width: 350px;
-                color: white;
-                padding: 16px 20px;
-                border-radius: 12px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 14px;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                transform: translateX(120%);
-                opacity: 0;
-                transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-                pointer-events: auto;
-            }
-            .toast-msg.show {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+            .toast-msg { min-width: 250px; max-width: 350px; color: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; transform: translateX(120%); opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); pointer-events: auto; }
+            .toast-msg.show { transform: translateX(0); opacity: 1; }
             .toast-success { background-color: #10b981; }
             .toast-error { background-color: #ef4444; }
             .toast-info { background-color: #3b82f6; }
-            
-            @media (max-width: 1000px) {
-                #toast-container {
-                    bottom: 80px; 
-                    right: 20px;
-                    left: 20px;
-                    align-items: center;
-                }
-            }
+            @media (max-width: 1000px) { #toast-container { bottom: 80px; right: 20px; left: 20px; align-items: center; } }
         </style>
         <div id="toast-container"></div>
+    `;
+
+    // GÜNÜN GÖREVİ KARTI HTML'İ
+    const dailyTaskHTML = `
+        <div id="daily-task-card" class="rounded-2xl p-5 bg-gradient-to-br from-indigo-900 to-purple-900 border border-indigo-700/50 shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:-translate-y-1 mb-4" onclick="window.openDailyTaskModal()" style="display: none !important;">
+            <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
+            <div class="relative z-10 flex flex-col h-full">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-white backdrop-blur-sm"><i class="fa-solid fa-bolt text-sm"></i></div>
+                        <span class="font-bold text-sm text-white">Günün Görevi</span>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-indigo-300 group-hover:text-white transition transform group-hover:translate-x-1"></i>
+                </div>
+                <h3 id="daily-task-title" class="text-white font-bold text-base mb-1 leading-tight">Yükleniyor...</h3>
+                <p id="daily-task-desc" class="text-indigo-200 text-xs mb-3 line-clamp-2">Lütfen bekleyin.</p>
+                <div id="daily-task-img-container" class="w-full h-24 rounded-lg overflow-hidden mb-3 bg-indigo-950/50 hidden">
+                    <img id="daily-task-img" src="" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">
+                </div>
+                <div class="mt-auto flex items-center gap-2">
+                    <span id="daily-task-participants" class="text-[11px] text-indigo-200 font-medium bg-black/20 px-2 py-1 rounded-md">0 kişi katıldı</span>
+                </div>
+            </div>
+        </div>
     `;
 
     // HTML'leri Ekrana Bas
     const sidebarContainer = document.getElementById('sidebar-container');
     if (sidebarContainer) sidebarContainer.innerHTML = sidebarHTML;
-
-    const bottomNavContainer = document.getElementById('bottom-nav-container');
-    if (bottomNavContainer) bottomNavContainer.innerHTML = bottomNavHTML;
 
     if (!document.getElementById('settings-modal')) {
         document.body.insertAdjacentHTML('beforeend', settingsModalHTML);
@@ -133,24 +114,33 @@ function loadUIComponents() {
     }
 
     // === MOBİL YAN PANEL OVERLAY ===
-    const mobilePanelHTML = `
-        <div id="mobile-side-panel-overlay" class="fixed inset-0 z-[6000] hidden bg-black/40 transition-opacity duration-300 opacity-0" onclick="window.closeMobilePanel(event)"></div>
-    `;
+    const mobilePanelHTML = `<div id="mobile-side-panel-overlay" class="fixed inset-0 z-[6000] hidden bg-black/40 transition-opacity duration-300 opacity-0" onclick="window.closeMobilePanel(event)"></div>`;
     if (!document.getElementById('mobile-side-panel-overlay')) {
         document.body.insertAdjacentHTML('beforeend', mobilePanelHTML);
     }
     
-    // Sağ sütun varsa mobilde kapatma butonu ekle (Günün Görevi Çiftleşmesini Önler)
+    // MASAÜSTÜ İÇİN KARTI SAĞ PANELE ZORLA EKLE (Eğer yoksa)
     const rightSidebar = document.getElementById('right-sidebar');
-    if (rightSidebar && !document.getElementById('mobile-panel-close-btn')) {
-        rightSidebar.insertAdjacentHTML('afterbegin', `
-            <div id="mobile-panel-close-btn" class="flex lg:hidden items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-gray-800">
-                <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
-                <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
-            </div>
-        `);
+    if (rightSidebar) {
+        if (!document.getElementById('mobile-panel-close-btn')) {
+            rightSidebar.insertAdjacentHTML('afterbegin', `
+                <div id="mobile-panel-close-btn" class="flex lg:hidden items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-gray-800">
+                    <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
+                    <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
+                </div>
+            `);
+        }
+        
+        // EĞER KART YOKSA İLK SIRAYA EKLE
+        if (!document.getElementById('daily-task-card')) {
+            const closeBtn = document.getElementById('mobile-panel-close-btn');
+            if (closeBtn) {
+                closeBtn.insertAdjacentHTML('afterend', dailyTaskHTML);
+            } else {
+                rightSidebar.insertAdjacentHTML('afterbegin', dailyTaskHTML);
+            }
+        }
     }
-
 }
 
 window.openMobilePanel = function(event) {
@@ -165,6 +155,28 @@ window.openMobilePanel = function(event) {
             <div id="mobile-panel-close-btn" class="flex lg:hidden items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-gray-800">
                 <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
                 <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
+            </div>
+
+            <!-- GÜNÜN GÖREVİ KARTI (DİNAMİK) -->
+            <div id="daily-task-card" class="rounded-2xl p-5 bg-gradient-to-br from-indigo-900 to-purple-900 border border-indigo-700/50 shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:-translate-y-1 mb-4" onclick="window.openDailyTaskModal()" style="display: none !important;">
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-white backdrop-blur-sm"><i class="fa-solid fa-bolt text-sm"></i></div>
+                            <span class="font-bold text-sm text-white">Günün Görevi</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right text-indigo-300 group-hover:text-white transition transform group-hover:translate-x-1"></i>
+                    </div>
+                    <h3 id="daily-task-title" class="text-white font-bold text-base mb-1 leading-tight">Yükleniyor...</h3>
+                    <p id="daily-task-desc" class="text-indigo-200 text-xs mb-3 line-clamp-2">Lütfen bekleyin.</p>
+                    <div id="daily-task-img-container" class="w-full h-24 rounded-lg overflow-hidden mb-3 bg-indigo-950/50 hidden">
+                        <img id="daily-task-img" src="" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">
+                    </div>
+                    <div class="mt-auto flex items-center gap-2">
+                        <span id="daily-task-participants" class="text-[11px] text-indigo-200 font-medium bg-black/20 px-2 py-1 rounded-md">0 kişi katıldı</span>
+                    </div>
+                </div>
             </div>
             
             <div class="rounded-2xl p-5 bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80')] bg-cover bg-center relative overflow-hidden group cursor-pointer shadow-sm" onclick="window.goToMyProfile()">
@@ -196,6 +208,12 @@ window.openMobilePanel = function(event) {
         if (window.renderWhoToFollowGlobal) {
             window.renderWhoToFollowGlobal();
         }
+        
+        // Dinamik oluşturulduğu için görevi tekrar çekip bağla
+        if (window.initDailyTask) {
+            window.initDailyTask();
+        }
+
     } else {
         if (window.renderWhoToFollowGlobal && document.getElementById('who-to-follow-list') && document.getElementById('who-to-follow-list').innerHTML.includes('yükleniyor')) {
             window.renderWhoToFollowGlobal();
