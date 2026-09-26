@@ -32,7 +32,6 @@ window.initVideoObserver = function() {
                 document.querySelectorAll('.auto-play-video').forEach(v => {
                     if (v !== activeVideo) {
                         v.pause();
-                        v.muted = true;
                     }
                 });
 
@@ -498,15 +497,7 @@ window.toggleVideoMute = function(id, event) {
     if (!video || !btn) return;
     
     video.muted = !video.muted; localStorage.setItem('mozaik_video_muted', video.muted);
-    if (!video.muted) {
-        document.querySelectorAll('.mz-video').forEach(v => {
-            if (v !== video) {
-                v.muted = true;
-                const otherBtn = document.querySelector(`#player-${v.id.replace('video-','')} .mz-control-mute`);
-                if (otherBtn) otherBtn.innerText = '🔇';
-            }
-        });
-    }
+    // Removed forced muting
 
     btn.innerText = video.muted ? '🔇' : '🔊';
 };
