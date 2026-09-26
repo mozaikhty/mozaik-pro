@@ -520,26 +520,7 @@ window.renderCustomVideo = function(url, likeActionStr, uniqueId, postId = '') {
 };
 
 
-    const lastTime = window.lastVideoClickTime[id] || 0;
-    
-    if (now - lastTime < 300) {
-        window.lastVideoClickTime[id] = 0; // double click
-        if (likeActionStr && likeActionStr.trim() !== '' && likeActionStr !== 'undefined') {
-            try { eval(likeActionStr); } catch(e) {}
-        }
-    } else {
-        window.lastVideoClickTime[id] = now;
-        setTimeout(() => {
-            if (window.lastVideoClickTime[id] !== 0) { // single click
-                if (window.openReelsViewer && postId && postId !== 'undefined' && postId !== '') {
-                    window.openReelsViewer(postId);
-                } else {
-                    window.toggleVideoPlay(id);
-                }
-            }
-        }, 300);
-    }
-};
+
 
 
 
