@@ -416,7 +416,7 @@ window.sendPostAsMessage = async function(targetUser) {
 };
 
 function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
-window.closePostDetail = function() { document.body.classList.remove('modal-open'); document.getElementById('post-detail-modal').style.display = 'none'; window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; window.history.replaceState({}, document.title, window.location.pathname); };
+window.closePostDetail = function() { document.body.classList.remove('modal-open'); document.getElementById('post-detail-modal').style.display = 'none'; window.currentOpenPostId = null; activeReplyParentId = null; const cont = document.getElementById('post-detail-container'); if(cont){ cont.querySelectorAll('video').forEach(v => v.pause()); cont.innerHTML = ''; } window.history.replaceState({}, document.title, window.location.pathname); };
 
 window.openPostDetail = async function(postId) {
     window.currentOpenPostId = postId; activeReplyParentId = null; 
@@ -454,13 +454,13 @@ window.openPostDetail = async function(postId) {
     let mediaHtmlDetail = '';
     if (postData.media && postData.media.length > 1) {
         let slides = postData.media.map((m, idx) => {
-            let tag = m.type === 'video' ? `<video controls playsinline onclick="event.stopPropagation()" src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain">`;
+            let tag = m.type === 'video' ? `<div class="mt-3">` + window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9), postId) + `</div>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain">`;
             return `<div style="flex: 0 0 100%; scroll-snap-align: start;">${tag}</div>`;
         }).join('');
         mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
     } else if (postData.media && postData.media.length === 1) {
         let m = postData.media[0];
-        mediaHtmlDetail = m.type === 'video' ? `<video controls playsinline onclick="event.stopPropagation()" src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4"></video>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
+        mediaHtmlDetail = m.type === 'video' ? `<div class="mt-3">` + window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9), postId) + `</div>` : `<img src="${window.sanitizeUrl(m.url)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
     } else if (postData.imageUrl) {
         mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" class="w-full max-h-[60vh] rounded-xl object-contain mb-4">`;
     }
@@ -509,7 +509,7 @@ window.openPostDetail = async function(postId) {
     const contentBox = document.getElementById('post-detail-content-box');
     if(contentBox) contentBox.scrollTop = 0; 
     document.getElementById('post-detail-container').innerHTML = html; 
-    window.initVideoPlayers?.(); window.observeVideos?.();
+    window.initVideoPlayers?.(); window.observeModalVideos?.();
     document.getElementById('post-detail-modal').style.display = 'flex';
     document.body.classList.add('modal-open');
 };
@@ -737,8 +737,7 @@ function renderFeed() {
             feedContainer.innerHTML = '<div class="py-20 text-center text-slate-500 dark:text-gray-400">Buralar çok sessiz...</div>'; 
         }
     }
-    window.initVideoPlayers?.();
-    window.observeVideos?.();
+    window.initVideoPlayers?.(); window.observeModalVideos?.();
 }
 
 document.addEventListener('keydown', function(e) {

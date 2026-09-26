@@ -156,7 +156,7 @@ function generateUniqueId() { return Math.random().toString(36).substr(2, 9); }
 
 window.closePostDetail = function() { document.body.classList.remove('modal-open');
     document.getElementById('post-detail-modal').style.display = 'none'; window.currentOpenPostId = null; activeReplyParentId = null;
-    document.getElementById('post-detail-container').innerHTML = ''; document.body.classList.remove('modal-open'); window.history.replaceState({}, document.title, window.location.pathname);
+    const cont = document.getElementById('post-detail-container'); if(cont){ cont.querySelectorAll('video').forEach(v => v.pause()); cont.innerHTML = ''; } document.body.classList.remove('modal-open'); window.history.replaceState({}, document.title, window.location.pathname);
 };
 
 window.openPostDetail = async function(postId) {
