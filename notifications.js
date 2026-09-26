@@ -110,7 +110,7 @@ function renderWhoToFollow() {
                         <p class="text-[11px] text-slate-500 dark:text-gray-400">@${window.escapeHtml(uid)}</p>
                     </div>
                 </div>
-                <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}')" class="border border-slate-200 dark:border-gray-600 text-xs px-4 py-1.5 rounded-full text-slate-700 dark:text-white bg-slate-100 dark:bg-transparent hover:bg-slate-200 dark:hover:bg-gray-700 transition font-semibold shadow-sm dark:shadow-none">Ekle</button>
+                <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}', this)" class="border border-slate-200 dark:border-gray-600 text-xs px-4 py-1.5 rounded-full text-slate-700 dark:text-white bg-slate-100 dark:bg-transparent hover:bg-slate-200 dark:hover:bg-gray-700 transition font-semibold shadow-sm dark:shadow-none">Ekle</button>
             </div>
         `;
     });

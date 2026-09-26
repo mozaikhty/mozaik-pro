@@ -163,7 +163,7 @@ function renderWhoToFollow() {
                     <p class="text-[10px] text-slate-500 dark:text-gray-400">@${window.escapeHtml(uid)}</p>
                 </div>
             </div>
-            <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}')" class="bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-gray-600 text-xs px-3 py-1 rounded-full text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-gray-700 transition font-semibold">Takip Et</button>
+            <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}', this)" class="bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-gray-600 text-xs px-3 py-1 rounded-full text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-gray-700 transition font-semibold">Takip Et</button>
         </div>`;
     });
     container.innerHTML = html;

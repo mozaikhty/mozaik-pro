@@ -350,7 +350,13 @@ window.closeMobileSidebar = function() {
 // 6. HIZLI TAKİP ETME (QUICK FOLLOW)
 // =====================================
 
-window.quickFollow = async function(targetUser) {
+window.quickFollow = async function(targetUser, btnElement) {
+    if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.innerText = "İşleniyor...";
+        btnElement.classList.add("opacity-50");
+    }
+    
     try {
         const myUsername = window.myUsername;
         const allUsersData = window.allUsersData || {};
@@ -360,14 +366,39 @@ window.quickFollow = async function(targetUser) {
         
         if (targetData.isPrivate) {
             await setDoc(targetRef, { followRequests: arrayUnion(myUsername) }, { merge: true });
-            window.showToast?.("Hesap gizli. Takip isteği gönderildi!", "success") || alert("Hesap gizli. Takip isteği gönderildi!");
+            window.showToast?.("Takip isteği gönderildi!", "success");
+            if (btnElement) {
+                btnElement.innerText = "İstek Gönderildi";
+                btnElement.classList.replace("bg-slate-100", "bg-slate-200");
+                btnElement.classList.replace("dark:bg-transparent", "dark:bg-gray-800");
+                btnElement.classList.replace("opacity-50", "opacity-100");
+            }
         } else {
             await setDoc(myRef, { following: arrayUnion(targetUser) }, { merge: true });
             await setDoc(targetRef, { followers: arrayUnion(myUsername) }, { merge: true });
             await addDoc(collection(db, "notifications"), { type: 'follow', sender: myUsername, recipient: targetUser, createdAt: serverTimestamp() });
+            if (btnElement) {
+                btnElement.innerText = "Takip Ediliyor";
+                btnElement.classList.replace("bg-slate-100", "bg-cyan-500");
+                btnElement.classList.replace("dark:bg-transparent", "bg-cyan-500");
+                btnElement.classList.replace("text-slate-700", "text-white");
+                btnElement.classList.replace("border-slate-200", "border-cyan-500");
+                btnElement.classList.replace("dark:border-gray-600", "border-cyan-500");
+                btnElement.classList.replace("opacity-50", "opacity-100");
+            }
+        }
+        
+        // Takip edilen kişiyi myFollowingList'e ekle
+        if (!targetData.isPrivate && window.myFollowingList && !window.myFollowingList.includes(targetUser)) {
+            window.myFollowingList.push(targetUser);
         }
     } catch (e) {
         console.error("Hızlı takip hatası:", e.code || "Bilinmeyen hata");
+        if (btnElement) {
+            btnElement.disabled = false;
+            btnElement.innerText = "Takip Et";
+            btnElement.classList.remove("opacity-50");
+        }
     }
 };
 

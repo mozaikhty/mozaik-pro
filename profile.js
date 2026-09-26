@@ -332,7 +332,7 @@ window.deleteComment = async function(postId, commentId) {
     }
 };
 
-function loadUserProfileData() {
+function loadUserProfileData() {\n    renderWhoToFollow();
     onSnapshot(doc(db, "users", targetUsername), async (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -714,3 +714,33 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+
+// --- ÖNERİLEN HESAPLAR ---
+function renderWhoToFollow() {
+    const container = document.getElementById('who-to-follow-list'); if (!container) return;
+    let eligibleUsers = Object.keys(allUsersData).filter(uid => { return uid !== myUsername && !myFollowingList.includes(uid); });
+    eligibleUsers = eligibleUsers.sort(() => 0.5 - Math.random()).slice(0, 3);
+    if (eligibleUsers.length === 0) { container.innerHTML = '<div class="text-sm text-slate-500 dark:text-gray-400 py-2">Şu an için yeni öneri yok.</div>'; return; }
+    
+    let html = '';
+    eligibleUsers.forEach(uid => {
+        const uData = allUsersData[uid]; 
+        const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-gray-700 flex items-center justify-center font-bold text-xs text-slate-500 dark:text-gray-300">👤</div>`;
+        const fullName = window.escapeHtml(uData.fullName || uid); 
+        const vHtml = uData.isVerified ? '<i class="fa-solid fa-circle-check text-blue-500 text-[10px] ml-1"></i>' : '';
+        
+        html += `
+        <div class="flex justify-between items-center cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1e293b] p-2 rounded-xl transition" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'">
+            <div class="flex items-center gap-2">
+                ${avatarHtml}
+                <div>
+                    <p class="text-xs font-bold text-slate-900 dark:text-white flex items-center">${fullName} ${vHtml}</p>
+                    <p class="text-[10px] text-slate-500 dark:text-gray-400">@${window.escapeHtml(uid)}</p>
+                </div>
+            </div>
+            <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}', this)" class="bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-gray-600 text-xs px-3 py-1 rounded-full text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-gray-700 transition font-semibold">Takip Et</button>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
