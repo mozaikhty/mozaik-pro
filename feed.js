@@ -737,6 +737,8 @@ function renderFeed() {
             feedContainer.innerHTML = '<div class="py-20 text-center text-slate-500 dark:text-gray-400">Buralar çok sessiz...</div>'; 
         }
     }
+    window.initVideoPlayers?.();
+    window.observeVideos?.();
 }
 
 document.addEventListener('keydown', function(e) {
