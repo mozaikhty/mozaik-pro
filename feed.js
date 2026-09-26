@@ -773,33 +773,37 @@ window.activeDailyTaskId = null;
 // Uygulama açıldığında bugünün görevini çeker
 window.initDailyTask = async function() {
     try {
-        const today = new Date().toISOString().split('T')[0]; // "2026-09-27" formatında
+        const today = new Date().toISOString().split('T')[0]; 
         
-        // Firestore sorgusu: Tarih bugün olan ve active durumu true olan görevi getir
-        const q = query(collection(db, "dailyTasks"), where("date", "==", today), where("active", "==", true), limit(1));
+        // FİREBASE INDEX HATASINI ÖNLEMEK İÇİN SADECE TARİHE GÖRE ÇEKİYORUZ
+        const q = query(collection(db, "dailyTasks"), where("date", "==", today));
         const snapshot = await getDocs(q);
 
-        // Hem masaüstü hem mobil paneldeki kartları bul
         const cards = document.querySelectorAll('#daily-task-card');
-        
-        if (!snapshot.empty) {
-            const taskDoc = snapshot.docs[0];
-            const taskData = taskDoc.data();
-            window.currentDailyTask = { id: taskDoc.id, ...taskData };
-            
-            const participants = taskData.participants || [];
+        let activeTask = null;
+
+        // JS ile aktif olanı buluyoruz
+        snapshot.forEach(docSnap => {
+            if (docSnap.data().active === true) {
+                activeTask = { id: docSnap.id, ...docSnap.data() };
+            }
+        });
+
+        if (activeTask) {
+            window.currentDailyTask = activeTask;
+            const participants = activeTask.participants || [];
             
             cards.forEach(card => {
-                card.style.display = 'block'; // Kartı görünür yap
-                card.querySelector('#daily-task-title').innerText = taskData.title || 'Günün Görevi';
-                card.querySelector('#daily-task-desc').innerText = taskData.description || '';
+                card.style.display = 'block'; 
+                card.querySelector('#daily-task-title').innerText = activeTask.title || 'Günün Görevi';
+                card.querySelector('#daily-task-desc').innerText = activeTask.description || '';
                 card.querySelector('#daily-task-participants').innerText = `${participants.length} kişi katıldı`;
                 
                 const imgContainer = card.querySelector('#daily-task-img-container');
                 const imgEl = card.querySelector('#daily-task-img');
                 
-                if (taskData.imageUrl) {
-                    imgEl.src = window.sanitizeUrl(taskData.imageUrl);
+                if (activeTask.imageUrl) {
+                    imgEl.src = window.sanitizeUrl(activeTask.imageUrl);
                     imgContainer.classList.remove('hidden');
                 } else {
                     imgContainer.classList.add('hidden');
