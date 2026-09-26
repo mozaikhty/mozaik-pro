@@ -269,20 +269,18 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         
         const postData = { content: text, imageUrl: imageUrl, media: mediaArray, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false };
         
-        // GÜNLÜK GÖREV ENTEGRASYONU
         if (window.activeDailyTaskId) {
             postData.dailyTaskId = window.activeDailyTaskId;
         }
         
         const newPostRef = await addDoc(collection(db, "posts"), postData);
         
-        // Katılımcıyı günlük göreve ekle
         if (window.activeDailyTaskId) {
             try {
                 await updateDoc(doc(db, "dailyTasks", window.activeDailyTaskId), {
                     participants: arrayUnion(myUsername)
                 });
-                window.activeDailyTaskId = null; // Sıfırla
+                window.activeDailyTaskId = null;
                 if (window.closeDailyTaskModal) window.closeDailyTaskModal();
                 if (window.initDailyTask) window.initDailyTask();
             } catch(e) { console.error('Göreve katılımcı eklenirken hata:', e); }
@@ -779,6 +777,7 @@ window.initDailyTask = async function() {
         const q = query(collection(db, "dailyTasks"), where("date", "==", today));
         const snapshot = await getDocs(q);
 
+        // Hem ID hem de Class ile tüm olası kartları seçelim
         const cards = document.querySelectorAll('#daily-task-card');
         let activeTask = null;
 
@@ -795,17 +794,27 @@ window.initDailyTask = async function() {
             
             cards.forEach(card => {
                 card.style.display = 'block'; 
-                card.querySelector('#daily-task-title').innerText = activeTask.title || 'Günün Görevi';
-                card.querySelector('#daily-task-desc').innerText = activeTask.description || '';
-                card.querySelector('#daily-task-participants').innerText = `${participants.length} kişi katıldı`;
+                card.style.setProperty('display', 'block', 'important'); // CSS KISITLAMASINI EZMEK İÇİN EKLENDİ
+                
+                // Başlık
+                const tEl = card.querySelector('#daily-task-title');
+                if(tEl) tEl.innerText = activeTask.title || 'Günün Görevi';
+                
+                // Açıklama
+                const dEl = card.querySelector('#daily-task-desc');
+                if(dEl) dEl.innerText = activeTask.description || '';
+                
+                // Katılımcı
+                const pEl = card.querySelector('#daily-task-participants');
+                if(pEl) pEl.innerText = `${participants.length} kişi katıldı`;
                 
                 const imgContainer = card.querySelector('#daily-task-img-container');
                 const imgEl = card.querySelector('#daily-task-img');
                 
-                if (activeTask.imageUrl) {
+                if (activeTask.imageUrl && imgEl && imgContainer) {
                     imgEl.src = window.sanitizeUrl(activeTask.imageUrl);
                     imgContainer.classList.remove('hidden');
-                } else {
+                } else if(imgContainer) {
                     imgContainer.classList.add('hidden');
                 }
             });
@@ -813,11 +822,15 @@ window.initDailyTask = async function() {
             // Bugün için görev yoksa
             window.currentDailyTask = null;
             cards.forEach(card => {
-                card.style.display = 'block';
-                card.querySelector('#daily-task-title').innerText = 'Görev Bekleniyor';
-                card.querySelector('#daily-task-desc').innerText = 'Bugünün görevi henüz hazırlanmadı.';
-                card.querySelector('#daily-task-participants').innerText = '0 kişi katıldı';
-                card.querySelector('#daily-task-img-container').classList.add('hidden');
+                card.style.setProperty('display', 'block', 'important'); // CSS KISITLAMASINI EZMEK İÇİN EKLENDİ
+                const tEl = card.querySelector('#daily-task-title');
+                if(tEl) tEl.innerText = 'Görev Bekleniyor';
+                const dEl = card.querySelector('#daily-task-desc');
+                if(dEl) dEl.innerText = 'Bugünün görevi henüz hazırlanmadı.';
+                const pEl = card.querySelector('#daily-task-participants');
+                if(pEl) pEl.innerText = '0 kişi katıldı';
+                const imgContainer = card.querySelector('#daily-task-img-container');
+                if(imgContainer) imgContainer.classList.add('hidden');
             });
         }
     } catch(e) {

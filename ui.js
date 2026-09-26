@@ -41,7 +41,7 @@ function loadUIComponents() {
     `;
 
     // === ALT MENÜ ===
-    
+    const bottomNavHTML = ``; // Mevcutta feed.html içinde barınıyor
 
     // === AYARLAR MODALI ===
     const settingsModalHTML = `
@@ -117,7 +117,7 @@ function loadUIComponents() {
         <div id="toast-container"></div>
     `;
 
-    // HTML'leri Ekrana Bas (Null Kontrolleri Eklendi)
+    // HTML'leri Ekrana Bas
     const sidebarContainer = document.getElementById('sidebar-container');
     if (sidebarContainer) sidebarContainer.innerHTML = sidebarHTML;
 
@@ -140,7 +140,7 @@ function loadUIComponents() {
         document.body.insertAdjacentHTML('beforeend', mobilePanelHTML);
     }
     
-    // Sağ sütun varsa mobilde kapatma butonu ekle
+    // Sağ sütun varsa mobilde kapatma butonu ekle (Günün görevi duplicate sorunu için temizlendi)
     const rightSidebar = document.getElementById('right-sidebar');
     if (rightSidebar && !document.getElementById('mobile-panel-close-btn')) {
         rightSidebar.insertAdjacentHTML('afterbegin', `
@@ -148,34 +148,8 @@ function loadUIComponents() {
                 <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
                 <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
             </div>
-
-            <!-- Günün Görevi Kartı -->
-            <div id="daily-task-card" class="rounded-2xl p-5 bg-gradient-to-br from-indigo-900 to-purple-900 border border-indigo-700/50 shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:-translate-y-1 mb-4" onclick="window.openDailyTaskModal()" style="display: none;">
-                <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
-                <div class="relative z-10 flex flex-col h-full">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-white backdrop-blur-sm"><i class="fa-solid fa-bolt text-sm"></i></div>
-                            <span class="font-bold text-sm text-white">Günün Görevi</span>
-                        </div>
-                        <i class="fa-solid fa-arrow-right text-indigo-300 group-hover:text-white transition transform group-hover:translate-x-1"></i>
-                    </div>
-                    <h3 id="daily-task-title" class="text-white font-bold text-base mb-1 leading-tight">...</h3>
-                    <p id="daily-task-desc" class="text-indigo-200 text-xs mb-3 line-clamp-2">...</p>
-                    
-                    <div id="daily-task-img-container" class="w-full h-24 rounded-lg overflow-hidden mb-3 bg-indigo-950/50 hidden">
-                        <img id="daily-task-img" src="" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">
-                    </div>
-                    
-                    <div class="mt-auto flex items-center gap-2">
-                        <span id="daily-task-participants" class="text-[11px] text-indigo-200 font-medium bg-black/20 px-2 py-1 rounded-md">0 kişi katıldı</span>
-                    </div>
-                </div>
-            </div>
-
         `);
     }
-
 }
 
 window.openMobilePanel = function(event) {
@@ -218,12 +192,10 @@ window.openMobilePanel = function(event) {
         document.body.insertAdjacentHTML('beforeend', sidebarHTML);
         sidebar = document.getElementById('right-sidebar');
         
-        // Eğer global render fonksiyonu varsa çağır ki öneriler yüklensin
         if (window.renderWhoToFollowGlobal) {
             window.renderWhoToFollowGlobal();
         }
     } else {
-        // Zaten varsa (feed.html gibi), ve öneriler boşsa yükle
         if (window.renderWhoToFollowGlobal && document.getElementById('who-to-follow-list') && document.getElementById('who-to-follow-list').innerHTML.includes('yükleniyor')) {
             window.renderWhoToFollowGlobal();
         }
@@ -273,7 +245,6 @@ window.toggleDarkMode = function() {
         document.body.classList.remove('dark-mode'); 
     }
 
-    // Gizli modlarda localStorage kısıtlamasına karşı Try-Catch bloğu
     try {
         if(isDark) {
             localStorage.setItem('theme', 'dark');
@@ -306,10 +277,8 @@ if (document.readyState === 'loading') {
     class ScrollManager {
         constructor() {
             this.lastScrollY = 0;
-            this.currentState = 'expanded'; // expanded, hidden, compact
+            this.currentState = 'expanded'; 
             this.isBottomCompact = false;
-            
-            // DOM Elements
             this.bottomNav = document.querySelector('.bottom-nav');
             this.bindEvents();
         }
@@ -326,11 +295,9 @@ if (document.readyState === 'loading') {
                 }, { passive: true });
             });
 
-            // Init state
             setTimeout(() => {
                 const initY = window.scrollY || (scrollableContainers.length > 0 ? scrollableContainers[0].scrollTop : 0);
                 this.lastScrollY = initY;
-                // Sadece mobilde scroll varsa gizle
                 if (window.innerWidth <= 1024 && initY > 10) {
                     this.setBottomNavState(true);
                     this.setHeaderState('hidden');
@@ -359,7 +326,6 @@ if (document.readyState === 'loading') {
             if (this.currentState === state) return;
             this.currentState = state;
             
-            // Apply states to body instead of header directly for more robust CSS targeting
             if (state === 'expanded') {
                 document.body.classList.remove('header-hidden', 'header-compact');
             } else if (state === 'hidden') {
@@ -372,30 +338,22 @@ if (document.readyState === 'loading') {
         }
 
         handleScroll(currentY) {
-            // MASAÜSTÜNDE SABİT KALMASI İÇİN
             if (window.innerWidth > 1024) {
                 this.setHeaderState('expanded');
                 return;
             }
 
-            // 1. Alt Navigasyon Mantığı (Bağımsız)
             if (currentY > 50) this.setBottomNavState(true);
             else if (currentY <= 10) this.setBottomNavState(false);
 
-            // 2. Akıllı Header Durum Makinesi
             if (currentY <= 10) {
-                // DURUM A / D: En üste gelindi, her şey görünür.
                 this.setHeaderState('expanded');
             } else {
                 const delta = currentY - this.lastScrollY;
-                
-                // Titreme önleyici tolerans
                 if (Math.abs(delta) > 5) {
                     if (delta > 0) {
-                        // DURUM B: Aşağı kaydırma
                         this.setHeaderState('hidden');
                     } else {
-                        // DURUM C: Sayfanın ortasında yukarı kaydırma
                         this.setHeaderState('compact');
                     }
                     this.lastScrollY = currentY;
