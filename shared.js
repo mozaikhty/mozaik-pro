@@ -686,3 +686,210 @@ window.renderWhoToFollowGlobal = async function() {
     });
     container.innerHTML = html;
 };
+
+
+// =====================================
+// GÜNLÜK GÖREV SİSTEMİ
+// =====================================
+window.currentDailyTask = null;
+
+window.initDailyTask = async function() {
+    try {
+        const todayStr = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD" format
+        // Query dailyTasks collection for active=true and date=todayStr
+        // Since we might not have a composite index, we can just query active=true and sort/filter client side or just query date.
+        // Actually, let's just fetch all active tasks and find today's.
+        import('https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js').then(async (firestore) => {
+            const { collection, getDocs, query, where, doc, setDoc } = firestore;
+            const q = query(collection(window.db || db, 'dailyTasks'), where('active', '==', true));
+            const snapshot = await getDocs(q);
+            
+            let todaysTask = null;
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data.date === todayStr) {
+                    todaysTask = { id: docSnap.id, ...data };
+                }
+            });
+            
+            // Eğer bugünün tarihiyle eşleşen yoksa, genel bir aktif görev gösterelim mi? 
+            // Sadece "Bugünün görevi henüz hazırlanmadı" diyeceğiz ama kartı komple gizlemek daha temiz.
+            const cards = document.querySelectorAll('#daily-task-card');
+            if (todaysTask) {
+                window.currentDailyTask = todaysTask;
+                cards.forEach(card => {
+                    card.style.display = 'block';
+                    card.querySelector('#daily-task-title').innerText = todaysTask.title || 'Günün Görevi';
+                    card.querySelector('#daily-task-desc').innerText = todaysTask.description || '';
+                    
+                    const imgContainer = card.querySelector('#daily-task-img-container');
+                    const imgEl = card.querySelector('#daily-task-img');
+                    if (todaysTask.imageUrl) {
+                        imgContainer.style.display = 'block';
+                        imgEl.src = window.sanitizeUrl(todaysTask.imageUrl);
+                    } else {
+                        imgContainer.style.display = 'none';
+                    }
+                    
+                    // Katılımcı sayısını hesapla (eğer participants array varsa)
+                    const pCount = todaysTask.participants ? todaysTask.participants.length : 0;
+                    card.querySelector('#daily-task-participants').innerText = pCount + ' kişi katıldı';
+                });
+            } else {
+                cards.forEach(card => card.style.display = 'none');
+            }
+        });
+    } catch(e) {
+        console.error('Daily task fetch error:', e);
+    }
+};
+
+window.openDailyTaskModal = function() {
+    if (!window.currentDailyTask) return;
+    
+    // Inject modal if it doesn't exist
+    if (!document.getElementById('daily-task-modal')) {
+        const modalHTML = `
+        <div id="daily-task-modal" class="fixed inset-0 z-[8000] hidden items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="window.closeDailyTaskModal()"></div>
+            <div class="bg-white dark:bg-[#0b1121] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl relative z-10 flex flex-col max-h-[90vh]">
+                <!-- Header -->
+                <div class="p-4 border-b border-slate-100 dark:border-gray-800 flex justify-between items-center bg-gradient-to-r from-indigo-600 to-purple-600">
+                    <div class="flex items-center gap-2 text-white">
+                        <i class="fa-solid fa-bolt"></i>
+                        <h2 class="font-bold text-lg">Günün Görevi</h2>
+                    </div>
+                    <button onclick="window.closeDailyTaskModal()" class="text-white/80 hover:text-white transition text-2xl leading-none">&times;</button>
+                </div>
+                
+                <!-- Body -->
+                <div class="overflow-y-auto p-0 flex-1">
+                    <div class="p-5 border-b border-slate-100 dark:border-gray-800 bg-slate-50 dark:bg-[#151e32]">
+                        <h3 id="modal-daily-task-title" class="text-xl font-bold text-slate-900 dark:text-white mb-2"></h3>
+                        <p id="modal-daily-task-desc" class="text-slate-600 dark:text-gray-300 text-sm mb-4"></p>
+                        <div id="modal-daily-task-img-container" class="w-full rounded-xl overflow-hidden mb-4 hidden shadow-md">
+                            <img id="modal-daily-task-img" src="" class="w-full h-48 object-cover">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                    <i class="fa-solid fa-users text-xs"></i>
+                                </div>
+                                <span id="modal-daily-task-participants" class="font-bold text-sm text-slate-700 dark:text-gray-300">0 kişi katıldı</span>
+                            </div>
+                            <button id="btn-join-daily-task" onclick="window.joinDailyTask()" class="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-5 py-2 rounded-full font-bold text-sm shadow-lg shadow-indigo-500/30 transition transform hover:scale-105">Göreve Katıl</button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-5">
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-gray-200 mb-4 flex items-center gap-2"><i class="fa-solid fa-images text-indigo-500"></i> Bu göreve katılanlar</h4>
+                        <div id="daily-task-posts-container" class="space-y-4">
+                            <div class="text-center text-slate-500 dark:text-gray-400 py-8 text-sm">Katılan gönderiler yükleniyor...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+    
+    const modal = document.getElementById('daily-task-modal');
+    document.getElementById('modal-daily-task-title').innerText = window.currentDailyTask.title;
+    document.getElementById('modal-daily-task-desc').innerText = window.currentDailyTask.description;
+    
+    const imgContainer = document.getElementById('modal-daily-task-img-container');
+    if (window.currentDailyTask.imageUrl) {
+        imgContainer.style.display = 'block';
+        document.getElementById('modal-daily-task-img').src = window.sanitizeUrl(window.currentDailyTask.imageUrl);
+    } else {
+        imgContainer.style.display = 'none';
+    }
+    
+    const pCount = window.currentDailyTask.participants ? window.currentDailyTask.participants.length : 0;
+    document.getElementById('modal-daily-task-participants').innerText = pCount + ' kişi katıldı';
+    
+    const btn = document.getElementById('btn-join-daily-task');
+    if (window.currentDailyTask.participants && window.currentDailyTask.participants.includes(window.myUsername)) {
+        btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Göreve katıldın';
+        btn.className = 'bg-slate-200 dark:bg-gray-700 text-slate-500 dark:text-gray-400 px-5 py-2 rounded-full font-bold text-sm cursor-not-allowed';
+        btn.disabled = true;
+    } else {
+        btn.innerHTML = 'Göreve Katıl';
+        btn.className = 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-5 py-2 rounded-full font-bold text-sm shadow-lg shadow-indigo-500/30 transition transform hover:scale-105 cursor-pointer';
+        btn.disabled = false;
+    }
+    
+    modal.style.display = 'flex';
+    document.body.classList.add('modal-open');
+    
+    // Fetch posts for this task
+    window.fetchDailyTaskPosts();
+};
+
+window.closeDailyTaskModal = function() {
+    const modal = document.getElementById('daily-task-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+};
+
+window.joinDailyTask = function() {
+    window.closeDailyTaskModal();
+    // Use the existing post modal in feed.html, or just open feed.html with a query param if not on feed.html
+    if (window.location.pathname.includes('feed.html')) {
+        if(window.openMainPostModal) {
+            window.openMainPostModal();
+            // Pre-fill or add a hidden tag for daily task
+            document.getElementById('modal-post-text').value = `#GününGörevi `;
+            window.activeDailyTaskId = window.currentDailyTask.id; // We'll intercept submitPost in feed.js
+            window.showToast?.('Günün görevine katılmak için gönderinizi paylaşın.', 'info');
+        }
+    } else {
+        window.location.href = 'feed.html?action=dailytask';
+    }
+};
+
+window.fetchDailyTaskPosts = async function() {
+    const container = document.getElementById('daily-task-posts-container');
+    if (!container) return;
+    
+    try {
+        import('https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js').then(async (firestore) => {
+            const { collection, getDocs, query, where, orderBy, limit } = firestore;
+            const q = query(
+                collection(window.db || db, 'posts'), 
+                where('dailyTaskId', '==', window.currentDailyTask.id),
+                orderBy('createdAt', 'desc'),
+                limit(10)
+            );
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+                container.innerHTML = '<div class="text-center text-slate-500 dark:text-gray-400 py-8 text-sm">İlk katılan sen ol!</div>';
+                return;
+            }
+            
+            let html = '';
+            // We use buildPostCard from feed.js if available, otherwise just basic HTML
+            if (window.buildPostCard) {
+                snapshot.forEach(doc => {
+                    const post = { id: doc.id, ...doc.data() };
+                    html += window.buildPostCard(post);
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<div class="text-center text-slate-500 dark:text-gray-400 py-8 text-sm">Gönderiler sadece Ana Akışta görüntülenebilir.</div>';
+            }
+        });
+    } catch (e) {
+        console.error('Error fetching task posts', e);
+        container.innerHTML = '<div class="text-center text-red-500 py-8 text-sm">Gönderiler yüklenirken bir hata oluştu.</div>';
+    }
+};
+
+// Auto-init on page load if auth is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait a bit for auth to resolve in other scripts
+    setTimeout(() => {
+        window.initDailyTask();
+    }, 1500);
+});

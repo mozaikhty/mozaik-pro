@@ -221,5 +221,13 @@ service cloud.firestore {
                          isOnlyAddingOrRemovingMe(resource.data.get('likes', []), request.resource.data.get('likes', []))
                        );
     }
+
+    // =========================================
+    // 9. GÜNLÜK GÖREVLER (DAILY TASKS) KOLEKSİYONU
+    // =========================================
+    match /dailyTasks/{taskId} {
+      allow read: if isLoggedIn();
+      allow create, update, delete: if isAdmin();
+    }
   }
 }

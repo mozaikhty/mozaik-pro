@@ -249,6 +249,7 @@
         <div class="nav-link" data-page="archive"><span class="icon">📋</span>Kişi Arşivi</div>
         <div class="nav-link" data-page="tickets"><span class="icon">📬</span>Destek Talepleri</div>
         <div class="nav-link" data-page="logs"><span class="icon">🔐</span>İşlem Geçmişi</div>
+        <div class="nav-link" data-page="dailyTasks"><span class="icon">🎯</span>Günün Görevi</div>
         <div style="flex:1"></div>
         <div class="nav-link" onclick="window.location.href='feed.html'"><span class="icon">🏠</span>Platforma Dön</div>
     </nav>
@@ -341,6 +342,66 @@
             </div>
         </div>
     </div>
+
+    
+    <!-- ==================== PAGE: DAILY TASKS ==================== -->
+    <div class="admin-page" id="page-dailyTasks">
+        <div class="section-card">
+            <div class="section-header">
+                <h3>Yeni Günlük Görev Oluştur</h3>
+            </div>
+            <div class="section-body p-5">
+                <form id="daily-task-form" class="space-y-4">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom:5px; font-size:13px; color:#94a3b8;">Görev Başlığı</label>
+                        <input type="text" id="dt-title" required style="width:100%; padding:8px 12px; background:#0f172a; border:1px solid #334155; border-radius:8px; color:#fff;" placeholder="Örn: Bugün gün batımını paylaş. 🌅">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom:5px; font-size:13px; color:#94a3b8;">Açıklama (İsteğe bağlı)</label>
+                        <textarea id="dt-desc" rows="2" style="width:100%; padding:8px 12px; background:#0f172a; border:1px solid #334155; border-radius:8px; color:#fff;" placeholder="Görev detayları..."></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom:5px; font-size:13px; color:#94a3b8;">Görev Görseli</label>
+                        <input type="file" id="dt-image" accept="image/*" style="width:100%; color:#94a3b8;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom:5px; font-size:13px; color:#94a3b8;">Yayınlanacağı Tarih</label>
+                        <input type="date" id="dt-date" required style="width:100%; padding:8px 12px; background:#0f172a; border:1px solid #334155; border-radius:8px; color:#fff;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                            <input type="checkbox" id="dt-active" checked>
+                            Hemen Aktif Et
+                        </label>
+                    </div>
+                    <button type="submit" id="dt-submit-btn" style="background:#6366f1; color:#fff; padding:10px 20px; border-radius:8px; font-weight:600; border:none; cursor:pointer;">Görevi Kaydet</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="section-card mt-6" style="margin-top:20px;">
+            <div class="section-header">
+                <h3>Geçmiş Görevler</h3>
+            </div>
+            <div class="section-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Başlık</th>
+                            <th>Durum</th>
+                            <th>Katılımcı</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="daily-tasks-tbody">
+                        <tr><td colspan="5" style="text-align:center;">Yükleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 
     <!-- ==================== PAGE: USERS ==================== -->
     <div class="admin-page" id="page-users">

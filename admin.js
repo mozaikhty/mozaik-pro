@@ -6,7 +6,7 @@
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDocs, where, addDoc, serverTimestamp, limit, getDoc, startAt, endAt, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+import { ref, deleteObject, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 import { auth, db, storage } from './firebase-config.js';
 
 // =====================================
@@ -73,6 +73,7 @@ function initPanel() {
     setupSearch();
     setupModals();
     setupMobileMenu();
+    initDailyTasks(); // GÜNÜN GÖREVİ SİSTEMİNİ BAŞLAT
 }
 
 // =====================================
@@ -94,7 +95,7 @@ window.switchPage = function(page) {
     const targetLink = document.querySelector(`.nav-link[data-page="${page}"]`);
     if (targetPage) targetPage.classList.add('active');
     if (targetLink) targetLink.classList.add('active');
-    const titles = { dashboard: 'Genel Bakış', users: 'Kullanıcı Yönetimi', bans: 'Ban Yönetimi', archive: 'Kişi Arşivi', tickets: 'Destek Talepleri', logs: 'İşlem Geçmişi' };
+    const titles = { dashboard: 'Genel Bakış', users: 'Kullanıcı Yönetimi', bans: 'Ban Yönetimi', archive: 'Kişi Arşivi', tickets: 'Destek Talepleri', logs: 'İşlem Geçmişi', dailyTasks: 'Günün Görevi' };
     const titleEl = document.getElementById('page-title');
     if (titleEl) titleEl.textContent = titles[page] || '';
     // Mobilde sidebar kapat
@@ -117,17 +118,14 @@ function setupMobileMenu() {
 }
 
 // =====================================
-// 6. DASHBOARD İSTATİSTİKLERİ
+// 6. DASHBOARD İSTATİSTİSTİKLERİ
 // =====================================
 async function loadDashboardStats() {
     try {
-        // Kullanıcı istatistikleri (allUsers yüklendikten sonra güncellenir)
-        // Gönderi sayısı
         const postsSnap = await getCountFromServer(collection(db, "posts"));
         const postCount = postsSnap.data().count;
         setText('stat-total-posts', postCount);
     } catch (e) {
-        // getCountFromServer desteklenmiyorsa
     }
 }
 
@@ -160,7 +158,6 @@ function loadUsers() {
 }
 
 function setupFilters() {
-    // Kullanıcı filtreleri
     document.querySelectorAll('[data-filter]').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
@@ -170,7 +167,6 @@ function setupFilters() {
             applyUserFilter();
         });
     });
-    // Ban filtreleri
     document.querySelectorAll('[data-ban-filter]').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('[data-ban-filter]').forEach(b => b.classList.remove('active'));
@@ -180,7 +176,6 @@ function setupFilters() {
             applyBanFilter();
         });
     });
-    // Ticket filtreleri
     document.querySelectorAll('[data-ticket-filter]').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('[data-ticket-filter]').forEach(b => b.classList.remove('active'));
@@ -192,7 +187,6 @@ function setupFilters() {
 }
 
 function setupSearch() {
-    // Kullanıcı arama
     let searchTimeout = null;
     document.getElementById('user-search')?.addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
@@ -202,7 +196,6 @@ function setupSearch() {
         }, 300);
     });
 
-    // Ban arama
     let banSearchTimeout = null;
     document.getElementById('ban-search')?.addEventListener('input', (e) => {
         clearTimeout(banSearchTimeout);
@@ -212,7 +205,6 @@ function setupSearch() {
         }, 300);
     });
 
-    // Global arama (topbar)
     document.getElementById('global-search')?.addEventListener('input', (e) => {
         const text = e.target.value.trim();
         if (text.length > 0) {
@@ -224,7 +216,6 @@ function setupSearch() {
         }
     });
 
-    // Log Arama
     document.getElementById('log-search')?.addEventListener('input', () => {
         currentLogPage = 1;
         applyLogsFilter();
@@ -235,16 +226,13 @@ function setupSearch() {
         applyLogsFilter();
     });
 
-    // Arşiv arama
     setupArchiveSearch();
 }
 
 function applyUserFilter() {
     const searchText = (document.getElementById('user-search')?.value || '').toLowerCase().trim();
     filteredUsers = allUsers.filter(u => {
-        // Metin filtresi
         if (searchText && !u.id.toLowerCase().includes(searchText)) return false;
-        // Durum filtresi
         if (currentFilter === 'active' && u.isBanned) return false;
         if (currentFilter === 'banned' && !u.isBanned) return false;
         if (currentFilter === 'verified' && !u.isVerified) return false;
@@ -263,7 +251,6 @@ function renderUsersTable() {
         return;
     }
 
-    // Sayfalama
     const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
     if (currentPage > totalPages) currentPage = totalPages;
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -316,8 +303,6 @@ function renderUsersTable() {
 
     html += '</tbody></table>';
     container.innerHTML = html;
-
-    // Sayfalama
     renderPagination(totalPages);
 }
 
@@ -363,7 +348,7 @@ function applyBanFilter() {
         if (currentBanFilter === 'permanent' && banType !== 'permanent') return false;
         if (currentBanFilter === 'temporary' && banType !== 'temporary') return false;
         if (currentBanFilter === 'expired' && !isExpired) return false;
-        if (currentBanFilter === 'all' && isExpired) return false; // Defaultta süresi dolanları gizle
+        if (currentBanFilter === 'all' && isExpired) return false; 
         
         if (searchText) {
             const matchId = u.id.toLowerCase().includes(searchText);
@@ -373,7 +358,6 @@ function applyBanFilter() {
         return true;
     });
     
-    // Sort by ban date desc
     filteredBans.sort((a, b) => {
         const tA = a.banData?.bannedAt?.toMillis() || 0;
         const tB = b.banData?.bannedAt?.toMillis() || 0;
@@ -529,7 +513,7 @@ window.executeBanUser = async function() {
     if (type === 'temporary') {
         const d = new Date();
         d.setDate(d.getDate() + parseInt(durationStr));
-        expiresAt = d; // Firestore will convert JS Date to Timestamp in updateDoc automatically
+        expiresAt = d; 
     }
 
     const btn = document.getElementById('execute-ban-btn');
@@ -550,7 +534,6 @@ window.executeBanUser = async function() {
         showAdminToast("Kullanıcı başarıyla banlandı.", "success");
         closeModal('modal-ban-user');
     } catch (e) {
-        console.error(e);
         showAdminToast("Banlama işlemi başarısız.", "error");
     }
     if (btn) { btn.disabled = false; btn.textContent = '🔒 Banla'; }
@@ -577,7 +560,7 @@ window.executeUnbanUser = async function() {
             banHistory = data.banHistory || [];
             if (data.banData) {
                 const oldBan = data.banData;
-                oldBan.unbannedAt = new Date(); // local date before save
+                oldBan.unbannedAt = new Date();
                 oldBan.unbannedBy = adminUsername;
                 banHistory.push(oldBan);
             }
@@ -593,7 +576,6 @@ window.executeUnbanUser = async function() {
         showAdminToast("Kullanıcının banı kaldırıldı.", "success");
         closeModal('modal-unban-user');
     } catch (e) {
-        console.error(e);
         showAdminToast("Ban kaldırma başarısız.", "error");
     }
     if (btn) { btn.disabled = false; btn.textContent = '🔓 Banı Kaldır'; }
@@ -612,7 +594,6 @@ window.executeDeleteUser = async function() {
     if (btn) { btn.disabled = true; btn.textContent = 'Siliniyor...'; }
 
     try {
-        // 1. Kullanıcının fotoğraflarını sil
         const userRef = doc(db, "users", username);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
@@ -621,7 +602,6 @@ window.executeDeleteUser = async function() {
             if (uData.bannerUrl) await deleteObject(ref(storage, uData.bannerUrl)).catch(() => {});
         }
 
-        // 2. Kullanıcının postlarını ve fotoğraflarını sil
         const q = query(collection(db, "posts"), where("author", "==", username));
         const snap = await getDocs(q);
         for (const d of snap.docs) {
@@ -632,7 +612,6 @@ window.executeDeleteUser = async function() {
             await deleteDoc(doc(db, "posts", d.id));
         }
 
-        // 3. Kullanıcı belgesini sil
         await deleteDoc(userRef);
         await logAdminAction('delete_user', username, 'Kullanıcı ve tüm verileri silindi');
         showAdminToast("Kullanıcı ve tüm verileri silindi.", "success");
@@ -756,7 +735,6 @@ function loadActivityStream() {
     onSnapshot(qNotifs, (snapshot) => {
         recentNotifsLog = [];
         snapshot.forEach(docSnap => { recentNotifsLog.push({ id: docSnap.id, _actType: 'notif', ...docSnap.data() }); });
-        // Dashboard son aktiviteler
         renderRecentActivities();
     });
 }
@@ -962,7 +940,6 @@ window.sendTicketReply = async function() {
             repliedBy: adminUsername,
             status: newStatus
         });
-        // Kullanıcıya bildirim gönder
         if (ticket && ticket.sender) {
             await addDoc(collection(db, "notifications"), {
                 type: 'support_reply',
@@ -1135,7 +1112,6 @@ function setupModals() {
     document.getElementById('execute-ban-btn')?.addEventListener('click', executeBanUser);
     document.getElementById('execute-unban-btn')?.addEventListener('click', executeUnbanUser);
 
-    // Overlay tıklamasıyla kapatma
     document.querySelectorAll('.modal-overlay').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModal(modal.id);
@@ -1178,3 +1154,122 @@ function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
 }
+
+// =====================================
+// GÜNLÜK GÖREV YÖNETİMİ
+// =====================================
+let dailyTasksUnsubscribe = null;
+
+function initDailyTasks() {
+    if (dailyTasksUnsubscribe) return;
+    
+    const form = document.getElementById('daily-task-form');
+    if(form) {
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('dt-submit-btn');
+            btn.innerText = "Kaydediliyor...";
+            btn.disabled = true;
+            
+            try {
+                const title = document.getElementById('dt-title').value;
+                const desc = document.getElementById('dt-desc').value;
+                const date = document.getElementById('dt-date').value;
+                const active = document.getElementById('dt-active').checked;
+                const fileInput = document.getElementById('dt-image');
+                
+                let imageUrl = null;
+                
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const fileName = `daily_tasks/${Date.now()}_${file.name}`;
+                    const storageRef = ref(storage, fileName);
+                    
+                    await uploadBytes(storageRef, file);
+                    imageUrl = await getDownloadURL(storageRef);
+                }
+                
+                const taskData = {
+                    title,
+                    description: desc,
+                    date,
+                    active,
+                    imageUrl,
+                    createdAt: serverTimestamp(),
+                    participants: []
+                };
+                
+                await addDoc(collection(db, "dailyTasks"), taskData);
+                
+                form.reset();
+                document.getElementById('dt-date').value = new Date().toISOString().split('T')[0];
+                showAdminToast('Günlük görev başarıyla oluşturuldu.', 'success');
+                
+            } catch(e) {
+                console.error('Error creating daily task:', e);
+                showAdminToast('Görev oluşturulurken hata: ' + e.message, 'error');
+            } finally {
+                btn.innerText = "Görevi Kaydet";
+                btn.disabled = false;
+            }
+        };
+    }
+    
+    const dateInput = document.getElementById('dt-date');
+    if(dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    const tbody = document.getElementById('daily-tasks-tbody');
+    const q = query(collection(db, "dailyTasks"), orderBy("date", "desc"), limit(20));
+    dailyTasksUnsubscribe = onSnapshot(q, (snapshot) => {
+        let html = '';
+        if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">Henüz görev oluşturulmamış.</td></tr>';
+            return;
+        }
+        
+        snapshot.forEach(docSnap => {
+            const t = docSnap.data();
+            const id = docSnap.id;
+            const pCount = t.participants ? t.participants.length : 0;
+            const statusBadge = t.active ? '<span class="badge-sm status-active">Aktif</span>' : '<span class="badge-sm status-banned">Pasif</span>';
+            
+            html += `
+                <tr>
+                    <td>${t.date}</td>
+                    <td style="font-weight:600; color:#f1f5f9;">${t.title}</td>
+                    <td>${statusBadge}</td>
+                    <td><span style="color:#e2e8f0; font-weight:600;">${pCount}</span> kişi</td>
+                    <td style="text-align:right;">
+                        <button class="btn-primary" onclick="window.toggleDailyTask('${id}', ${!t.active})" style="background:${t.active ? '#dc2626' : '#16a34a'}; padding:5px 10px; font-size:11px; margin-right:5px;">
+                            ${t.active ? 'Pasif Yap' : 'Aktif Yap'}
+                        </button>
+                        <button class="btn-danger" onclick="window.deleteDailyTask('${id}')" style="background:transparent; color:#ef4444; border:1px solid #ef4444; padding:4px 9px; font-size:11px;">Sil</button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+    });
+}
+
+window.toggleDailyTask = async function(id, newState) {
+    try {
+        await updateDoc(doc(db, "dailyTasks", id), { active: newState });
+        showAdminToast('Görev durumu güncellendi.', 'success');
+    } catch(e) { 
+        showAdminToast('Hata: ' + e.message, 'error'); 
+    }
+};
+
+window.deleteDailyTask = async function(id) {
+    if(!confirm("Bu görevi silmek istediğinize emin misiniz? (Katılan gönderiler silinmez, sadece görev silinir)")) return;
+    try {
+        await deleteDoc(doc(db, "dailyTasks", id));
+        showAdminToast('Görev başarıyla silindi.', 'success');
+    } catch(e) { 
+        showAdminToast('Hata: ' + e.message, 'error'); 
+    }
+};

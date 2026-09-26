@@ -148,6 +148,31 @@ function loadUIComponents() {
                 <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
                 <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
             </div>
+
+            <!-- Günün Görevi Kartı -->
+            <div id="daily-task-card" class="rounded-2xl p-5 bg-gradient-to-br from-indigo-900 to-purple-900 border border-indigo-700/50 shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:-translate-y-1 mb-4" onclick="window.openDailyTaskModal()" style="display: none;">
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-white backdrop-blur-sm"><i class="fa-solid fa-bolt text-sm"></i></div>
+                            <span class="font-bold text-sm text-white">Günün Görevi</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right text-indigo-300 group-hover:text-white transition transform group-hover:translate-x-1"></i>
+                    </div>
+                    <h3 id="daily-task-title" class="text-white font-bold text-base mb-1 leading-tight">...</h3>
+                    <p id="daily-task-desc" class="text-indigo-200 text-xs mb-3 line-clamp-2">...</p>
+                    
+                    <div id="daily-task-img-container" class="w-full h-24 rounded-lg overflow-hidden mb-3 bg-indigo-950/50 hidden">
+                        <img id="daily-task-img" src="" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">
+                    </div>
+                    
+                    <div class="mt-auto flex items-center gap-2">
+                        <span id="daily-task-participants" class="text-[11px] text-indigo-200 font-medium bg-black/20 px-2 py-1 rounded-md">0 kişi katıldı</span>
+                    </div>
+                </div>
+            </div>
+
         `);
     }
 

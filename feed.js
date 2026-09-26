@@ -21,6 +21,7 @@ document.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal-overlay') && event.target.id !== 'story-viewer-overlay') {
         event.target.style.display = 'none';
         if(event.target.id === 'post-detail-modal') { window.closePostDetail(); return; }
+        if(event.target.id === 'daily-task-modal') { window.closeDailyTaskModal(); return; }
         if(event.target.id === 'story-details-modal' || event.target.id === 'story-share-modal') { if(window.resumeStory) window.resumeStory(); }
     }
 });
@@ -44,7 +45,6 @@ window.switchFeedTab = function(tabName) {
     if (activeTab) {
         activeTab.classList.replace('border-transparent', 'border-cyan-500');
         activeTab.classList.replace('text-slate-500', 'text-cyan-600');
-        // Dark mode overrides
         activeTab.classList.add('dark:border-cyan-400', 'dark:text-cyan-400');
         activeTab.classList.remove('dark:text-gray-400');
     }
@@ -87,6 +87,7 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         loadFeedPosts(); 
+        window.initDailyTask(); // GÜNÜN GÖREVİNİ ÇEK VE KARTI OLUŞTUR
         
         if (window.cleanupExpiredStories) { setTimeout(() => { window.cleanupExpiredStories(); }, 5000); }
         
@@ -94,6 +95,17 @@ onAuthStateChanged(auth, async (user) => {
         const tab = urlParams.get('tab');
         if(tab === 'bookmarks') { setTimeout(() => { window.showBookmarksTab(); }, 100); }
         else if(tab === 'following') { setTimeout(() => { window.switchFeedTab('following'); }, 100); }
+        const action = urlParams.get('action');
+        if(action === 'dailytask') {
+            setTimeout(() => {
+                if(window.currentDailyTask && window.openMainPostModal) {
+                    window.openMainPostModal();
+                    document.getElementById('modal-post-text').value = '#GününGörevi ';
+                    window.activeDailyTaskId = window.currentDailyTask.id;
+                    if (window.showToast) window.showToast('Günün görevine katılmak için gönderinizi paylaşın.', 'info');
+                }
+            }, 2000);
+        }
         else if(tab === 'discover') { setTimeout(() => { window.switchFeedTab('discover'); }, 100); }
         
         if(urlParams.get('action') === 'post') { setTimeout(() => { window.openMainPostModal(); }, 300); }
@@ -254,8 +266,28 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         }
         
         let imageUrl = mediaArray.length > 0 ? mediaArray[0].url : null;
-        await addDoc(collection(db, "posts"), { content: text, imageUrl: imageUrl, media: mediaArray, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false });
         
+        const postData = { content: text, imageUrl: imageUrl, media: mediaArray, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false };
+        
+        // GÜNLÜK GÖREV ENTEGRASYONU
+        if (window.activeDailyTaskId) {
+            postData.dailyTaskId = window.activeDailyTaskId;
+        }
+        
+        const newPostRef = await addDoc(collection(db, "posts"), postData);
+        
+        // Katılımcıyı günlük göreve ekle
+        if (window.activeDailyTaskId) {
+            try {
+                await updateDoc(doc(db, "dailyTasks", window.activeDailyTaskId), {
+                    participants: arrayUnion(myUsername)
+                });
+                window.activeDailyTaskId = null; // Sıfırla
+                if (window.closeDailyTaskModal) window.closeDailyTaskModal();
+                if (window.initDailyTask) window.initDailyTask();
+            } catch(e) { console.error('Göreve katılımcı eklenirken hata:', e); }
+        }
+
         try {
             const today = new Date().toISOString().split('T')[0];
             const uSnap = await getDoc(doc(db, "users", myUsername));
@@ -724,5 +756,179 @@ document.addEventListener('keydown', function(e) {
         if (pdm && pdm.style.display === 'flex') {
             window.closePostDetail();
         }
+        const dtm = document.getElementById('daily-task-modal');
+        if (dtm && dtm.style.display === 'flex') {
+            window.closeDailyTaskModal();
+        }
     }
 });
+
+
+// =====================================
+// GÜNÜN GÖREVİ (DAILY TASK) SİSTEMİ
+// =====================================
+window.currentDailyTask = null;
+window.activeDailyTaskId = null; 
+
+// Uygulama açıldığında bugünün görevini çeker
+window.initDailyTask = async function() {
+    try {
+        const today = new Date().toISOString().split('T')[0]; // "2026-09-27" formatında
+        
+        // Firestore sorgusu: Tarih bugün olan ve active durumu true olan görevi getir
+        const q = query(collection(db, "dailyTasks"), where("date", "==", today), where("active", "==", true), limit(1));
+        const snapshot = await getDocs(q);
+
+        // Hem masaüstü hem mobil paneldeki kartları bul
+        const cards = document.querySelectorAll('#daily-task-card');
+        
+        if (!snapshot.empty) {
+            const taskDoc = snapshot.docs[0];
+            const taskData = taskDoc.data();
+            window.currentDailyTask = { id: taskDoc.id, ...taskData };
+            
+            const participants = taskData.participants || [];
+            
+            cards.forEach(card => {
+                card.style.display = 'block'; // Kartı görünür yap
+                card.querySelector('#daily-task-title').innerText = taskData.title || 'Günün Görevi';
+                card.querySelector('#daily-task-desc').innerText = taskData.description || '';
+                card.querySelector('#daily-task-participants').innerText = `${participants.length} kişi katıldı`;
+                
+                const imgContainer = card.querySelector('#daily-task-img-container');
+                const imgEl = card.querySelector('#daily-task-img');
+                
+                if (taskData.imageUrl) {
+                    imgEl.src = window.sanitizeUrl(taskData.imageUrl);
+                    imgContainer.classList.remove('hidden');
+                } else {
+                    imgContainer.classList.add('hidden');
+                }
+            });
+        } else {
+            // Bugün için görev yoksa
+            window.currentDailyTask = null;
+            cards.forEach(card => {
+                card.style.display = 'block';
+                card.querySelector('#daily-task-title').innerText = 'Görev Bekleniyor';
+                card.querySelector('#daily-task-desc').innerText = 'Bugünün görevi henüz hazırlanmadı.';
+                card.querySelector('#daily-task-participants').innerText = '0 kişi katıldı';
+                card.querySelector('#daily-task-img-container').classList.add('hidden');
+            });
+        }
+    } catch(e) {
+        console.error("Günlük görev çekilirken hata:", e);
+    }
+};
+
+// Görev detay modalını açar
+window.openDailyTaskModal = function() {
+    if (!window.currentDailyTask) {
+        if(window.showToast) window.showToast('Şu anda aktif bir görev bulunmuyor.', 'info');
+        return;
+    }
+    
+    const task = window.currentDailyTask;
+    const participants = task.participants || [];
+    const hasJoined = participants.includes(myUsername);
+    
+    document.getElementById('modal-dt-title').innerText = task.title;
+    document.getElementById('modal-dt-desc').innerText = task.description;
+    document.getElementById('modal-dt-participants').innerText = participants.length;
+    
+    const imgContainer = document.getElementById('modal-dt-img-container');
+    if (task.imageUrl) {
+        document.getElementById('modal-dt-img').src = window.sanitizeUrl(task.imageUrl);
+        imgContainer.classList.remove('hidden');
+    } else {
+        imgContainer.classList.add('hidden');
+    }
+    
+    const joinBtn = document.getElementById('modal-dt-join-btn');
+    if (hasJoined) {
+        joinBtn.innerHTML = '<i class="fa-solid fa-check"></i> Göreve Katıldın';
+        joinBtn.className = 'bg-green-600 dark:bg-green-700 text-white font-bold py-2.5 px-6 rounded-full shadow-md flex items-center gap-2 cursor-default opacity-90';
+        joinBtn.onclick = null;
+    } else {
+        joinBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Göreve Katıl';
+        joinBtn.className = 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-2.5 px-6 rounded-full transition shadow-md flex items-center gap-2 cursor-pointer';
+        joinBtn.onclick = window.joinDailyTask;
+    }
+    
+    document.getElementById('daily-task-modal').style.display = 'flex';
+    document.body.classList.add('modal-open');
+    
+    // Göreve katılanların gönderilerini çek
+    fetchDailyTaskPosts(task.id);
+};
+
+window.closeDailyTaskModal = function() {
+    document.getElementById('daily-task-modal').style.display = 'none';
+    document.body.classList.remove('modal-open');
+};
+
+// Göreve katıl butonuna basıldığında
+window.joinDailyTask = function() {
+    if (!window.currentDailyTask) return;
+    window.closeDailyTaskModal();
+    window.activeDailyTaskId = window.currentDailyTask.id; // Gönderi sistemine görev ID'sini aktar
+    
+    if (window.openMainPostModal) {
+        window.openMainPostModal();
+        const input = document.getElementById('modal-post-text');
+        input.value = '#GününGörevi ';
+        input.focus();
+    }
+};
+
+// Modalda gösterilecek katılımcı gönderilerini çeker
+async function fetchDailyTaskPosts(taskId) {
+    const container = document.getElementById('modal-dt-posts');
+    container.innerHTML = '<div class="text-center text-slate-500 dark:text-gray-400 py-4">Gönderiler yükleniyor...</div>';
+    
+    try {
+        const q = query(collection(db, "posts"), where("dailyTaskId", "==", taskId), orderBy("createdAt", "desc"), limit(20));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+            container.innerHTML = '<div class="text-center text-slate-500 dark:text-gray-400 py-8 bg-slate-50 dark:bg-gray-800/50 rounded-xl border border-slate-200 dark:border-gray-700">Bu göreve henüz kimse katılmadı.<br>İlk katılan sen ol! 🚀</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        snapshot.forEach(docSnap => {
+            const postData = docSnap.data();
+            const authorData = window.allUsersData[postData.author] || {};
+            const avatarImgSrc = authorData.avatarUrl ? window.sanitizeUrl(authorData.avatarUrl) : '';
+            const avatarHtml = avatarImgSrc ? `<img src="${avatarImgSrc}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center font-bold text-xs text-slate-500">👤</div>`;
+            const fullName = window.escapeHtml(authorData.fullName || postData.author);
+            
+            let mediaHtml = '';
+            if (postData.imageUrl) {
+                mediaHtml = `<img src="${window.sanitizeUrl(postData.imageUrl)}" class="w-full max-h-[250px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-700/50">`;
+            }
+            
+            const postContent = DOMPurify.sanitize(postData.content || '');
+            
+            const postHtml = `
+                <div class="bg-slate-50 dark:bg-gray-800/40 p-4 rounded-xl border border-slate-200 dark:border-gray-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-gray-700 transition" onclick="window.closeDailyTaskModal(); window.openPostDetail('${docSnap.id}')">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-gray-700 overflow-hidden border border-slate-300 dark:border-gray-600 flex-shrink-0">${avatarHtml}</div>
+                        <div>
+                            <div class="font-bold text-slate-900 dark:text-white text-[15px]">${fullName}</div>
+                            <div class="text-[13px] text-slate-500 dark:text-gray-400">@${window.escapeHtml(postData.author)}</div>
+                        </div>
+                    </div>
+                    <div class="text-[15px] text-slate-800 dark:text-gray-200 line-clamp-3">${postContent}</div>
+                    ${mediaHtml}
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', postHtml);
+        });
+        
+    } catch(e) {
+        console.error("Görev gönderileri çekilirken hata:", e);
+        container.innerHTML = '<div class="text-center text-red-500 py-4">Gönderiler yüklenirken bir hata oluştu.</div>';
+    }
+}
