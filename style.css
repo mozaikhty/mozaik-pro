@@ -1325,3 +1325,49 @@ input:checked + .slider:before { transform: translateX(20px); }
     background: #fff;
     width: 0%;
 }
+
+
+/* ==========================================
+   YÜZER ALT SİDEBAR (MOBİL ALT NAVİGASYON COMPACT) 
+   ========================================== */
+body.sidebar-compact > .fixed.bottom-0.lg\:hidden {
+    bottom: 20px !important;
+    width: 80% !important;
+    left: 10% !important;
+    border-radius: 30px !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.15) !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+}
+
+body.dark-mode.sidebar-compact > .fixed.bottom-0.lg\:hidden {
+    border-color: rgba(51, 65, 85, 0.6) !important;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.5) !important;
+}
+
+body.sidebar-compact > .fixed.bottom-0.lg\:hidden .h-16 {
+    height: 3.5rem !important; /* from 4rem */
+}
+
+body.sidebar-compact > .fixed.bottom-0.lg\:hidden .text-lg {
+    font-size: 1rem !important; 
+}
+
+body.sidebar-compact > .fixed.bottom-0.lg\:hidden .w-14 {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+}
+
+body.sidebar-compact > .fixed.bottom-0.lg\:hidden .-top-5 {
+    top: -0.5rem !important;
+}
+
+body.sidebar-compact > .fixed.bottom-0.lg\:hidden .text-2xl {
+    font-size: 1.25rem !important;
+}
+
+body > .fixed.bottom-0.lg\:hidden,
+body > .fixed.bottom-0.lg\:hidden * {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}

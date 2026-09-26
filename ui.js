@@ -253,6 +253,13 @@ if (document.readyState === 'loading') {
         setBottomNavState(isCompact) {
             if (this.isBottomCompact !== isCompact) {
                 this.isBottomCompact = isCompact;
+                
+                if (isCompact) {
+                    document.body.classList.add('sidebar-compact');
+                } else {
+                    document.body.classList.remove('sidebar-compact');
+                }
+
                 if (this.bottomNav) {
                     if (isCompact) this.bottomNav.classList.add('compact');
                     else this.bottomNav.classList.remove('compact');
