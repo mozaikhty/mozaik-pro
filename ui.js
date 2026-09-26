@@ -130,6 +130,7 @@ function loadUIComponents() {
     
     if (!document.getElementById('toast-container')) {
         document.body.insertAdjacentHTML('beforeend', toastHTML);
+    }
 
     // === MOBİL YAN PANEL OVERLAY ===
     const mobilePanelHTML = `
@@ -150,7 +151,7 @@ function loadUIComponents() {
         `);
     }
 
-});
+}
 
 window.openMobilePanel = function(event) {
     if(event) event.stopPropagation();
@@ -176,6 +177,7 @@ window.closeMobilePanel = function(event) {
             document.body.style.overflow = '';
         }, 300);
     }
+};
 
 // === DİĞER FONKSİYONLAR ===
 window.openSettingsModal = function() {
@@ -340,29 +342,3 @@ if (document.readyState === 'loading') {
         initScrollManager();
     }
 })();
-
-
-window.openMobilePanel = function() {
-    const overlay = document.getElementById('mobile-side-panel-overlay');
-    const panel = document.getElementById('mobile-side-panel');
-    if(overlay && panel) {
-        overlay.classList.remove('hidden');
-        void overlay.offsetWidth;
-        overlay.classList.remove('opacity-0');
-        panel.classList.remove('translate-x-full');
-        document.body.style.overflow = 'hidden';
-    }
-};
-
-window.closeMobilePanel = function(event) {
-    const overlay = document.getElementById('mobile-side-panel-overlay');
-    const panel = document.getElementById('mobile-side-panel');
-    if(overlay && panel) {
-        overlay.classList.add('opacity-0');
-        panel.classList.add('translate-x-full');
-        setTimeout(() => {
-            overlay.classList.add('hidden');
-            document.body.style.overflow = '';
-        }, 300);
-    }
-};
