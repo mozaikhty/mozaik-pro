@@ -91,7 +91,11 @@ onAuthStateChanged(auth, async (user) => {
         if (window.cleanupExpiredStories) { setTimeout(() => { window.cleanupExpiredStories(); }, 5000); }
         
         const urlParams = new URLSearchParams(window.location.search);
-        if(urlParams.get('tab') === 'bookmarks') { setTimeout(() => { window.showBookmarksTab(); }, 100); }
+        const tab = urlParams.get('tab');
+        if(tab === 'bookmarks') { setTimeout(() => { window.showBookmarksTab(); }, 100); }
+        else if(tab === 'following') { setTimeout(() => { window.switchFeedTab('following'); }, 100); }
+        else if(tab === 'discover') { setTimeout(() => { window.switchFeedTab('discover'); }, 100); }
+        
         if(urlParams.get('action') === 'post') { setTimeout(() => { window.openMainPostModal(); }, 300); }
         if(urlParams.get('post')) { setTimeout(() => { window.openPostDetail(urlParams.get('post')); }, 400); }
     } else { window.location.href = "index.html"; }

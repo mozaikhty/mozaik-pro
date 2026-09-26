@@ -46,26 +46,22 @@
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             <!-- Logo -->
             <div class="flex items-center cursor-pointer" onclick="window.location.href='feed.html'">
-                <img src="icon-192.png" alt="Mozaik Logo" class="h-8 w-auto object-contain">
+                <img src="icon-192.png" alt="Mozaik Logo" class="h-10 w-auto object-contain">
             </div>
 
             <!-- Ortadaki Menü -->
             <nav class="hidden md:flex space-x-8 text-sm font-medium">
-
-
-                <a href="feed.html" class="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition">Ana Akış</a>
-                <a href="search.html" class="text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-500 dark:border-cyan-400 pb-5 pt-5 transition">Keşfet</a>
-                <a href="feed.html" class="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition">Ağım</a>
-            
-            
+                <a href="feed.html?tab=discover" id="tab-discover"  class="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white border-b-2 border-transparent pb-5 pt-5 transition">Ana Akış</a>
+                <a href="search.html" id="tab-search" class="text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-500 dark:border-cyan-400 pb-5 pt-5 transition">Keşfet</a>
+                <a href="feed.html?tab=following" id="tab-following"  class="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white border-b-2 border-transparent pb-5 pt-5 transition">Ağım</a>
             </nav>
 
             <!-- Sağ İkonlar -->
             <div class="flex items-center space-x-6 text-xl text-slate-600 dark:text-gray-300">
                 <i class="fa-regular fa-bell cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.location.href='notifications.html'"></i>
                 <i class="fa-regular fa-comment-dots cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.location.href='chat.html'"></i>
-                <!-- Mobil profil avatarı (Sadece mobilde görünür) -->
-                <div id="mobile-avatar-header" class="md:hidden w-8 h-8 rounded-full bg-slate-200 dark:bg-gray-800 overflow-hidden cursor-pointer" onclick="window.goToMyProfile()">👤</div>
+                <!-- Mobil panel açma butonu -->
+                <i class="fa-solid fa-bars md:hidden text-2xl cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.openMobilePanel()"></i>
             </div>
         </div>
     </header>
