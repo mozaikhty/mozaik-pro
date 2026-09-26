@@ -332,7 +332,8 @@ window.deleteComment = async function(postId, commentId) {
     }
 };
 
-function loadUserProfileData() {\n    renderWhoToFollow();
+function loadUserProfileData() {
+    renderWhoToFollow();
     onSnapshot(doc(db, "users", targetUsername), async (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();

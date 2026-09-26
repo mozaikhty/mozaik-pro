@@ -1473,6 +1473,14 @@ header {
 
 /* Mobil Panel İçin Responsive Sağ Sütun */
 @media (max-width: 1024px) {
+    
+    /* Kullanıcının yerel kodunda gizlenmiş olma ihtimaline karşı */
+    #right-sidebar > div {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
     .responsive-right-sidebar {
         display: flex !important;
         position: fixed !important;
