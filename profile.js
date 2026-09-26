@@ -251,7 +251,7 @@ window.openPostDetail = async function(postId) {
     `;
     const contentBox = document.getElementById('post-detail-content-box');
     if(contentBox) contentBox.scrollTop = 0; 
-    document.getElementById('post-detail-container').innerHTML = html; window.initVideoPlayers(); window.observeVideos();
+    document.getElementById('post-detail-container').innerHTML = html; window.initVideoPlayers?.(); window.observeModalVideos?.();
     document.getElementById('post-detail-modal').style.display = 'flex';
     document.body.classList.add('modal-open');
 };

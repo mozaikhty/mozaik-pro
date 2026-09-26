@@ -101,6 +101,7 @@ window.initModalVideoObserver = function() {
     }
 };
 
+
 window.observeModalVideos = function() {
     if (!window.modalVideoObserver) return;
     const modalCont = document.getElementById('post-detail-modal');
@@ -108,6 +109,26 @@ window.observeModalVideos = function() {
         modalCont.querySelectorAll('.mz-video').forEach(video => {
             window.modalVideoObserver.observe(video);
         });
+
+        // Explicit fallback for immediate play, as requested
+        setTimeout(() => {
+            const firstVideo = modalCont.querySelector('.mz-video');
+            if (firstVideo && firstVideo.paused) {
+                const globalMuted = localStorage.getItem('mozaik_video_muted') !== 'false';
+                firstVideo.muted = globalMuted;
+                const uniqueId = firstVideo.id.replace('video-', '');
+                const btn = document.querySelector('#player-' + uniqueId + ' .mz-control-mute');
+                if (btn) btn.innerText = globalMuted ? '🔇' : '🔊';
+                
+                firstVideo.play().catch(err => {
+                    if (err.name === 'NotAllowedError') {
+                        firstVideo.muted = true;
+                        if (btn) btn.innerText = '🔇';
+                        firstVideo.play().catch(()=>{});
+                    }
+                });
+            }
+        }, 100);
     }
 };
 

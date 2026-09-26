@@ -471,13 +471,16 @@ window.openPostDetail = async function(postId) {
                 </div>
             </div>
         `;
+                window.initVideoPlayers?.(); window.observeModalVideos?.();
     } catch(e) { console.error(e); }
 };
 
-window.closePostDetail = function() { document.body.classList.remove('modal-open');
+window.closePostDetail = function() { 
+    document.body.classList.remove('modal-open');
     const modal = document.getElementById('post-detail-modal');
     if(modal) modal.style.display = 'none';
-    document.body.classList.remove('modal-open');
+    const cont = document.getElementById('post-detail-container');
+    if(cont){ cont.querySelectorAll('video').forEach(v => v.pause()); cont.innerHTML = ''; }
 };
 
 document.addEventListener('keydown', function(e) {
