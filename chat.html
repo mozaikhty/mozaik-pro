@@ -33,7 +33,7 @@
         @media (max-width: 1024px) {
             body.chat-active #inbox-column { display: none !important; }
             body.chat-active #chat-column { display: flex !important; width: 100%; height: 100vh; padding-bottom: 0 !important;}
-            body.chat-active .bottom-nav { display: none !important; }
+            body.chat-active #mobile-bottom-nav { display: none !important; }
         }
     </style>
 </head>
@@ -193,18 +193,20 @@
     </main>
 
     <!-- MOBİL ALT NAVİGASYON -->
-    <div class="fixed bottom-0 w-full backdrop-blur-md border-t border-slate-200 dark:border-gray-800 lg:hidden bottom-nav bg-white/95 dark:bg-[#0b1121]/95 z-50 transition-colors duration-300">
+    <div id="mobile-bottom-nav" class="fixed bottom-0 w-full backdrop-blur-md border-t border-slate-200 dark:border-gray-800 lg:hidden bg-white/95 dark:bg-[#0b1121]/95 z-50 transition-colors duration-300">
         <div class="flex justify-around items-center h-16 relative">
             <a href="feed.html" class="flex flex-col items-center text-slate-400 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-white transition"><i class="fa-solid fa-house text-lg"></i></a>
             <a href="search.html" class="flex flex-col items-center text-slate-400 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-white transition"><i class="fa-regular fa-compass text-lg"></i></a>
+            
             <div class="relative -top-5">
-                <div class="w-14 h-14 bg-gradient-to-tr from-cyan-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30 cursor-pointer transform rotate-45 hover:scale-105 transition" onclick="window.location.href='feed.html?action=post'">
+                <div class="w-14 h-14 bg-gradient-to-tr from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30 cursor-pointer transform rotate-45 hover:scale-105 transition" onclick="window.openMainPostModal()">
                     <i class="fa-solid fa-plus text-white text-2xl -rotate-45"></i>
                 </div>
             </div>
-            <a href="notifications.html" class="flex flex-col items-center text-slate-400 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-white transition"><i class="fa-solid fa-bell text-lg"></i></a>
+            
+            <a href="notifications.html" class="flex flex-col items-center text-slate-400 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-white transition"><i class="fa-regular fa-bell text-lg"></i></a>
             <!-- Chat Aktif -->
-            <a href="#" class="flex flex-col items-center text-cyan-500 dark:text-cyan-400"><i class="fa-solid fa-envelope text-lg"></i></a>
+            <a href="#" class="flex flex-col items-center text-cyan-600 dark:text-cyan-400"><i class="fa-solid fa-envelope text-lg"></i></a>
         </div>
     </div>
 
