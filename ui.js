@@ -155,8 +155,55 @@ function loadUIComponents() {
 
 window.openMobilePanel = function(event) {
     if(event) event.stopPropagation();
-    const overlay = document.getElementById('mobile-side-panel-overlay');
-    const sidebar = document.getElementById('right-sidebar');
+    let overlay = document.getElementById('mobile-side-panel-overlay');
+    let sidebar = document.getElementById('right-sidebar');
+    
+    // Eğer sayfada sağ panel yoksa (Örn: Keşfet, Mesajlar, Reels), dinamik olarak oluştur
+    if (!sidebar) {
+        const sidebarHTML = `
+        <div id="right-sidebar" class="responsive-right-sidebar hidden lg:flex flex-col space-y-4 sticky top-20 h-fit">
+            <div id="mobile-panel-close-btn" class="flex lg:hidden items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-gray-800">
+                <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
+                <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
+            </div>
+            
+            <div class="rounded-2xl p-5 bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80')] bg-cover bg-center relative overflow-hidden group cursor-pointer shadow-sm" onclick="window.goToMyProfile()">
+                <div class="absolute inset-0 bg-slate-900/60 group-hover:bg-slate-900/50 transition"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-face-smile text-cyan-400"></i>
+                        <span class="font-bold text-sm text-white">Senin Mozaik'in</span>
+                    </div>
+                    <p class="text-xs text-gray-200">Profiline gitmek için tıkla.</p>
+                    <p class="text-xs text-white mt-8 font-medium">Hayatını mozaik gibi<br>bir araya getir. ✨</p>
+                </div>
+            </div>
+            
+            <div class="rounded-2xl p-5 bg-white dark:bg-[#151e32] border border-slate-200 dark:border-purple-900/50 shadow-sm transition-colors duration-300">
+                <div class="flex items-center gap-2 mb-3 border-b border-slate-100 dark:border-gray-800 pb-2">
+                    <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400"><i class="fa-solid fa-cube text-xs"></i></div>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">Önerilen Hesaplar</span>
+                </div>
+                <div id="who-to-follow-list" class="space-y-2 mt-2">
+                    <div class="text-sm text-slate-500 dark:text-gray-400 py-2 text-center">Öneriler yükleniyor...</div>
+                </div>
+            </div>
+        </div>`;
+        
+        document.body.insertAdjacentHTML('beforeend', sidebarHTML);
+        sidebar = document.getElementById('right-sidebar');
+        
+        // Eğer global render fonksiyonu varsa çağır ki öneriler yüklensin
+        if (window.renderWhoToFollowGlobal) {
+            window.renderWhoToFollowGlobal();
+        }
+    } else {
+        // Zaten varsa (feed.html gibi), ve öneriler boşsa yükle
+        if (window.renderWhoToFollowGlobal && document.getElementById('who-to-follow-list') && document.getElementById('who-to-follow-list').innerHTML.includes('yükleniyor')) {
+            window.renderWhoToFollowGlobal();
+        }
+    }
+    
     if(overlay && sidebar) {
         overlay.classList.remove('hidden');
         void overlay.offsetWidth;

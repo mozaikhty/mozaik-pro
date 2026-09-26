@@ -5,7 +5,7 @@
 // tekrar eden fonksiyonları tek bir yerde toplar. Her sayfa dosyası bu modülü import eder.
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-import { collection, addDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { collection, addDoc, doc, getDoc, getDocs, query, limit, setDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { auth, db } from './firebase-config.js';
 
 // =====================================
@@ -602,4 +602,87 @@ window.openReelsViewer = function(startPostId) {
         } catch(e) {}
     }
     window.location.href = 'reels.html?video=' + startPostId;
+};
+
+
+// =====================================
+// ORTAK ÖNERİLEN HESAPLAR SİSTEMİ
+// =====================================
+window.cachedSuggestions = null;
+window.fetchSuggestedUsers = async function() {
+    if (window.cachedSuggestions) return window.cachedSuggestions;
+    
+    try {
+        const myUsername = window.myUsername;
+        const myData = (window.allUsersData && window.allUsersData[myUsername]) ? window.allUsersData[myUsername] : {};
+        const following = myData.following || [];
+        const requests = myData.followRequests || [];
+        
+        const q = query(collection(db, 'users'), limit(50));
+        const snapshot = await getDocs(q);
+        
+        let suggestions = [];
+        snapshot.forEach(docSnap => {
+            const uid = docSnap.id;
+            const data = docSnap.data();
+            
+            if (uid === myUsername) return;
+            if (following.includes(uid)) return;
+            if (requests.includes(uid)) return;
+            if (data.followRequests && data.followRequests.includes(myUsername)) return;
+            if (data.status === 'deleted' || data.isActive === false) return;
+            
+            suggestions.push({ uid, ...data });
+        });
+        
+        suggestions = suggestions.sort(() => 0.5 - Math.random()).slice(0, 5);
+        window.cachedSuggestions = suggestions;
+        
+        if (!window.allUsersData) window.allUsersData = {};
+        suggestions.forEach(s => {
+            window.allUsersData[s.uid] = s;
+        });
+        
+        return suggestions;
+    } catch(e) {
+        console.error('Önerilen hesaplar alınamadı:', e);
+        return [];
+    }
+};
+
+window.renderWhoToFollowGlobal = async function() {
+    const container = document.getElementById('who-to-follow-list'); 
+    if (!container) return;
+    
+    if (!window.cachedSuggestions) {
+        container.innerHTML = '<div class="text-sm text-slate-500 dark:text-gray-400 py-2 text-center">Öneriler yükleniyor...</div>';
+    }
+    
+    const users = await window.fetchSuggestedUsers();
+    
+    if (!users || users.length === 0) { 
+        container.innerHTML = '<div class="text-sm text-slate-500 dark:text-gray-400 py-4 text-center">Şu an için yeni öneri yok.</div>'; 
+        return; 
+    }
+    
+    let html = '';
+    users.forEach(uData => {
+        const uid = uData.uid;
+        const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-gray-700 flex items-center justify-center font-bold text-xs text-slate-500 dark:text-gray-300">👤</div>`;
+        const fullName = window.escapeHtml(uData.fullName || uid); 
+        const vHtml = uData.isVerified ? '<i class="fa-solid fa-circle-check text-blue-500 text-[10px] ml-1"></i>' : '';
+        
+        html += `
+        <div class="flex justify-between items-center cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1e293b] p-2 rounded-xl transition" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'">
+            <div class="flex items-center gap-2">
+                ${avatarHtml}
+                <div>
+                    <p class="text-xs font-bold text-slate-900 dark:text-white flex items-center">${fullName} ${vHtml}</p>
+                    <p class="text-[10px] text-slate-500 dark:text-gray-400">@${window.escapeHtml(uid)}</p>
+                </div>
+            </div>
+            <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}', this)" class="bg-slate-100 dark:bg-transparent border border-slate-200 dark:border-gray-600 text-xs px-3 py-1 rounded-full text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-gray-700 transition font-semibold whitespace-nowrap">Takip Et</button>
+        </div>`;
+    });
+    container.innerHTML = html;
 };

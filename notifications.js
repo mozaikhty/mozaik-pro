@@ -78,44 +78,7 @@ onAuthStateChanged(auth, (user) => {
     } else { window.location.href = "index.html"; }
 });
 
-function renderWhoToFollow() {
-    const container = document.getElementById('who-to-follow-list');
-    if (!container) return;
-    const myFollowingList = allUsersData[myUsername]?.following || [];
-
-    let eligibleUsers = Object.keys(allUsersData).filter(uid => {
-        return uid !== myUsername && !myFollowingList.includes(uid);
-    });
-
-    eligibleUsers = eligibleUsers.sort(() => 0.5 - Math.random()).slice(0, 4);
-
-    if (eligibleUsers.length === 0) {
-        container.innerHTML = '<div class="text-sm text-slate-500 dark:text-gray-400 text-center py-4">Şu an için yeni öneri yok.</div>';
-        return;
-    }
-
-    let html = '';
-    eligibleUsers.forEach(uid => {
-        const uData = allUsersData[uid];
-        const avatarHtml = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" class="w-full h-full object-cover">` : `<span class="text-xs">👤</span>`;
-        const fullName = window.escapeHtml(uData.fullName || uid);
-        const vHtml = uData.isVerified ? '<i class="fa-solid fa-circle-check text-blue-500 text-[10px] ml-1"></i>' : '';
-        
-        html += `
-            <div class="flex justify-between items-center cursor-pointer hover:bg-slate-50 dark:hover:bg-gray-800 p-2 rounded-xl transition" onclick="window.location.href='profile.html?user=${window.escapeHtml(uid)}'">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-200 dark:border-gray-600 bg-slate-100 dark:bg-gray-700 flex items-center justify-center">${avatarHtml}</div>
-                    <div>
-                        <p class="text-sm font-bold text-slate-900 dark:text-white flex items-center">${fullName} ${vHtml}</p>
-                        <p class="text-[11px] text-slate-500 dark:text-gray-400">@${window.escapeHtml(uid)}</p>
-                    </div>
-                </div>
-                <button onclick="event.stopPropagation(); window.quickFollow('${window.escapeHtml(uid)}', this)" class="border border-slate-200 dark:border-gray-600 text-xs px-4 py-1.5 rounded-full text-slate-700 dark:text-white bg-slate-100 dark:bg-transparent hover:bg-slate-200 dark:hover:bg-gray-700 transition font-semibold shadow-sm dark:shadow-none">Ekle</button>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-}
+function renderWhoToFollow() { if(window.renderWhoToFollowGlobal) window.renderWhoToFollowGlobal(); }
 
 window.deleteNotification = async function(notifId, event) {
     event.stopPropagation();
