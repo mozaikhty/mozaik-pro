@@ -40,6 +40,9 @@ function loadUIComponents() {
         </div>
     `;
 
+    // === ALT MENÜ ===
+    const bottomNavHTML = ``;
+
     // === AYARLAR MODALI ===
     const settingsModalHTML = `
         <div class="modal-overlay" id="settings-modal" style="z-index: 5000; display:none;">
@@ -77,31 +80,6 @@ function loadUIComponents() {
         <div id="toast-container"></div>
     `;
 
-    // GÜNÜN GÖREVİ KARTI HTML'İ
-    const dailyTaskHTML = `
-        <div id="daily-task-card" class="rounded-2xl p-5 bg-gradient-to-br from-indigo-900 to-purple-900 border border-indigo-700/50 shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:-translate-y-1 mb-4" onclick="window.openDailyTaskModal()" style="display: none !important;">
-            <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
-            <div class="relative z-10 flex flex-col h-full">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-white backdrop-blur-sm"><i class="fa-solid fa-bolt text-sm"></i></div>
-                        <span class="font-bold text-sm text-white">Günün Görevi</span>
-                    </div>
-                    <i class="fa-solid fa-arrow-right text-indigo-300 group-hover:text-white transition transform group-hover:translate-x-1"></i>
-                </div>
-                <h3 id="daily-task-title" class="text-white font-bold text-base mb-1 leading-tight">Yükleniyor...</h3>
-                <p id="daily-task-desc" class="text-indigo-200 text-xs mb-3 line-clamp-2">Lütfen bekleyin.</p>
-                <div id="daily-task-img-container" class="w-full h-24 rounded-lg overflow-hidden mb-3 bg-indigo-950/50 hidden">
-                    <img id="daily-task-img" src="" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">
-                </div>
-                <div class="mt-auto flex items-center gap-2">
-                    <span id="daily-task-participants" class="text-[11px] text-indigo-200 font-medium bg-black/20 px-2 py-1 rounded-md">0 kişi katıldı</span>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // HTML'leri Ekrana Bas
     const sidebarContainer = document.getElementById('sidebar-container');
     if (sidebarContainer) sidebarContainer.innerHTML = sidebarHTML;
 
@@ -119,28 +97,16 @@ function loadUIComponents() {
         document.body.insertAdjacentHTML('beforeend', mobilePanelHTML);
     }
     
-    // MASAÜSTÜ İÇİN KARTI SAĞ PANELE ZORLA EKLE (Eğer yoksa)
     const rightSidebar = document.getElementById('right-sidebar');
-    if (rightSidebar) {
-        if (!document.getElementById('mobile-panel-close-btn')) {
-            rightSidebar.insertAdjacentHTML('afterbegin', `
-                <div id="mobile-panel-close-btn" class="flex lg:hidden items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-gray-800">
-                    <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
-                    <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
-                </div>
-            `);
-        }
-        
-        // EĞER KART YOKSA İLK SIRAYA EKLE
-        if (!document.getElementById('daily-task-card')) {
-            const closeBtn = document.getElementById('mobile-panel-close-btn');
-            if (closeBtn) {
-                closeBtn.insertAdjacentHTML('afterend', dailyTaskHTML);
-            } else {
-                rightSidebar.insertAdjacentHTML('afterbegin', dailyTaskHTML);
-            }
-        }
+    if (rightSidebar && !document.getElementById('mobile-panel-close-btn')) {
+        rightSidebar.insertAdjacentHTML('afterbegin', `
+            <div id="mobile-panel-close-btn" class="flex lg:hidden items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-gray-800">
+                <span class="font-bold text-lg text-slate-800 dark:text-white">Menü</span>
+                <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
+            </div>
+        `);
     }
+
 }
 
 window.openMobilePanel = function(event) {
@@ -148,7 +114,6 @@ window.openMobilePanel = function(event) {
     let overlay = document.getElementById('mobile-side-panel-overlay');
     let sidebar = document.getElementById('right-sidebar');
     
-    // Eğer sayfada sağ panel yoksa dinamik olarak oluştur
     if (!sidebar) {
         const sidebarHTML = `
         <div id="right-sidebar" class="responsive-right-sidebar hidden lg:flex flex-col space-y-4 sticky top-20 h-fit">
@@ -157,8 +122,7 @@ window.openMobilePanel = function(event) {
                 <button class="text-3xl leading-none text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition" onclick="window.closeMobilePanel(event)">&times;</button>
             </div>
 
-            <!-- GÜNÜN GÖREVİ KARTI (DİNAMİK) -->
-            <div id="daily-task-card" class="rounded-2xl p-5 bg-gradient-to-br from-indigo-900 to-purple-900 border border-indigo-700/50 shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:-translate-y-1 mb-4" onclick="window.openDailyTaskModal()" style="display: none !important;">
+            <div id="daily-task-card" class="rounded-2xl p-5 bg-gradient-to-br from-indigo-900 to-purple-900 border border-indigo-700/50 shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:-translate-y-1 mb-4" onclick="window.openDailyTaskModal()">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
                 <div class="relative z-10 flex flex-col h-full">
                     <div class="flex items-center justify-between mb-3">
@@ -169,12 +133,12 @@ window.openMobilePanel = function(event) {
                         <i class="fa-solid fa-arrow-right text-indigo-300 group-hover:text-white transition transform group-hover:translate-x-1"></i>
                     </div>
                     <h3 id="daily-task-title" class="text-white font-bold text-base mb-1 leading-tight">Yükleniyor...</h3>
-                    <p id="daily-task-desc" class="text-indigo-200 text-xs mb-3 line-clamp-2">Lütfen bekleyin.</p>
+                    <p id="daily-task-desc" class="text-indigo-200 text-xs mb-3 line-clamp-2">Lütfen bekleyin...</p>
                     <div id="daily-task-img-container" class="w-full h-24 rounded-lg overflow-hidden mb-3 bg-indigo-950/50 hidden">
                         <img id="daily-task-img" src="" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition">
                     </div>
                     <div class="mt-auto flex items-center gap-2">
-                        <span id="daily-task-participants" class="text-[11px] text-indigo-200 font-medium bg-black/20 px-2 py-1 rounded-md">0 kişi katıldı</span>
+                        <span id="daily-task-participants" class="text-[11px] text-indigo-200 font-medium bg-black/20 px-2 py-1 rounded-md">Bağlanıyor...</span>
                     </div>
                 </div>
             </div>
@@ -205,14 +169,8 @@ window.openMobilePanel = function(event) {
         document.body.insertAdjacentHTML('beforeend', sidebarHTML);
         sidebar = document.getElementById('right-sidebar');
         
-        if (window.renderWhoToFollowGlobal) {
-            window.renderWhoToFollowGlobal();
-        }
-        
-        // Dinamik oluşturulduğu için görevi tekrar çekip bağla
-        if (window.initDailyTask) {
-            window.initDailyTask();
-        }
+        if (window.renderWhoToFollowGlobal) window.renderWhoToFollowGlobal();
+        if (window.initDailyTask) window.initDailyTask();
 
     } else {
         if (window.renderWhoToFollowGlobal && document.getElementById('who-to-follow-list') && document.getElementById('who-to-follow-list').innerHTML.includes('yükleniyor')) {
@@ -242,12 +200,9 @@ window.closeMobilePanel = function(event) {
     }
 };
 
-// === DİĞER FONKSİYONLAR ===
 window.openSettingsModal = function() {
     const settingsModal = document.getElementById('settings-modal');
-    if(settingsModal) {
-        settingsModal.style.display = 'flex';
-    }
+    if(settingsModal) settingsModal.style.display = 'flex';
     const toggle = document.getElementById('dark-mode-toggle');
     if(toggle) toggle.checked = document.body.classList.contains('dark-mode');
 };
@@ -255,24 +210,14 @@ window.openSettingsModal = function() {
 window.toggleDarkMode = function() {
     const toggle = document.getElementById('dark-mode-toggle');
     if(!toggle) return;
-    
     const isDark = toggle.checked;
-    
-    if(isDark) { 
-        document.body.classList.add('dark-mode'); 
-    } else { 
-        document.body.classList.remove('dark-mode'); 
-    }
+    if(isDark) document.body.classList.add('dark-mode'); 
+    else document.body.classList.remove('dark-mode'); 
 
     try {
-        if(isDark) {
-            localStorage.setItem('theme', 'dark');
-        } else {
-            localStorage.setItem('theme', 'light');
-        }
-    } catch(e) {
-        console.warn("Tarayıcı gizlilik ayarları nedeniyle tema tercihi kaydedilemedi.");
-    }
+        if(isDark) localStorage.setItem('theme', 'dark');
+        else localStorage.setItem('theme', 'light');
+    } catch(e) {}
 };
 
 function initUI() {
@@ -285,13 +230,8 @@ function initUI() {
         }
     } catch(e) {}
 }
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initUI);
-} else {
-    initUI();
-}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initUI); } else { initUI(); }
 
-// --- NAV AND HEADER SCROLL BEHAVIOR ---
 (function() {
     class ScrollManager {
         constructor() {
@@ -303,16 +243,9 @@ if (document.readyState === 'loading') {
         }
 
         bindEvents() {
-            window.addEventListener('scroll', () => {
-                this.handleScroll(window.scrollY || document.documentElement.scrollTop);
-            }, { passive: true });
-
+            window.addEventListener('scroll', () => { this.handleScroll(window.scrollY || document.documentElement.scrollTop); }, { passive: true });
             const scrollableContainers = document.querySelectorAll('.inbox-list');
-            scrollableContainers.forEach(container => {
-                container.addEventListener('scroll', () => {
-                    this.handleScroll(container.scrollTop);
-                }, { passive: true });
-            });
+            scrollableContainers.forEach(container => { container.addEventListener('scroll', () => { this.handleScroll(container.scrollTop); }, { passive: true }); });
 
             setTimeout(() => {
                 const initY = window.scrollY || (scrollableContainers.length > 0 ? scrollableContainers[0].scrollTop : 0);
@@ -327,13 +260,8 @@ if (document.readyState === 'loading') {
         setBottomNavState(isCompact) {
             if (this.isBottomCompact !== isCompact) {
                 this.isBottomCompact = isCompact;
-                
-                if (isCompact) {
-                    document.body.classList.add('sidebar-compact');
-                } else {
-                    document.body.classList.remove('sidebar-compact');
-                }
-
+                if (isCompact) document.body.classList.add('sidebar-compact');
+                else document.body.classList.remove('sidebar-compact');
                 if (this.bottomNav) {
                     if (isCompact) this.bottomNav.classList.add('compact');
                     else this.bottomNav.classList.remove('compact');
@@ -344,50 +272,27 @@ if (document.readyState === 'loading') {
         setHeaderState(state) {
             if (this.currentState === state) return;
             this.currentState = state;
-            
-            if (state === 'expanded') {
-                document.body.classList.remove('header-hidden', 'header-compact');
-            } else if (state === 'hidden') {
-                document.body.classList.add('header-hidden');
-                document.body.classList.remove('header-compact');
-            } else if (state === 'compact') {
-                document.body.classList.add('header-compact');
-                document.body.classList.remove('header-hidden');
-            }
+            if (state === 'expanded') { document.body.classList.remove('header-hidden', 'header-compact'); } 
+            else if (state === 'hidden') { document.body.classList.add('header-hidden'); document.body.classList.remove('header-compact'); } 
+            else if (state === 'compact') { document.body.classList.add('header-compact'); document.body.classList.remove('header-hidden'); }
         }
 
         handleScroll(currentY) {
-            if (window.innerWidth > 1024) {
-                this.setHeaderState('expanded');
-                return;
-            }
-
+            if (window.innerWidth > 1024) { this.setHeaderState('expanded'); return; }
             if (currentY > 50) this.setBottomNavState(true);
             else if (currentY <= 10) this.setBottomNavState(false);
 
-            if (currentY <= 10) {
-                this.setHeaderState('expanded');
-            } else {
+            if (currentY <= 10) { this.setHeaderState('expanded'); } 
+            else {
                 const delta = currentY - this.lastScrollY;
                 if (Math.abs(delta) > 5) {
-                    if (delta > 0) {
-                        this.setHeaderState('hidden');
-                    } else {
-                        this.setHeaderState('compact');
-                    }
+                    if (delta > 0) this.setHeaderState('hidden');
+                    else this.setHeaderState('compact');
                     this.lastScrollY = currentY;
                 }
             }
         }
     }
-
-    function initScrollManager() {
-        new ScrollManager();
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initScrollManager);
-    } else {
-        initScrollManager();
-    }
+    function initScrollManager() { new ScrollManager(); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initScrollManager); } else { initScrollManager(); }
 })();

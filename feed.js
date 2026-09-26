@@ -269,20 +269,18 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         
         const postData = { content: text, imageUrl: imageUrl, media: mediaArray, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false };
         
-        // GÜNLÜK GÖREV ENTEGRASYONU
         if (window.activeDailyTaskId) {
             postData.dailyTaskId = window.activeDailyTaskId;
         }
         
         const newPostRef = await addDoc(collection(db, "posts"), postData);
         
-        // Katılımcıyı günlük göreve ekle
         if (window.activeDailyTaskId) {
             try {
                 await updateDoc(doc(db, "dailyTasks", window.activeDailyTaskId), {
                     participants: arrayUnion(myUsername)
                 });
-                window.activeDailyTaskId = null; // Sıfırla
+                window.activeDailyTaskId = null;
                 if (window.closeDailyTaskModal) window.closeDailyTaskModal();
                 if (window.initDailyTask) window.initDailyTask();
             } catch(e) { console.error('Göreve katılımcı eklenirken hata:', e); }
@@ -770,19 +768,14 @@ document.addEventListener('keydown', function(e) {
 window.currentDailyTask = null;
 window.activeDailyTaskId = null; 
 
-// Uygulama açıldığında bugünün görevini çeker
 window.initDailyTask = async function() {
+    const cards = document.querySelectorAll('#daily-task-card');
     try {
         const today = new Date().toISOString().split('T')[0]; 
-        
-        // FİREBASE INDEX HATASINI ÖNLEMEK İÇİN SADECE TARİHE GÖRE ÇEKİYORUZ
         const q = query(collection(db, "dailyTasks"), where("date", "==", today));
         const snapshot = await getDocs(q);
 
-        const cards = document.querySelectorAll('#daily-task-card');
         let activeTask = null;
-
-        // JS ile aktif olanı buluyoruz
         snapshot.forEach(docSnap => {
             if (docSnap.data().active === true) {
                 activeTask = { id: docSnap.id, ...docSnap.data() };
@@ -794,17 +787,12 @@ window.initDailyTask = async function() {
             const participants = activeTask.participants || [];
             
             cards.forEach(card => {
-                card.style.setProperty('display', 'block', 'important'); // CSS KISITLAMASINI EZMEK İÇİN EKLENDİ
-                
-                // Başlık
                 const tEl = card.querySelector('#daily-task-title');
                 if(tEl) tEl.innerText = activeTask.title || 'Günün Görevi';
                 
-                // Açıklama
                 const dEl = card.querySelector('#daily-task-desc');
                 if(dEl) dEl.innerText = activeTask.description || '';
                 
-                // Katılımcı
                 const pEl = card.querySelector('#daily-task-participants');
                 if(pEl) pEl.innerText = `${participants.length} kişi katıldı`;
                 
@@ -819,10 +807,8 @@ window.initDailyTask = async function() {
                 }
             });
         } else {
-            // Bugün için görev yoksa
             window.currentDailyTask = null;
             cards.forEach(card => {
-                card.style.setProperty('display', 'block', 'important'); // CSS KISITLAMASINI EZMEK İÇİN EKLENDİ
                 const tEl = card.querySelector('#daily-task-title');
                 if(tEl) tEl.innerText = 'Görev Bekleniyor';
                 const dEl = card.querySelector('#daily-task-desc');
@@ -835,10 +821,18 @@ window.initDailyTask = async function() {
         }
     } catch(e) {
         console.error("Günlük görev çekilirken hata:", e);
+        window.currentDailyTask = null;
+        cards.forEach(card => {
+            const tEl = card.querySelector('#daily-task-title');
+            if(tEl) tEl.innerText = 'Bağlantı Hatası';
+            const dEl = card.querySelector('#daily-task-desc');
+            if(dEl) dEl.innerText = 'Görevler yüklenemedi. Lütfen sayfayı yenileyin.';
+            const pEl = card.querySelector('#daily-task-participants');
+            if(pEl) pEl.innerText = 'Hata';
+        });
     }
 };
 
-// Görev detay modalını açar
 window.openDailyTaskModal = function() {
     if (!window.currentDailyTask) {
         if(window.showToast) window.showToast('Şu anda aktif bir görev bulunmuyor.', 'info');
@@ -875,7 +869,6 @@ window.openDailyTaskModal = function() {
     document.getElementById('daily-task-modal').style.display = 'flex';
     document.body.classList.add('modal-open');
     
-    // Göreve katılanların gönderilerini çek
     fetchDailyTaskPosts(task.id);
 };
 
@@ -884,11 +877,10 @@ window.closeDailyTaskModal = function() {
     document.body.classList.remove('modal-open');
 };
 
-// Göreve katıl butonuna basıldığında
 window.joinDailyTask = function() {
     if (!window.currentDailyTask) return;
     window.closeDailyTaskModal();
-    window.activeDailyTaskId = window.currentDailyTask.id; // Gönderi sistemine görev ID'sini aktar
+    window.activeDailyTaskId = window.currentDailyTask.id; 
     
     if (window.openMainPostModal) {
         window.openMainPostModal();
@@ -898,7 +890,6 @@ window.joinDailyTask = function() {
     }
 };
 
-// Modalda gösterilecek katılımcı gönderilerini çeker
 async function fetchDailyTaskPosts(taskId) {
     const container = document.getElementById('modal-dt-posts');
     container.innerHTML = '<div class="text-center text-slate-500 dark:text-gray-400 py-4">Gönderiler yükleniyor...</div>';
