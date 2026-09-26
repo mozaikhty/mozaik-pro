@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sohbet / Mozaik</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b1121">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    
+    <!-- TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=31">
+    
+    <style>
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        /* Eski Tasarımın Kalıntılarını Gizle */
+        .mobile-sidebar, .mobile-sidebar-overlay, .app-container { display: none !important; }
+        body { background-color: #0b1121 !important; color: #e5e7eb !important; overflow: hidden; }
+        
+        /* Mobilde chat aktifken sol menüyü gizle */
+        @media (max-width: 1024px) {
+            body.chat-active #inbox-column { display: none !important; }
+            body.chat-active #chat-column { display: flex !important; width: 100%; height: 100vh; padding-bottom: 0 !important;}
+            body.chat-active .bottom-nav { display: none !important; }
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen">
+    <script>
+        try {
+            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+        } catch(e) { console.warn("Gizli mod nedeniyle tema okunamadı."); }
+    </script>
+
+    <!-- ÜST MENÜ (Sadece masaüstü) -->
+    <header class="hidden lg:block sticky top-0 z-50 backdrop-blur-md border-b border-gray-800" style="background-color: rgba(11, 17, 33, 0.9);">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-1 text-2xl font-bold text-white tracking-wide cursor-pointer" onclick="window.location.href='feed.html'">
+                <span>M</span>
+                <div class="flex grid grid-cols-2 gap-0.5">
+                    <div class="w-2 h-2 bg-pink-500 rounded-sm"></div>
+                    <div class="w-2 h-2 bg-blue-500 rounded-sm"></div>
+                    <div class="w-2 h-2 bg-cyan-400 rounded-sm"></div>
+                    <div class="w-2 h-2 bg-purple-500 rounded-sm"></div>
+                </div>
+                <span>zaik</span>
+            </div>
+            <nav class="flex space-x-8 text-sm font-medium">
+                <a href="feed.html" class="text-gray-400 hover:text-white transition">Ana Akış</a>
+                <a href="search.html" class="text-gray-400 hover:text-white transition">Keşfet</a>
+                <a href="notifications.html" class="text-gray-400 hover:text-white transition">Bildirimler</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ANA İÇERİK - 2 Sütunlu Chat Düzeni -->
+    <main class="max-w-6xl mx-auto flex h-screen lg:h-[calc(100vh-64px)]">
+        
+        <!-- SOL SÜTUN (Gelen Kutusu) -->
+        <div id="inbox-column" class="w-full lg:w-96 flex flex-col border-r border-gray-800 bg-[#0b1121] pb-16 lg:pb-0">
+            
+            <div class="p-4 border-b border-gray-800">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div id="mobile-avatar-header" class="w-9 h-9 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-lg overflow-hidden cursor-pointer lg:hidden" onclick="window.goToMyProfile()">👤</div>
+                        <h2 class="text-xl font-bold text-white tracking-wide">Mesajlar</h2>
+                    </div>
+                    <div class="flex space-x-4 text-gray-400">
+                        <i class="fa-solid fa-gear cursor-pointer hover:text-white transition text-lg" onclick="document.getElementById('chat-settings-modal').style.display='flex'"></i>
+                        <i class="fa-solid fa-pen-to-square cursor-pointer hover:text-white transition text-lg" onclick="window.showNewChatScreen()"></i>
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                    <input type="text" id="dm-search-input" placeholder="Kişi veya grup ara..." class="w-full bg-[#151e32] border border-gray-700 text-white text-sm rounded-full pl-11 pr-4 py-3 outline-none focus:border-cyan-500 transition">
+                </div>
+            </div>
+
+            <div id="inbox-tabs" class="flex border-b border-gray-800 text-sm font-semibold">
+                <div class="feed-tab active flex-1 py-3 text-cyan-400 border-b-2 border-cyan-400 text-center cursor-pointer transition" data-tab="all">Tümü</div>
+                <div class="feed-tab flex-1 py-3 text-gray-500 hover:text-white border-b-2 border-transparent text-center cursor-pointer transition" data-tab="unread">Okunmamış</div>
+                <div class="feed-tab flex-1 py-3 text-gray-500 hover:text-white border-b-2 border-transparent text-center cursor-pointer transition" data-tab="groups">Gruplar</div>
+            </div>
+
+            <div id="dm-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                <div style="padding: 40px; text-align: center; color: #64748b;">Yükleniyor...</div>
+            </div>
+        </div>
+
+        <!-- SAĞ SÜTUN (Aktif Sohbet) -->
+        <div id="chat-column" class="hidden lg:flex flex-1 flex-col bg-[#0b1121] relative">
+            
+            <div id="chat-empty-state" class="flex flex-col items-center justify-center h-full text-center p-6">
+                <div class="w-24 h-24 bg-gray-800 border border-gray-700 rounded-full flex items-center justify-center mb-5 text-4xl shadow-lg shadow-black/50">💬</div>
+                <h2 class="text-2xl font-bold text-white mb-2">Sohbet Başlat</h2>
+                <p class="text-sm text-gray-400 mb-8">Mevcut görüşmelerden birini seçin veya yeni bir ağ kurun.</p>
+                <button class="bg-[#06b6d4] hover:bg-cyan-600 text-white px-8 py-3 rounded-full font-bold transition shadow-lg shadow-cyan-500/20" onclick="window.showNewChatScreen()">Yeni Mesaj</button>
+            </div>
+
+            <div id="new-chat-state" class="hidden flex-col h-full bg-[#0b1121]">
+                <div class="p-4 border-b border-gray-800 flex items-center gap-4 bg-[#151e32]">
+                    <i class="fa-solid fa-arrow-left text-gray-400 text-xl cursor-pointer hover:text-white" onclick="window.closeNewChatScreen()"></i>
+                    <h2 class="text-lg font-bold text-white">Yeni Mesaj</h2>
+                </div>
+                <div class="p-4 flex-1 overflow-y-auto">
+                    <div class="relative mb-6">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                        <input type="text" id="new-chat-search" placeholder="Kişi arayın..." class="w-full bg-[#151e32] border border-gray-700 text-white text-sm rounded-xl pl-11 pr-4 py-3 outline-none focus:border-cyan-500 transition">
+                    </div>
+                    <button id="open-group-modal" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-xl font-bold mb-4 transition border border-gray-700 flex items-center justify-center gap-2"><i class="fa-solid fa-user-group"></i> Grup Oluştur</button>
+                    <div id="new-chat-results" class="space-y-1"></div>
+                </div>
+            </div>
+
+            <div id="chat-view" class="hidden flex-col h-full relative bg-[#0b1121]">
+                <div class="p-3 border-b border-gray-800 bg-[#151e32]/95 backdrop-blur-md flex items-center justify-between z-10 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-arrow-left text-gray-400 text-xl cursor-pointer hover:text-white lg:hidden px-2" onclick="window.location.href='chat.html'"></i>
+                        <div id="chat-avatar" class="w-10 h-10 rounded-xl bg-gray-700 border border-gray-600 flex items-center justify-center overflow-hidden cursor-pointer flex-shrink-0" onclick="window.goToChatProfile()">👤</div>
+                        <div class="cursor-pointer overflow-hidden" onclick="window.goToChatProfile()">
+                            <h2 id="chat-username-text" class="font-bold text-white text-sm flex items-center gap-1 truncate">Yükleniyor...</h2>
+                            <p id="chat-subtitle" class="text-xs text-gray-400 truncate">@bekleniyor</p>
+                            <p id="typing-indicator" class="text-xs text-cyan-400 italic font-semibold hidden">yazıyor...</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 lg:gap-3">
+                        <button id="add-member-btn" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center transition border border-gray-700 hidden"><i class="fa-solid fa-user-plus text-xs"></i></button>
+                        <button id="audio-call-btn" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center transition border border-gray-700"><i class="fa-solid fa-phone text-xs"></i></button>
+                        <button id="video-call-btn" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center transition border border-gray-700"><i class="fa-solid fa-video text-xs"></i></button>
+                        <button id="delete-chat-btn" class="w-9 h-9 rounded-full bg-red-900/20 hover:bg-red-900/50 text-red-400 flex items-center justify-center transition border border-red-900/50"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div>
+                
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col scroll-smooth">
+                    <!-- Dinamik İçerik -->
+                </div>
+                
+                <div id="reply-preview-box" class="hidden bg-[#1e293b] border-l-4 border-[#06b6d4] p-3 flex justify-between items-center text-sm text-gray-300 mx-4 mt-2 rounded-lg shadow-lg">
+                    <div class="truncate max-w-[90%]"><b class="text-[#06b6d4]">Yanıtlanıyor (@<span id="reply-preview-sender"></span>):</b> <span id="reply-preview-msg"></span></div>
+                    <button class="text-red-400 hover:text-red-300 text-lg font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-500/20 transition" onclick="window.cancelReply()">&times;</button>
+                </div>
+
+                <div class="p-3 lg:p-4 bg-[#151e32] border-t border-gray-800 flex items-end gap-2 lg:gap-3 z-10 pb-6 lg:pb-4">
+                    <div class="flex gap-1.5 mb-1">
+                        <input type="file" id="chat-image-input" accept="image/*" class="hidden">
+                        <label for="chat-image-input" id="img-upload-label" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 cursor-pointer transition border border-gray-700"><i class="fa-regular fa-image"></i></label>
+                        <button id="open-emoji-btn" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 cursor-pointer transition border border-gray-700"><i class="fa-regular fa-face-smile"></i></button>
+                    </div>
+                    
+                    <div id="chat-emoji-picker" class="hidden absolute bottom-20 left-4 bg-[#1e293b] border border-gray-700 rounded-2xl p-3 gap-3 flex-wrap shadow-2xl z-50 w-64">
+                        <span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">😀</span><span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">😂</span><span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">🥰</span>
+                        <span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">😎</span><span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">🔥</span><span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">👍</span>
+                        <span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">🎉</span><span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">😢</span><span class="emoji-item cursor-pointer text-2xl hover:scale-125 transition">😮</span>
+                    </div>
+
+                    <div class="flex-1 bg-gray-900 border border-gray-700 rounded-3xl flex items-center px-4 py-1.5 focus-within:border-cyan-500 transition shadow-inner">
+                        <input type="text" id="msg-input" class="w-full bg-transparent border-none text-white text-sm outline-none py-1.5 placeholder-gray-500" placeholder="Mesaj gönder..." autocomplete="off">
+                    </div>
+                    <button id="send-btn" disabled class="w-10 h-10 flex-shrink-0 rounded-full bg-cyan-600 text-white flex items-center justify-center transition disabled:opacity-50 disabled:bg-gray-800 disabled:text-gray-500 mb-1"><i class="fa-solid fa-paper-plane text-sm -ml-0.5 mt-0.5"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MOBİL ALT NAVİGASYON (Chat aktifken gizlenir) -->
+    <div class="fixed bottom-0 w-full backdrop-blur-md border-t border-gray-800 lg:hidden bottom-nav" style="background-color: rgba(11, 17, 33, 0.95); z-index: 50;">
+        <div class="flex justify-around items-center h-16 relative">
+            <a href="feed.html" class="flex flex-col items-center text-gray-400 hover:text-white transition"><i class="fa-solid fa-house text-lg"></i></a>
+            <a href="search.html" class="flex flex-col items-center text-gray-400 hover:text-white transition"><i class="fa-solid fa-magnifying-glass text-lg"></i></a>
+            <div class="relative -top-5">
+                <div class="w-14 h-14 bg-gradient-to-tr from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30 cursor-pointer transform rotate-45 hover:scale-105 transition" onclick="window.location.href='feed.html?action=post'">
+                    <i class="fa-solid fa-plus text-white text-2xl -rotate-45"></i>
+                </div>
+            </div>
+            <a href="notifications.html" class="flex flex-col items-center text-gray-400 hover:text-white transition"><i class="fa-regular fa-bell text-lg"></i></a>
+            <a href="#" class="flex flex-col items-center text-[#06b6d4]"><i class="fa-solid fa-envelope text-lg"></i></a>
+        </div>
+    </div>
+
+    <!-- Modallar ve Scriptler -->
+    <div class="call-overlay" id="call-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
+        <h2 class="call-status-text text-white font-bold text-xl absolute top-10" id="call-status-text">Aranıyor...</h2>
+        <div class="video-container relative w-[90%] max-w-2xl h-[60vh] bg-gray-900 rounded-3xl overflow-hidden border border-gray-700 shadow-2xl" id="video-container">
+            <video id="remote-video" class="w-full h-full object-cover" autoplay playsinline></video>
+            <video id="local-video" class="absolute bottom-4 right-4 w-24 h-36 bg-black rounded-xl object-cover border border-gray-600 shadow-lg" autoplay playsinline muted></video>
+        </div>
+        <div class="call-controls absolute bottom-10 flex gap-6 bg-gray-800/80 p-4 rounded-full border border-gray-700 backdrop-blur-md">
+            <button class="w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 text-white flex justify-center items-center text-2xl transition shadow-lg" id="accept-call-btn" style="display:none;"><i class="fa-solid fa-phone"></i></button>
+            <button class="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white flex justify-center items-center text-2xl transition shadow-lg" id="end-call-btn"><i class="fa-solid fa-phone-slash"></i></button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="chat-settings-modal"><div class="modal-content" style="max-width:400px; padding:0; background:#151e32;"><div class="modal-header" style="padding:20px; border-bottom:1px solid #1e293b; margin:0;"><h3 style="margin:0; font-size:16px; color:white;">Sohbet Ayarları</h3><button class="close-btn" onclick="document.getElementById('chat-settings-modal').style.display='none'" style="background:transparent; color:white;">&times;</button></div><div style="padding:20px; display:flex; flex-direction:column; gap:15px;"><label style="display:flex; align-items:center; gap:10px; font-weight:600; cursor:pointer; color:#94a3b8;"><input type="checkbox" checked class="accent-cyan-500"> Okundu bilgisini gönder</label><label style="display:flex; align-items:center; gap:10px; font-weight:600; cursor:pointer; color:#94a3b8;"><input type="checkbox" checked class="accent-cyan-500"> Gelen aramalara izin ver</label><label style="display:flex; align-items:center; gap:10px; font-weight:600; cursor:pointer; color:#94a3b8;"><input type="checkbox" checked class="accent-cyan-500"> Yüksek kaliteli medya yükle</label><button class="w-full bg-[#06b6d4] hover:bg-cyan-600 text-white py-2 rounded-lg mt-4 font-bold transition" onclick="document.getElementById('chat-settings-modal').style.display='none'">Kaydet</button></div></div></div>
+    <div class="modal-overlay" id="group-modal"><div class="modal-content" style="max-width:400px; padding:0; background:#151e32;"><div class="modal-header" style="padding:20px; border-bottom:1px solid #1e293b; margin:0;"><h3 style="margin:0; font-size:16px; color:white;">Ağ Grubu Oluştur</h3><button class="close-btn" onclick="document.getElementById('group-modal').style.display='none'" style="background:transparent; color:white;">&times;</button></div><div style="padding:20px;"><input type="text" id="group-name-input" class="w-full bg-gray-800 border border-gray-700 text-white p-3 rounded-xl mb-4 outline-none focus:border-cyan-500 transition" placeholder="Grup Adı"><div style="font-weight:600; font-size:13px; margin-bottom:10px; color:#64748b;">Kişileri Seç:</div><div id="group-users-list" class="max-h-48 overflow-y-auto space-y-2 border border-gray-700 p-2 rounded-xl bg-gray-900"></div><button id="create-group-btn" class="w-full bg-[#06b6d4] hover:bg-cyan-600 text-white py-3 rounded-xl mt-4 font-bold transition">Grubu Oluştur</button></div></div></div>
+    <div class="modal-overlay" id="add-member-modal"><div class="modal-content" style="max-width:400px; padding:0; background:#151e32;"><div class="modal-header" style="padding:20px; border-bottom:1px solid #1e293b; margin:0;"><h3 style="margin:0; font-size:16px; color:white;">Gruba Kişi Ekle</h3><button class="close-btn" onclick="document.getElementById('add-member-modal').style.display='none'" style="background:transparent; color:white;">&times;</button></div><div style="padding:20px;"><div class="relative mb-4"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i><input type="text" id="add-member-search" placeholder="Kişi arayın..." class="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-xl pl-10 pr-4 py-3 outline-none focus:border-cyan-500 transition" autocomplete="off"></div><div id="add-member-results" class="max-h-48 overflow-y-auto space-y-2"><div style="padding:10px; color:#64748b; text-align:center; font-size:13px;">Kişi aratın...</div></div></div></div></div>
+
+    <script type="module" src="webrtc.js"></script>
+    <script type="module" src="app.js"></script>
+    <script type="module" src="chat.js"></script>
+    <script src="ui.js?v=29"></script>
+    
+    <script>
+        document.querySelectorAll('#inbox-tabs .feed-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('#inbox-tabs .feed-tab').forEach(t => {
+                    t.classList.remove('text-cyan-400', 'border-cyan-400');
+                    t.classList.add('text-gray-500', 'border-transparent');
+                });
+                const target = e.currentTarget;
+                target.classList.remove('text-gray-500', 'border-transparent');
+                target.classList.add('text-cyan-400', 'border-cyan-400');
+            });
+        });
+    </script>
+</body>
+</html>

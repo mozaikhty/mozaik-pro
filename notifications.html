@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bildirimler / Mozaik</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b1121">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    
+    <!-- TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=31">
+    
+    <style>
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Eski Tasarım Kalıntılarını Gizle */
+        .mobile-sidebar, .mobile-sidebar-overlay, .app-container { display: none !important; }
+        body { background-color: #0b1121 !important; color: #e5e7eb !important; }
+    </style>
+</head>
+<body class="font-sans min-h-screen pb-24">
+    <script>
+        try {
+            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+        } catch(e) { console.warn("Gizli mod veya erişim engeli nedeniyle tema okunamadı."); }
+    </script>
+
+    <!-- ÜST MENÜ (Sadece masaüstü) -->
+    <header class="hidden lg:block sticky top-0 z-50 backdrop-blur-md border-b border-gray-800" style="background-color: rgba(11, 17, 33, 0.9);">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-1 text-2xl font-bold text-white tracking-wide cursor-pointer" onclick="window.location.href='feed.html'">
+                <span>M</span>
+                <div class="flex grid grid-cols-2 gap-0.5">
+                    <div class="w-2 h-2 bg-pink-500 rounded-sm"></div>
+                    <div class="w-2 h-2 bg-blue-500 rounded-sm"></div>
+                    <div class="w-2 h-2 bg-cyan-400 rounded-sm"></div>
+                    <div class="w-2 h-2 bg-purple-500 rounded-sm"></div>
+                </div>
+                <span>zaik</span>
+            </div>
+            <nav class="flex space-x-8 text-sm font-medium">
+                <a href="feed.html" class="text-gray-400 hover:text-white transition">Ana Akış</a>
+                <a href="search.html" class="text-gray-400 hover:text-white transition">Keşfet</a>
+                <a href="notifications.html" class="text-white border-b-2 border-cyan-400 pb-5 pt-5 transition">Bildirimler</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 pt-4 flex flex-col lg:flex-row gap-8 bg-[#0b1121]">
+        
+        <!-- SOL SÜTUN (Bildirimler Listesi) -->
+        <div class="flex-1 min-w-0">
+            <!-- MOBİL ÜST BAR -->
+            <div class="sticky top-0 z-40 bg-[#0b1121]/95 backdrop-blur-md pb-4 pt-2">
+                <div class="flex lg:hidden justify-between items-center mb-4">
+                    <div id="mobile-avatar-header" class="w-9 h-9 rounded-xl bg-gray-800 flex items-center justify-center text-lg overflow-hidden border border-gray-700" onclick="window.goToMyProfile()">👤</div>
+                    <div class="flex gap-4 text-xl text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass cursor-pointer hover:text-white transition" onclick="window.location.href='search.html'"></i>
+                        <i class="fa-regular fa-comment-dots cursor-pointer hover:text-white transition" onclick="window.location.href='chat.html'"></i>
+                    </div>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-4 tracking-wide">Bildirimler</h2>
+                
+                <!-- BİLDİRİM SEKMELERİ -->
+                <div class="flex border-b border-gray-800 text-sm font-semibold">
+                    <div class="flex-1 pb-3 text-center cursor-pointer text-cyan-400 border-b-2 border-cyan-400 transition" id="tab-all">Tümü</div>
+                    <div class="flex-1 pb-3 text-center cursor-pointer text-gray-500 hover:text-white transition border-b-2 border-transparent" id="tab-requests">Bağlantı İstekleri</div>
+                </div>
+            </div>
+
+            <!-- Bildirim İçerik Alanı -->
+            <div id="notifications-list" class="mt-4 space-y-3 pb-8">
+                <div style="padding: 40px; text-align: center; color: #64748b;">Yükleniyor...</div>
+            </div>
+        </div>
+
+        <!-- SAĞ SÜTUN (Öneriler Widget) -->
+        <aside class="hidden lg:block w-80 flex-shrink-0 mt-20">
+            <div class="bg-[#151e32] border border-gray-800 rounded-2xl p-5 sticky top-24">
+                <div class="flex items-center gap-2 mb-4 border-b border-gray-800 pb-3">
+                    <i class="fa-solid fa-user-plus text-cyan-400"></i>
+                    <span class="font-bold text-sm text-white">Ağınıza Ekleyin</span>
+                </div>
+                <div id="who-to-follow-list" class="space-y-2">
+                    <div class="text-sm text-gray-500 text-center py-4">Öneriler yükleniyor...</div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- POST DETAIL MODAL (Destek Talebi İnceleme İçin) -->
+    <div id="ticket-modal" class="modal-overlay" style="display:none; z-index: 5000;" onclick="if(event.target === this) document.getElementById('ticket-modal').style.display='none'">
+        <div class="modal-content" style="max-width: 600px; width: 95%; background-color: #151e32; border: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; padding:0;">
+            <div class="modal-header" style="position: sticky; top:0; z-index: 10; background-color: #151e32; border-bottom: 1px solid #334155; padding: 15px 20px;">
+                <h3 style="margin: 0; color: white; font-size: 16px;">Destek Talebi Detayı</h3>
+                <span class="close-modal text-gray-400 hover:text-white cursor-pointer text-2xl" onclick="document.getElementById('ticket-modal').style.display='none'">&times;</span>
+            </div>
+            <div id="ticket-modal-content" class="p-5 text-gray-300">Yükleniyor...</div>
+        </div>
+    </div>
+
+    <!-- MOBİL ALT NAVİGASYON -->
+    <div class="fixed bottom-0 w-full backdrop-blur-md border-t border-gray-800 lg:hidden" style="background-color: rgba(11, 17, 33, 0.95); z-index: 50;">
+        <div class="flex justify-around items-center h-16 relative">
+            <a href="feed.html" class="flex flex-col items-center text-gray-400 hover:text-white transition"><i class="fa-solid fa-house text-lg"></i></a>
+            <a href="search.html" class="flex flex-col items-center text-gray-400 hover:text-white transition"><i class="fa-solid fa-magnifying-glass text-lg"></i></a>
+            
+            <div class="relative -top-5">
+                <div class="w-14 h-14 bg-gradient-to-tr from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30 cursor-pointer transform rotate-45 hover:scale-105 transition" onclick="window.location.href='feed.html?action=post'">
+                    <i class="fa-solid fa-plus text-white text-2xl -rotate-45"></i>
+                </div>
+            </div>
+            
+            <!-- Bildirimler Aktif -->
+            <a href="notifications.html" class="flex flex-col items-center text-cyan-400"><i class="fa-solid fa-bell text-lg"></i></a>
+            <a href="#" onclick="window.goToMyProfile()" class="flex flex-col items-center text-gray-400 hover:text-white transition"><i class="fa-regular fa-user text-lg"></i></a>
+        </div>
+    </div>
+
+    <script src="ui.js?v=29"></script>
+    <script type="module" src="notifications.js"></script>
+
+</body>
+</html>
