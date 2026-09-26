@@ -269,18 +269,20 @@ async function submitPost(textId, imageId, btnId, previewId, isModal) {
         
         const postData = { content: text, imageUrl: imageUrl, media: mediaArray, location: loc, author: myUsername, authorEmail: currentUser.email, createdAt: serverTimestamp(), likes: [], comments: [], isEdited: false, isRepost: false };
         
+        // GÜNLÜK GÖREV ENTEGRASYONU
         if (window.activeDailyTaskId) {
             postData.dailyTaskId = window.activeDailyTaskId;
         }
         
         const newPostRef = await addDoc(collection(db, "posts"), postData);
         
+        // Katılımcıyı günlük göreve ekle
         if (window.activeDailyTaskId) {
             try {
                 await updateDoc(doc(db, "dailyTasks", window.activeDailyTaskId), {
                     participants: arrayUnion(myUsername)
                 });
-                window.activeDailyTaskId = null;
+                window.activeDailyTaskId = null; // Sıfırla
                 if (window.closeDailyTaskModal) window.closeDailyTaskModal();
                 if (window.initDailyTask) window.initDailyTask();
             } catch(e) { console.error('Göreve katılımcı eklenirken hata:', e); }
@@ -777,7 +779,6 @@ window.initDailyTask = async function() {
         const q = query(collection(db, "dailyTasks"), where("date", "==", today));
         const snapshot = await getDocs(q);
 
-        // Hem ID hem de Class ile tüm olası kartları seçelim
         const cards = document.querySelectorAll('#daily-task-card');
         let activeTask = null;
 
@@ -793,7 +794,6 @@ window.initDailyTask = async function() {
             const participants = activeTask.participants || [];
             
             cards.forEach(card => {
-                card.style.display = 'block'; 
                 card.style.setProperty('display', 'block', 'important'); // CSS KISITLAMASINI EZMEK İÇİN EKLENDİ
                 
                 // Başlık

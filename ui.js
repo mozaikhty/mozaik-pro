@@ -41,7 +41,7 @@ function loadUIComponents() {
     `;
 
     // === ALT MENÜ ===
-    const bottomNavHTML = ``; // Mevcutta feed.html içinde barınıyor
+    const bottomNavHTML = ``; // feed.html içinde statik
 
     // === AYARLAR MODALI ===
     const settingsModalHTML = `
@@ -140,7 +140,7 @@ function loadUIComponents() {
         document.body.insertAdjacentHTML('beforeend', mobilePanelHTML);
     }
     
-    // Sağ sütun varsa mobilde kapatma butonu ekle (Günün görevi duplicate sorunu için temizlendi)
+    // Sağ sütun varsa mobilde kapatma butonu ekle (Günün Görevi Çiftleşmesini Önler)
     const rightSidebar = document.getElementById('right-sidebar');
     if (rightSidebar && !document.getElementById('mobile-panel-close-btn')) {
         rightSidebar.insertAdjacentHTML('afterbegin', `
@@ -150,6 +150,7 @@ function loadUIComponents() {
             </div>
         `);
     }
+
 }
 
 window.openMobilePanel = function(event) {
@@ -157,7 +158,7 @@ window.openMobilePanel = function(event) {
     let overlay = document.getElementById('mobile-side-panel-overlay');
     let sidebar = document.getElementById('right-sidebar');
     
-    // Eğer sayfada sağ panel yoksa (Örn: Keşfet, Mesajlar, Reels), dinamik olarak oluştur
+    // Eğer sayfada sağ panel yoksa dinamik olarak oluştur
     if (!sidebar) {
         const sidebarHTML = `
         <div id="right-sidebar" class="responsive-right-sidebar hidden lg:flex flex-col space-y-4 sticky top-20 h-fit">
