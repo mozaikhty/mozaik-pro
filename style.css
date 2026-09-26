@@ -19,7 +19,104 @@ a { text-decoration: none; color: inherit; }
 /* ==========================================================================
    SOL MENÜ (SIDEBAR LEFT)
    ========================================================================== */
-.sidebar-left { width: 260px; padding: 20px 20px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid #e2e8f0; background: transparent; }
+/* YÜZER SIDEBAR (FLOATING PANEL) */
+.sidebar-left {
+    width: 260px;
+    padding: 24px 20px;
+    position: sticky;
+    top: 24px;
+    height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    
+    /* Yüzer Görünüm */
+    border-right: none;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 28px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.06);
+    margin: 24px 0 24px 24px;
+    
+    /* Animasyonlar */
+    transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
+                padding 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+}
+
+body.dark-mode .sidebar-left {
+    background: rgba(15, 23, 42, 0.85);
+    border-color: rgba(51, 65, 85, 0.6);
+    box-shadow: 0 10px 35px rgba(0,0,0,0.3);
+}
+
+/* YÜZER SIDEBAR COMPACT (SCROLL) DURUMU */
+body.sidebar-compact .sidebar-left {
+    width: 90px;
+    padding: 24px 15px;
+}
+
+body.sidebar-compact .logo-desktop {
+    font-size: 0; /* Metni gizle */
+    text-align: center;
+    padding: 10px 0;
+}
+body.sidebar-compact .logo-desktop::first-letter {
+    font-size: 28px;
+    visibility: visible;
+}
+
+body.sidebar-compact .desktop-nav-item {
+    font-size: 0; /* Metni gizle */
+    justify-content: center;
+    padding: 14px;
+    border-left: none; /* Active state border iptal */
+    border-radius: 14px; /* Yuvarlak ikon arka planı */
+}
+body.sidebar-compact .desktop-nav-item span {
+    font-size: 20px;
+    margin: 0;
+    width: auto !important;
+}
+
+/* Aktif ikon stili */
+body.sidebar-compact .desktop-nav-item.active {
+    background-color: #2c3e50;
+}
+body.sidebar-compact .desktop-nav-item.active span {
+    filter: brightness(0) invert(1);
+}
+
+body.dark-mode.sidebar-compact .desktop-nav-item.active {
+    background-color: rgba(56, 189, 248, 0.2);
+}
+body.dark-mode.sidebar-compact .desktop-nav-item.active span {
+    filter: none;
+    color: #38bdf8;
+}
+
+body.sidebar-compact .desktop-post-btn {
+    font-size: 0;
+    padding: 16px 0;
+    border-radius: 20px !important;
+}
+body.sidebar-compact .desktop-post-btn::after {
+    content: "➕";
+    font-size: 18px;
+    visibility: visible;
+}
+
+body.sidebar-compact .sidebar-user-menu {
+    padding: 10px;
+    justify-content: center;
+}
+body.sidebar-compact .sidebar-user-info,
+body.sidebar-compact .sidebar-user-menu > div:last-child {
+    display: none;
+}
+
 .logo-desktop { font-size: 26px; font-weight: 900; padding: 10px; margin-bottom: 20px; display: inline-block; color: #2c3e50; letter-spacing: -0.5px; }
 .desktop-nav { display: flex; flex-direction: column; gap: 8px; }
 .desktop-nav-item { display: flex; align-items: center; gap: 15px; font-size: 18px; padding: 12px 16px; border-radius: 8px; transition: 0.2s; cursor: pointer; font-weight: 500; color: #475569; }
@@ -1324,50 +1421,4 @@ input:checked + .slider:before { transform: translateX(20px); }
     height: 100%;
     background: #fff;
     width: 0%;
-}
-
-
-/* ==========================================
-   YÜZER ALT SİDEBAR (MOBİL ALT NAVİGASYON COMPACT) 
-   ========================================== */
-body.sidebar-compact > .fixed.bottom-0.lg\:hidden {
-    bottom: 20px !important;
-    width: 80% !important;
-    left: 10% !important;
-    border-radius: 30px !important;
-    border: 1px solid rgba(226, 232, 240, 0.8) !important;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.15) !important;
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-}
-
-body.dark-mode.sidebar-compact > .fixed.bottom-0.lg\:hidden {
-    border-color: rgba(51, 65, 85, 0.6) !important;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.5) !important;
-}
-
-body.sidebar-compact > .fixed.bottom-0.lg\:hidden .h-16 {
-    height: 3.5rem !important; /* from 4rem */
-}
-
-body.sidebar-compact > .fixed.bottom-0.lg\:hidden .text-lg {
-    font-size: 1rem !important; 
-}
-
-body.sidebar-compact > .fixed.bottom-0.lg\:hidden .w-14 {
-    width: 2.75rem !important;
-    height: 2.75rem !important;
-}
-
-body.sidebar-compact > .fixed.bottom-0.lg\:hidden .-top-5 {
-    top: -0.5rem !important;
-}
-
-body.sidebar-compact > .fixed.bottom-0.lg\:hidden .text-2xl {
-    font-size: 1.25rem !important;
-}
-
-body > .fixed.bottom-0.lg\:hidden,
-body > .fixed.bottom-0.lg\:hidden * {
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
