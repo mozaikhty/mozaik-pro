@@ -39,12 +39,12 @@ onAuthStateChanged(auth, (user) => {
         onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
             activeChats = activeChats.filter(c => c.type === 'group'); 
             snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
-            window.attachCallListeners(activeChats); 
+            if(window.attachCallListeners) window.attachCallListeners(activeChats); 
         });
         onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
             activeChats = activeChats.filter(c => c.type === 'private'); 
             snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); 
-            window.attachCallListeners(activeChats); 
+            if(window.attachCallListeners) window.attachCallListeners(activeChats); 
         });
     } else { window.location.href = "index.html"; }
 });
@@ -194,6 +194,7 @@ function fetchData() {
     fetchAllUsersForSearch();
     fetchGlobalTrendingTags();
     loadExplorePosts(false);
+    window.initDailyTask(); // Görev sistemini başlat
 }
 
 window.addEventListener('scroll', debounce(() => {
@@ -410,6 +411,173 @@ async function performSmartSearch() {
     searchSuggestions.innerHTML = html;
 }
 
+// =====================================
+// GÜNÜN GÖREVİ (DAILY TASK) SİSTEMİ 
+// =====================================
+window.currentDailyTask = null;
+
+window.initDailyTask = async function() {
+    const card = document.getElementById('search-daily-task-card');
+    if(!card) return;
+
+    try {
+        const today = new Date().toISOString().split('T')[0]; 
+        const q = query(collection(db, "dailyTasks"), where("date", "==", today));
+        const snapshot = await getDocs(q);
+
+        let activeTask = null;
+        snapshot.forEach(docSnap => {
+            if (docSnap.data().active === true) {
+                activeTask = { id: docSnap.id, ...docSnap.data() };
+            }
+        });
+
+        if (activeTask) {
+            window.currentDailyTask = activeTask;
+            const participants = activeTask.participants || [];
+            
+            card.style.setProperty('display', 'flex', 'important'); 
+            
+            const tEl = document.getElementById('search-dt-title');
+            if(tEl) tEl.innerText = activeTask.title || 'Günün Görevi';
+            
+            const dEl = document.getElementById('search-dt-desc');
+            if(dEl) dEl.innerText = activeTask.description || '';
+            
+            const pEl = document.getElementById('search-dt-participants');
+            if(pEl) pEl.innerText = `${participants.length} kişi katıldı`;
+            
+            const imgContainer = document.getElementById('search-dt-img-container');
+            const imgEl = document.getElementById('search-dt-img');
+            
+            if (activeTask.imageUrl && imgEl && imgContainer) {
+                imgEl.src = window.sanitizeUrl(activeTask.imageUrl);
+                imgContainer.classList.remove('hidden');
+            } else if(imgContainer) {
+                imgContainer.classList.add('hidden');
+            }
+        } else {
+            window.currentDailyTask = null;
+            card.style.setProperty('display', 'flex', 'important');
+            const tEl = document.getElementById('search-dt-title');
+            if(tEl) tEl.innerText = 'Görev Bekleniyor';
+            const dEl = document.getElementById('search-dt-desc');
+            if(dEl) dEl.innerText = 'Bugünün görevi henüz hazırlanmadı.';
+            const pEl = document.getElementById('search-dt-participants');
+            if(pEl) pEl.innerText = '0 kişi katıldı';
+            const imgContainer = document.getElementById('search-dt-img-container');
+            if(imgContainer) imgContainer.classList.add('hidden');
+        }
+    } catch(e) {
+        console.error("Günlük görev çekilirken hata:", e);
+    }
+};
+
+window.openDailyTaskModal = function() {
+    if (!window.currentDailyTask) {
+        if(window.showToast) window.showToast('Şu anda aktif bir görev bulunmuyor.', 'info');
+        return;
+    }
+    
+    const task = window.currentDailyTask;
+    const participants = task.participants || [];
+    const hasJoined = participants.includes(myUsername);
+    
+    document.getElementById('modal-dt-title').innerText = task.title;
+    document.getElementById('modal-dt-desc').innerText = task.description;
+    document.getElementById('modal-dt-participants').innerText = participants.length;
+    
+    const imgContainer = document.getElementById('modal-dt-img-container');
+    if (task.imageUrl) {
+        document.getElementById('modal-dt-img').src = window.sanitizeUrl(task.imageUrl);
+        imgContainer.classList.remove('hidden');
+    } else {
+        imgContainer.classList.add('hidden');
+    }
+    
+    const joinBtn = document.getElementById('modal-dt-join-btn');
+    if (hasJoined) {
+        joinBtn.innerHTML = '<i class="fa-solid fa-check"></i> Göreve Katıldın';
+        joinBtn.className = 'bg-green-600 dark:bg-green-700 text-white font-bold py-2.5 px-6 rounded-full shadow-md flex items-center gap-2 cursor-default opacity-90';
+        joinBtn.onclick = null;
+    } else {
+        joinBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Göreve Katıl';
+        joinBtn.className = 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-2.5 px-6 rounded-full transition shadow-md flex items-center gap-2 cursor-pointer';
+        joinBtn.onclick = window.joinDailyTask;
+    }
+    
+    document.getElementById('daily-task-modal').style.display = 'flex';
+    document.body.classList.add('modal-open');
+    
+    fetchDailyTaskPosts(task.id);
+};
+
+window.closeDailyTaskModal = function() {
+    document.getElementById('daily-task-modal').style.display = 'none';
+    document.body.classList.remove('modal-open');
+};
+
+// Keşfet sayfasından gönderi oluşturulamadığı için kullanıcıyı doğrudan Feed ana sayfasına yönlendirir.
+// Feed sayfası açıldığında "action=dailytask" parametresini okur ve otomatik olarak görev paylaşım modalını açar.
+window.joinDailyTask = function() {
+    if (!window.currentDailyTask) return;
+    window.location.href = 'feed.html?action=dailytask';
+};
+
+async function fetchDailyTaskPosts(taskId) {
+    const container = document.getElementById('modal-dt-posts');
+    container.innerHTML = '<div class="text-center text-slate-500 dark:text-gray-400 py-4">Gönderiler yükleniyor...</div>';
+    
+    try {
+        const q = query(collection(db, "posts"), where("dailyTaskId", "==", taskId), orderBy("createdAt", "desc"), limit(20));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+            container.innerHTML = '<div class="text-center text-slate-500 dark:text-gray-400 py-8 bg-slate-50 dark:bg-gray-800/50 rounded-xl border border-slate-200 dark:border-gray-700">Bu göreve henüz kimse katılmadı.<br>İlk katılan sen ol! 🚀</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        snapshot.forEach(docSnap => {
+            const postData = docSnap.data();
+            const authorData = window.allUsersData[postData.author] || {};
+            const avatarImgSrc = authorData.avatarUrl ? window.sanitizeUrl(authorData.avatarUrl) : '';
+            const avatarHtml = avatarImgSrc ? `<img src="${avatarImgSrc}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center font-bold text-xs text-slate-500">👤</div>`;
+            const fullName = window.escapeHtml(authorData.fullName || postData.author);
+            
+            let mediaHtml = '';
+            if (postData.imageUrl) {
+                mediaHtml = `<img src="${window.sanitizeUrl(postData.imageUrl)}" class="w-full max-h-[250px] object-cover rounded-xl mt-3 border border-slate-100 dark:border-gray-700/50">`;
+            }
+            
+            const postContent = DOMPurify.sanitize(postData.content || '');
+            
+            const postHtml = `
+                <div class="bg-slate-50 dark:bg-gray-800/40 p-4 rounded-xl border border-slate-200 dark:border-gray-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-gray-700 transition" onclick="window.closeDailyTaskModal(); window.openPostDetail('${docSnap.id}')">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-gray-700 overflow-hidden border border-slate-300 dark:border-gray-600 flex-shrink-0">${avatarHtml}</div>
+                        <div>
+                            <div class="font-bold text-slate-900 dark:text-white text-[15px]">${fullName}</div>
+                            <div class="text-[13px] text-slate-500 dark:text-gray-400">@${window.escapeHtml(postData.author)}</div>
+                        </div>
+                    </div>
+                    <div class="text-[15px] text-slate-800 dark:text-gray-200 line-clamp-3">${postContent}</div>
+                    ${mediaHtml}
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', postHtml);
+        });
+        
+    } catch(e) {
+        console.error("Görev gönderileri çekilirken hata:", e);
+        container.innerHTML = '<div class="text-center text-red-500 py-4">Gönderiler yüklenirken bir hata oluştu.</div>';
+    }
+}
+
+// =====================================
+// POST DETAY GÖRÜNTÜLEME
+// =====================================
 window.openPostDetail = async function(postId) {
     if(!postId) return;
     const modal = document.getElementById('post-detail-modal');
@@ -471,7 +639,7 @@ window.openPostDetail = async function(postId) {
                 </div>
             </div>
         `;
-                window.initVideoPlayers?.(); window.observeModalVideos?.();
+        window.initVideoPlayers?.(); window.observeModalVideos?.();
     } catch(e) { console.error(e); }
 };
 
@@ -488,6 +656,10 @@ document.addEventListener('keydown', function(e) {
         const pdm = document.getElementById('post-detail-modal');
         if (pdm && pdm.style.display === 'flex') {
             window.closePostDetail();
+        }
+        const dtm = document.getElementById('daily-task-modal');
+        if (dtm && dtm.style.display === 'flex') {
+            window.closeDailyTaskModal();
         }
     }
 });

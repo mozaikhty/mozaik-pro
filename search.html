@@ -24,7 +24,6 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* .mobile-sidebar, .mobile-sidebar-overlay, .app-container { display: none !important; } */
         body { background-color: #f8fafc !important; color: #1e293b !important; }
         body.dark-mode { background-color: #0b1121 !important; color: #e5e7eb !important; }
         
@@ -40,8 +39,6 @@
     </script>
 
     <!-- ÜST MENÜ (Sadece masaüstü) -->
-    <!-- YENİ ÜST MENÜ (HEADER) -->
-    <!-- YENİ ÜST MENÜ (HEADER) -->
     <header class="sticky top-0 z-50 bg-white/90 dark:bg-[#0b1121]/90 backdrop-blur-md border-b border-slate-200 dark:border-gray-800 transition-colors duration-300" id="global-unified-header">
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             <!-- Logo -->
@@ -60,7 +57,6 @@
             <div class="flex items-center space-x-6 text-xl text-slate-600 dark:text-gray-300">
                 <i class="fa-regular fa-bell hidden md:block cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.location.href='notifications.html'"></i>
                 <i class="fa-regular fa-comment-dots cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.location.href='chat.html'"></i>
-                <!-- Mobil panel açma butonu -->
                 <i class="fa-solid fa-bars md:hidden text-2xl cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.openMobilePanel()"></i>
             </div>
         </div>
@@ -75,7 +71,6 @@
                     <span class="text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-500 dark:border-cyan-400 pb-1">Keşfet</span>
                     <span class="text-slate-400 dark:text-gray-500 cursor-pointer hover:text-slate-700 dark:hover:text-white transition" onclick="window.location.href='feed.html'">Takip</span>
                 </div>
-                
             </div>
 
             <!-- ARAMA ÇUBUĞU -->
@@ -88,37 +83,30 @@
 
         <!-- YATAY KATEGORİ MENÜSÜ -->
         <div class="flex items-center gap-3 overflow-x-auto hide-scrollbar py-2 mt-2 border-b border-slate-200 dark:border-gray-800 pb-4 transition-colors duration-300">
-            
             <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 min-w-[70px]" onclick="window.setCategory('all')">
                 <div id="cat-all" class="w-14 h-14 rounded-2xl bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-400/50 flex justify-center items-center text-xl shadow-sm transition"><i class="fa-solid fa-layer-group"></i></div>
                 <span class="text-[11px] text-slate-700 dark:text-white font-medium mt-1">Tümü</span>
             </div>
-            
             <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 min-w-[70px]" onclick="window.setCategory('fotoğraf')">
                 <div id="cat-foto" class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-gray-700 flex justify-center items-center text-xl transition hover:bg-slate-200 dark:hover:bg-gray-700"><i class="fa-solid fa-camera"></i></div>
                 <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium mt-1">Fotoğraf</span>
             </div>
-
             <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 min-w-[70px]" onclick="window.setCategory('video')">
                 <div id="cat-video" class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-gray-700 flex justify-center items-center text-xl transition hover:bg-slate-200 dark:hover:bg-gray-700"><i class="fa-solid fa-play"></i></div>
                 <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium mt-1">Video</span>
             </div>
-
             <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 min-w-[70px]" onclick="window.setCategory('müzik')">
                 <div id="cat-müzik" class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-gray-700 flex justify-center items-center text-xl transition hover:bg-slate-200 dark:hover:bg-gray-700"><i class="fa-solid fa-music"></i></div>
                 <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium mt-1">Müzik</span>
             </div>
-
             <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 min-w-[70px]" onclick="window.setCategory('yazı')">
                 <div id="cat-yazı" class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-gray-700 flex justify-center items-center text-xl transition hover:bg-slate-200 dark:hover:bg-gray-700"><i class="fa-regular fa-file-lines"></i></div>
                 <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium mt-1">Yazı</span>
             </div>
-
             <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 min-w-[70px]" onclick="window.setCategory('konum')">
                 <div id="cat-konum" class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-gray-700 flex justify-center items-center text-xl transition hover:bg-slate-200 dark:hover:bg-gray-700"><i class="fa-solid fa-location-dot"></i></div>
                 <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium mt-1">Konum</span>
             </div>
-
             <div class="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 min-w-[70px]" onclick="window.setCategory('ruh hali')">
                 <div id="cat-ruh" class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-gray-700 flex justify-center items-center text-xl transition hover:bg-slate-200 dark:hover:bg-gray-700"><i class="fa-regular fa-face-smile"></i></div>
                 <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium mt-1">Ruh Hali</span>
@@ -128,22 +116,25 @@
         <!-- WIDGET ALANLARI -->
         <div id="explore-widgets" class="space-y-8 mt-6">
             
-            <!-- GÜNÜN MOZAİĞİ -->
-            <div class="rounded-3xl bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/60 dark:to-cyan-900/30 border border-blue-100 dark:border-blue-800/40 p-5 flex flex-col md:flex-row relative overflow-hidden shadow-sm">
-                <div class="z-10 flex-1 pr-4">
+            <!-- GÜNÜN GÖREVİ (YENİLENMİŞ BANNER) -->
+            <div id="search-daily-task-card" class="rounded-3xl bg-gradient-to-r from-indigo-900/90 to-purple-900/90 border border-indigo-700/50 p-6 flex flex-col md:flex-row relative overflow-hidden shadow-lg cursor-pointer transition-transform hover:-translate-y-1" onclick="window.openDailyTaskModal()" style="display: none !important;">
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
+                <div class="z-10 flex-1 pr-4 relative">
                     <div class="flex items-center gap-2 mb-3">
-                        <i class="fa-solid fa-shapes text-cyan-500 dark:text-cyan-400"></i>
-                        <span class="text-sm font-bold text-cyan-600 dark:text-cyan-400">Günün Mozaiği</span>
+                        <div class="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-white backdrop-blur-sm"><i class="fa-solid fa-bolt text-sm"></i></div>
+                        <span class="text-sm font-bold text-white tracking-wide">Günün Görevi</span>
                     </div>
-                    <p class="text-slate-600 dark:text-gray-300 text-sm mb-1">Bugünün görevi:</p>
-                    <h2 class="text-slate-900 dark:text-white text-2xl font-bold mb-2">Gökyüzünün fotoğrafını çek ☁️</h2>
-                    <p class="text-slate-500 dark:text-gray-400 text-xs mb-5">Katılanların gönderileri burada birleşiyor.</p>
-                    <button class="border border-slate-300 dark:border-white/30 rounded-full px-5 py-2 text-slate-800 dark:text-white text-sm font-semibold hover:bg-slate-200 dark:hover:bg-white/10 transition flex items-center gap-2">Gönderilere göz at <i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                    <h2 id="search-dt-title" class="text-white text-2xl font-bold mb-2">Yükleniyor...</h2>
+                    <p id="search-dt-desc" class="text-indigo-200 text-sm mb-5 line-clamp-2">Lütfen bekleyin...</p>
+                    <div class="flex items-center gap-4">
+                        <button class="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full px-5 py-2 text-sm font-bold transition flex items-center gap-2 shadow-md">
+                            Katıl / İncele <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </button>
+                        <span id="search-dt-participants" class="text-xs font-semibold text-indigo-300">0 kişi katıldı</span>
+                    </div>
                 </div>
-                <div class="hidden md:flex relative w-64 h-32 mt-4 md:mt-0">
-                    <img src="https://images.unsplash.com/photo-1509803874385-db7c23652552?w=300&q=80" class="collage-img absolute right-0 top-0 w-32 h-20 object-cover rounded-lg rotate-3 z-20">
-                    <img src="https://images.unsplash.com/photo-1513002749550-c59d220b8e42?w=300&q=80" class="collage-img absolute right-16 top-10 w-28 h-20 object-cover rounded-lg -rotate-6 z-30">
-                    <img src="https://images.unsplash.com/photo-1499346156599-5561a7a40879?w=300&q=80" class="collage-img absolute right-32 top-2 w-32 h-24 object-cover rounded-lg -rotate-2 z-10 opacity-70">
+                <div class="hidden md:flex relative w-72 h-36 mt-4 md:mt-0 items-center justify-center" id="search-dt-img-container">
+                    <img id="search-dt-img" src="" class="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-xl border border-white/10 opacity-90 group-hover:opacity-100 transition duration-300">
                 </div>
             </div>
 
@@ -185,9 +176,7 @@
                 <span class="text-slate-400 dark:text-gray-500 text-xs font-semibold flex items-center gap-1 cursor-pointer">Daha fazlası <i class="fa-solid fa-arrow-right"></i></span>
             </div>
             
-            <div id="explore-results" class="grid grid-cols-2 md:grid-cols-3 gap-4 pb-8">
-                <!-- Javascript ile yüklenecek -->
-            </div>
+            <div id="explore-results" class="grid grid-cols-2 md:grid-cols-3 gap-4 pb-8"></div>
             <div id="loading-indicator" style="text-align:center; padding:20px; display:none;" class="text-slate-500 dark:text-gray-400">Yükleniyor...</div>
         </div>
 
@@ -201,6 +190,41 @@
                 <span class="close-modal text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer text-2xl font-bold" onclick="window.closePostDetail()">&times;</span>
             </div>
             <div id="post-detail-container" class="overflow-y-auto flex-1 text-slate-800 dark:text-white"></div>
+        </div>
+    </div>
+
+    <!-- GÜNÜN GÖREVİ MODALI -->
+    <div class="modal-overlay" id="daily-task-modal" style="display:none; z-index: 5500;" onclick="if(event.target === this) window.closeDailyTaskModal()">
+        <div class="modal-content bg-white dark:bg-[#151e32] border border-slate-200 dark:border-gray-700 w-[95%] max-w-[600px] mx-auto mt-10 rounded-2xl p-0 flex flex-col overflow-hidden shadow-2xl h-[85vh]">
+            <div class="modal-header bg-white dark:bg-[#151e32] border-b border-slate-200 dark:border-gray-800 p-4 flex justify-between items-center sticky top-0 z-10 m-0">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400"><i class="fa-solid fa-bolt text-sm"></i></div>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-lg m-0">Günün Görevi</h3>
+                </div>
+                <button class="close-btn text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-800" onclick="window.closeDailyTaskModal()">&times;</button>
+            </div>
+            <div class="overflow-y-auto flex-1 p-5">
+                <div class="mb-6">
+                    <h2 id="modal-dt-title" class="text-2xl font-black text-slate-900 dark:text-white mb-2">Yükleniyor...</h2>
+                    <p id="modal-dt-desc" class="text-slate-600 dark:text-gray-300 text-base mb-4">Lütfen bekleyin...</p>
+                    <div id="modal-dt-img-container" class="w-full rounded-xl overflow-hidden mb-5 hidden border border-slate-200 dark:border-gray-700 bg-slate-100 dark:bg-gray-800">
+                        <img id="modal-dt-img" src="" class="w-full h-auto max-h-[300px] object-contain">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm font-semibold text-slate-500 dark:text-gray-400"><i class="fa-solid fa-users mr-1"></i> <span id="modal-dt-participants">0</span> kişi katıldı</div>
+                        <button id="modal-dt-join-btn" onclick="window.joinDailyTask()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-2.5 px-6 rounded-full transition shadow-md flex items-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-plus"></i> Göreve Katıl
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="border-t border-slate-200 dark:border-gray-800 pt-5 mt-2">
+                    <h4 class="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><i class="fa-regular fa-image"></i> Bu göreve katılanlar</h4>
+                    <div id="modal-dt-posts" class="space-y-4">
+                        <div class="text-center text-slate-500 dark:text-gray-400 py-4">Gönderiler yükleniyor...</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
