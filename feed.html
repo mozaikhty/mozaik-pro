@@ -40,10 +40,11 @@
     </script>
 
     <!-- YENİ ÜST MENÜ (HEADER) -->
+    <!-- YENİ ÜST MENÜ (HEADER) -->
     <header class="sticky top-0 z-40 bg-white/90 dark:bg-[#0b1121]/90 backdrop-blur-md border-b border-slate-200 dark:border-gray-800 transition-colors duration-300">
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             <!-- Logo -->
-            <div class="flex items-center space-x-1 text-2xl font-bold text-slate-900 dark:text-white tracking-wide cursor-pointer" onclick="window.scrollTo(0,0)">
+            <div class="flex items-center space-x-1 text-2xl font-bold text-slate-900 dark:text-white tracking-wide cursor-pointer" onclick="window.location.href='feed.html'">
                 <span>M</span>
                 <div class="flex grid grid-cols-2 gap-0.5">
                     <div class="w-2 h-2 bg-pink-500 rounded-sm"></div>
@@ -56,14 +57,14 @@
 
             <!-- Ortadaki Menü -->
             <nav class="hidden md:flex space-x-8 text-sm font-medium">
+
                 <a href="#" id="tab-discover" onclick="window.switchFeedTab('discover')" class="text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-500 dark:border-cyan-400 pb-5 pt-5 transition">Öne Çıkanlar</a>
                 <a href="#" id="tab-following" onclick="window.switchFeedTab('following')" class="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white pb-5 pt-5 border-b-2 border-transparent transition">Ağım</a>
+            
             </nav>
 
             <!-- Sağ İkonlar -->
             <div class="flex items-center space-x-6 text-xl text-slate-600 dark:text-gray-300">
-                <i class="fa-solid fa-magnifying-glass cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.location.href='search.html'"></i>
-                <i class="fa-regular fa-square-plus cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.openMainPostModal()"></i>
                 <i class="fa-regular fa-comment-dots cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.location.href='chat.html'"></i>
                 <!-- Mobil profil avatarı (Sadece mobilde görünür) -->
                 <div id="mobile-avatar-header" class="md:hidden w-8 h-8 rounded-full bg-slate-200 dark:bg-gray-800 overflow-hidden cursor-pointer" onclick="window.goToMyProfile()">👤</div>
