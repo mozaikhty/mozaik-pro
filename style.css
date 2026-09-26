@@ -1454,3 +1454,13 @@ body.header-hidden .sticky.top-0:not(header):not(.modal-header) {
 .sticky.top-0:not(header):not(.modal-header) {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+
+/* Mesajlar Sayfası Özel Scroll Hiding Layout Düzeltmesi */
+body.header-hidden main.chat-main-container {
+    transform: translateY(-64px);
+    height: 100vh !important;
+}
+main.chat-main-container {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

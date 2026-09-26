@@ -205,5 +205,168 @@
     <script type="module" src="profile.js?v=7"></script>
     <script type="module" src="webrtc.js?v=7"></script>
     <script src="ui.js?v=29"></script>
+l>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mozaik / Anasayfa</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    
+    <!-- TAILWIND CSS & DARK MODE -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '.dark-mode'],
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=31">
+    
+    <style>
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark-mode ::-webkit-scrollbar-thumb { background: #334155; }
+        
+        /* .mobile-sidebar, .mobile-sidebar-overlay, .app-container { display: none !important; } */
+        
+        body { background-color: #f8fafc !important; color: #1e293b !important; }
+        body.dark-mode { background-color: #0b1121 !important; color: #e5e7eb !important; }
+    </style>
+</head>
+<body class="font-sans min-h-screen pb-24 text-slate-800 dark:text-gray-200 transition-colors duration-300">
+    <script>
+        try {
+            if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+        } catch(e) { console.warn("Tema okunamadı."); }
+    </script>
+
+    <!-- YENİ ÜST MENÜ (HEADER) -->
+    <!-- YENİ ÜST MENÜ (HEADER) -->
+    <header class="sticky top-0 z-40 bg-white/90 dark:bg-[#0b1121]/90 backdrop-blur-md border-b border-slate-200 dark:border-gray-800 transition-colors duration-300">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center cursor-pointer" onclick="window.location.href='feed.html'">
+                <img src="icon-192.png" alt="Mozaik Logo" class="h-10 w-auto object-contain">
+            </div>
+
+            <!-- Ortadaki Menü -->
+            <nav class="hidden md:flex space-x-8 text-sm font-medium">
+                <a href="#" id="tab-discover" onclick="window.switchFeedTab('discover')" class="text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-500 dark:border-cyan-400 pb-5 pt-5 transition">Ana Akış</a>
+                <a href="search.html" id="tab-search" class="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white border-b-2 border-transparent pb-5 pt-5 transition">Keşfet</a>
+                <a href="#" id="tab-following" onclick="window.switchFeedTab('following')" class="text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white border-b-2 border-transparent pb-5 pt-5 transition">Ağım</a>
+            </nav>
+<script>
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    if(params.get('tab') === 'following') {
+        const d = document.getElementById('tab-discover');
+        const f = document.getElementById('tab-following');
+        if(d && f) {
+            d.className = "text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white border-b-2 border-transparent pb-5 pt-5 transition";
+            f.className = "text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-500 dark:border-cyan-400 pb-5 pt-5 transition";
+        }
+    }
+  })();
+</script>
+
+
+            <!-- Sağ İkonlar -->
+            <div class="flex items-center space-x-6 text-xl text-slate-600 dark:text-gray-300">
+                <i class="fa-regular fa-bell cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.location.href='notifications.html'"></i>
+                <i class="fa-regular fa-comment-dots cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.location.href='chat.html'"></i>
+                <!-- Mobil panel açma butonu -->
+                <i class="fa-solid fa-bars md:hidden text-2xl cursor-pointer hover:text-cyan-500 dark:hover:text-white transition" onclick="window.openMobilePanel()"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- ANA İÇERİK IZGARASI -->
+    <main class="max-w-6xl mx-auto px-4 pt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- SOL SÜTUN -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Hikayeler -->
+            <div class="flex space-x-4 overflow-x-auto pb-2" id="stories-container" style="scrollbar-width: thin;"></div>
+
+            <!-- Ruh Hali Kartı -->
+            <div class="rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between bg-white dark:bg-[#151e32] border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-300">
+                <div class="mb-3 sm:mb-0 text-center sm:text-left">
+                    <h3 class="text-slate-900 dark:text-white font-semibold flex items-center justify-center sm:justify-start gap-2">
+                        <i class="fa-solid fa-sparkles text-cyan-500 dark:text-[#06b6d4]"></i> Bugünün ruh hali
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-gray-400 mt-1">Mozaik'te bugün en çok görülen ruh halleri</p>
+                </div>
+                <div class="flex space-x-4 text-center text-xs">
+                    <div><div class="text-2xl">😀</div><div class="text-slate-700 dark:text-gray-300 mt-1 font-medium">Mutlu</div><div class="text-slate-400 dark:text-gray-500">%28</div></div>
+                    <div><div class="text-2xl">😌</div><div class="text-slate-700 dark:text-gray-300 mt-1 font-medium">Sakin</div><div class="text-slate-400 dark:text-gray-500">%17</div></div>
+                </div>
+            </div>
+
+            <!-- GÖNDERİ PAYLAŞMA KUTUSU (Masaüstü için) -->
+            <div class="hidden md:flex gap-4 p-5 rounded-2xl bg-white dark:bg-[#151e32] border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-300" id="desktop-post-box">
+                <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-gray-800 overflow-hidden flex-shrink-0 cursor-pointer border border-slate-200 dark:border-gray-700" id="desktop-input-avatar" onclick="window.goToMyProfile()">👤</div>
+                <div class="flex-1">
+                    <textarea id="post-text" maxlength="2200" placeholder="Düşüncelerinizi aktarın..." class="w-full bg-transparent border-none text-slate-900 dark:text-white outline-none resize-none font-sans min-h-[60px] text-base placeholder-slate-400 dark:placeholder-gray-500"></textarea>
+                    
+                    <div id="image-preview-text" class="hidden text-sm font-bold text-cyan-600 dark:text-cyan-400 mt-2 gap-2 flex-wrap"></div>
+                    <div id="location-preview-text" class="hidden text-sm font-bold text-cyan-600 dark:text-cyan-400 mt-2">📍 <span id="loc-text-span"></span> <span class="text-red-500 cursor-pointer ml-1" onclick="window.removeLocation(false)">✖</span></div>
+                    <input type="file" id="image-input" accept="image/*,video/mp4,video/webm" multiple class="hidden">
+                    
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-100 dark:border-gray-800/50">
+                        <div class="flex gap-2 text-slate-500 dark:text-gray-400">
+                            <label for="image-input" class="w-9 h-9 rounded-full hover:bg-slate-100 dark:hover:bg-gray-800 flex items-center justify-center cursor-pointer transition"><i class="fa-regular fa-image"></i></label>
+                            <div class="w-9 h-9 rounded-full hover:bg-slate-100 dark:hover:bg-gray-800 flex items-center justify-center cursor-pointer transition" onclick="window.addLocation(false)"><i class="fa-solid fa-location-dot"></i></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs font-semibold text-slate-400 dark:text-gray-500" id="inline-char-count">2200</span>
+                            <button id="share-btn" disabled class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-6 rounded-full disabled:opacity-50 transition shadow-sm">Yayınla</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GÖNDERİLERİN GELECEĞİ ALAN -->
+            <div id="feed-container" class="space-y-6">
+                <div style="padding: 40px; text-align: center;" class="text-slate-500 dark:text-gray-400">İçerikler yükleniyor...</div>
+            </div>
+
+        </div>
+
+        <!-- SAĞ SÜTUN (Widgetlar) -->
+        <div class="hidden lg:flex flex-col space-y-4 sticky top-20 h-fit">
+            
+            <div class="rounded-2xl p-5 bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80')] bg-cover bg-center relative overflow-hidden group cursor-pointer shadow-sm" onclick="window.goToMyProfile()">
+                <div class="absolute inset-0 bg-slate-900/60 group-hover:bg-slate-900/50 transition"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-face-smile text-cyan-400"></i>
+                        <span class="font-bold text-sm text-white">Senin Mozaik'in</span>
+                    </div>
+                    <p class="text-xs text-gray-200">Profiline gitmek için tıkla.</p>
+                    <p class="text-xs text-white mt-8 font-medium">Hayatını mozaik gibi<br>bir araya getir. ✨</p>
+                </div>
+            </div>
+            
+            <div class="rounded-2xl p-5 bg-white dark:bg-[#151e32] border border-slate-200 dark:border-purple-900/50 shadow-sm transition-colors duration-300">
+                <div class="flex items-center gap-2 mb-3 border-b border-slate-100 dark:border-gray-800 pb-2">
+                    <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400"><i class="fa-solid fa-cube text-xs"></i></div>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">Önerilen Hesaplar</span>
+                </div>
+                <div id="who-to-follow-list" class="space-y-2 mt-2">
+                    <div class="text-sm text-slate-500 dark:text-gray-400 py-2">Öneriler yükleniyor...</div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    
 </body>
 </html>

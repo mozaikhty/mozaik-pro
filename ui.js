@@ -41,14 +41,7 @@ function loadUIComponents() {
     `;
 
     // === ALT MENÜ ===
-    const bottomNavHTML = `
-        <div class="bottom-nav">
-            <a href="feed.html" class="nav-item ${page === 'feed.html' ? 'active' : ''}">🏠</a>
-            <a href="search.html" class="nav-item ${page === 'search.html' ? 'active' : ''}">🔍</a>
-            <a href="chat.html" class="nav-item ${page === 'chat.html' ? 'active' : ''}">✉️</a>
-            <a href="notifications.html" class="nav-item ${page === 'notifications.html' ? 'active' : ''}">🔔</a>
-        </div>
-    `;
+    
 
     // === AYARLAR MODALI ===
     const settingsModalHTML = `
@@ -251,16 +244,16 @@ if (document.readyState === 'loading') {
                 this.handleScroll(window.scrollY || document.documentElement.scrollTop);
             }, { passive: true });
 
-            const inboxList = document.querySelector('.inbox-list');
-            if (inboxList) {
-                inboxList.addEventListener('scroll', () => {
-                    this.handleScroll(inboxList.scrollTop);
+            const scrollableContainers = document.querySelectorAll('.inbox-list');
+            scrollableContainers.forEach(container => {
+                container.addEventListener('scroll', () => {
+                    this.handleScroll(container.scrollTop);
                 }, { passive: true });
-            }
+            });
 
             // Init state
             setTimeout(() => {
-                const initY = window.scrollY || (inboxList ? inboxList.scrollTop : 0);
+                const initY = window.scrollY || (scrollableContainers.length > 0 ? scrollableContainers[0].scrollTop : 0);
                 this.lastScrollY = initY;
                 if (initY > 10) {
                     this.setBottomNavState(true);
