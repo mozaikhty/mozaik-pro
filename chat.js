@@ -74,7 +74,7 @@ document.addEventListener('click', function(event) {
 document.getElementById('chat-image-input')?.addEventListener('change', (e) => {
     if(e.target.files.length > 0) { 
         const sBtn = document.getElementById('send-btn'); if(sBtn) sBtn.disabled = false; 
-        const uploadLabel = document.getElementById('img-upload-label'); if(uploadLabel) uploadLabel.classList.add('text-[#06b6d4]', 'border-[#06b6d4]'); 
+        const uploadLabel = document.getElementById('img-upload-label'); if(uploadLabel) uploadLabel.classList.add('text-cyan-500', 'border-cyan-500'); 
     }
 });
 document.getElementById('msg-input')?.addEventListener('input', (e) => {
@@ -202,7 +202,7 @@ function updateInboxDisplay() {
                 avatar = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" class="w-full h-full object-cover">` : '👤'; link = `chat.html?user=${window.escapeHtml(otherUser)}`;
             } else {
                 title = DOMPurify.sanitize(conv.name); 
-                avatar = `<div class="bg-gradient-to-tr from-green-500 to-emerald-400 text-white w-full h-full flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-user-group"></i></div>`; 
+                avatar = `<div class="bg-gradient-to-tr from-green-400 to-emerald-500 text-white w-full h-full flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-user-group"></i></div>`; 
                 link = `chat.html?group=${conv.id}`;
             }
             
@@ -211,24 +211,24 @@ function updateInboxDisplay() {
             
             const isActive = (targetUsername && link.includes(targetUsername)) || (targetGroupId && link.includes(targetGroupId));
             
-            let subtitleHtml = isUnread ? `<b class="text-white">${DOMPurify.sanitize(lastMsgText)}</b>` : `<span class="text-gray-400">${DOMPurify.sanitize(lastMsgText)}</span>`;
+            let subtitleHtml = isUnread ? `<b class="text-slate-900 dark:text-white">${DOMPurify.sanitize(lastMsgText)}</b>` : `<span class="text-slate-500 dark:text-gray-400">${DOMPurify.sanitize(lastMsgText)}</span>`;
 
             html += `
-            <div class="flex items-center gap-4 p-3 rounded-2xl transition cursor-pointer border border-transparent hover:border-gray-700 hover:bg-[#151e32] mb-1 dm-user-card ${isActive ? 'bg-[#1e293b] border-[#06b6d4]/50' : ''}" onclick="window.location.href='${link}'">
-                <div class="w-14 h-14 rounded-2xl bg-gray-800 overflow-hidden flex-shrink-0 border border-gray-700 flex justify-center items-center text-xl">${avatar}</div>
+            <div class="flex items-center gap-4 p-3 rounded-2xl transition cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-gray-700 hover:bg-slate-50 dark:hover:bg-[#151e32] mb-1 dm-user-card ${isActive ? 'bg-blue-50 dark:bg-[#1e293b] border-cyan-500 dark:border-[#06b6d4]/50' : ''}" onclick="window.location.href='${link}'">
+                <div class="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-gray-800 overflow-hidden flex-shrink-0 border border-slate-300 dark:border-gray-700 flex justify-center items-center text-xl">${avatar}</div>
                 <div class="flex-1 min-w-0">
                     <div class="flex justify-between items-center mb-1">
-                        <h4 class="text-sm font-bold text-white truncate flex items-center">${title}</h4>
-                        <span class="text-[10px] font-semibold ${isUnread ? 'text-[#06b6d4]' : 'text-gray-500'}">${timeAgoStr}</span>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate flex items-center">${title}</h4>
+                        <span class="text-[10px] font-semibold ${isUnread ? 'text-cyan-500 dark:text-[#06b6d4]' : 'text-slate-400 dark:text-gray-500'}">${timeAgoStr}</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <p class="text-xs truncate max-w-[85%]">${subtitleHtml}</p>
-                        ${isUnread ? '<div class="w-2.5 h-2.5 rounded-full bg-[#06b6d4] shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>' : ''}
+                        ${isUnread ? '<div class="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm shadow-cyan-500/50"></div>' : ''}
                     </div>
                 </div>
             </div>`;
         });
-    } else { html = '<p class="text-center text-gray-500 py-10">Sohbet bulunamadı.</p>'; }
+    } else { html = '<p class="text-center text-slate-500 dark:text-gray-400 py-10">Sohbet bulunamadı.</p>'; }
     
     container.innerHTML = html;
 }
@@ -247,16 +247,16 @@ document.getElementById('new-chat-search')?.addEventListener('input', debounce((
             const title = `${safeTitle} ${uData.isVerified ? '<i class="fa-solid fa-circle-check text-blue-500 text-[10px] ml-1"></i>' : ''}`;
             
             html += `
-            <div class="flex items-center justify-between p-3 hover:bg-gray-800 rounded-xl cursor-pointer transition border border-transparent hover:border-gray-700" onclick="window.location.href='chat.html?user=${window.escapeHtml(uid)}'">
+            <div class="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer transition border border-transparent hover:border-slate-200 dark:hover:border-gray-700" onclick="window.location.href='chat.html?user=${window.escapeHtml(uid)}'">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gray-700 overflow-hidden border border-gray-600 flex items-center justify-center">${avatar}</div>
-                    <div><div class="text-sm font-bold text-white flex items-center">${title}</div><div class="text-[11px] text-gray-500">@${window.escapeHtml(uid)}</div></div>
+                    <div class="w-10 h-10 rounded-xl bg-slate-200 dark:bg-gray-700 overflow-hidden border border-slate-300 dark:border-gray-600 flex items-center justify-center text-slate-500 dark:text-white">${avatar}</div>
+                    <div><div class="text-sm font-bold text-slate-900 dark:text-white flex items-center">${title}</div><div class="text-[11px] text-slate-500 dark:text-gray-400">@${window.escapeHtml(uid)}</div></div>
                 </div>
-                <i class="fa-solid fa-chevron-right text-gray-600 text-xs"></i>
+                <i class="fa-solid fa-chevron-right text-slate-400 dark:text-gray-500 text-xs"></i>
             </div>`;
         });
     } else {
-        html = '<div class="text-center text-gray-500 py-4 text-sm">Kullanıcı bulunamadı.</div>';
+        html = '<div class="text-center text-slate-500 dark:text-gray-400 py-4 text-sm">Kullanıcı bulunamadı.</div>';
     }
     container.innerHTML = html;
 }, 300));
@@ -268,16 +268,16 @@ if (openGroupModalBtn) {
         const listDiv = document.getElementById('group-users-list'); if(!listDiv) return;
         
         let html = '';
-        if(myFollowing.length === 0) { listDiv.innerHTML = '<div class="text-center text-gray-500 py-4 text-sm">Önce ağınıza birilerini eklemelisiniz!</div>'; return; }
+        if(myFollowing.length === 0) { listDiv.innerHTML = '<div class="text-center text-slate-500 dark:text-gray-400 py-4 text-sm">Önce ağınıza birilerini eklemelisiniz!</div>'; return; }
         myFollowing.forEach(uid => {
             const uData = allUsersData[uid] || {}; const avatar = uData.avatarUrl ? `<img src="${window.sanitizeUrl(uData.avatarUrl)}" class="w-full h-full object-cover">` : '👤';
             html += `
-            <label class="flex items-center justify-between p-3 hover:bg-gray-800 rounded-xl cursor-pointer transition border border-transparent hover:border-gray-700">
+            <label class="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer transition border border-transparent hover:border-slate-200 dark:hover:border-gray-700">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gray-700 overflow-hidden border border-gray-600 flex items-center justify-center">${avatar}</div>
-                    <div class="text-sm font-bold text-white">@${window.escapeHtml(uid)}</div>
+                    <div class="w-10 h-10 rounded-xl bg-slate-200 dark:bg-gray-700 overflow-hidden border border-slate-300 dark:border-gray-600 flex items-center justify-center text-slate-500 dark:text-white">${avatar}</div>
+                    <div class="text-sm font-bold text-slate-800 dark:text-white">@${window.escapeHtml(uid)}</div>
                 </div>
-                <input type="checkbox" class="group-member-checkbox w-5 h-5 accent-[#06b6d4]" value="${window.escapeHtml(uid)}">
+                <input type="checkbox" class="group-member-checkbox w-5 h-5 accent-cyan-500" value="${window.escapeHtml(uid)}">
             </label>`;
         });
         listDiv.innerHTML = html;
@@ -324,7 +324,7 @@ async function setupActiveChat() {
         } catch(e) {}
     } else if (targetGroupId) {
         isGroupChat = true; chatId = targetGroupId;
-        const cAv = document.getElementById('chat-avatar'); if(cAv) cAv.innerHTML = `<div class="bg-gradient-to-tr from-green-500 to-emerald-400 text-white w-full h-full flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-user-group"></i></div>`;
+        const cAv = document.getElementById('chat-avatar'); if(cAv) cAv.innerHTML = `<div class="bg-gradient-to-tr from-green-400 to-emerald-500 text-white w-full h-full flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-user-group"></i></div>`;
         const addMemBtn = document.getElementById('add-member-btn'); if(addMemBtn) addMemBtn.style.display = 'flex';
         try {
             const gSnap = await getDoc(doc(db, "groups", targetGroupId));
@@ -429,7 +429,7 @@ function loadMessages() {
 
             if (data.type === 'system') {
                 const icon = data.text.includes('görüntülü') ? '<i class="fa-solid fa-video"></i>' : (data.text.includes('katıldı') ? '<i class="fa-solid fa-user-plus"></i>' : '<i class="fa-solid fa-phone"></i>');
-                html += `<div class="flex justify-center my-4"><span class="bg-gray-800/80 text-gray-400 text-xs px-4 py-1.5 rounded-full border border-gray-700 shadow-sm">${icon} ${DOMPurify.sanitize(data.text)} - ${timeString}</span></div>`;
+                html += `<div class="flex justify-center my-4"><span class="bg-slate-200 dark:bg-gray-800/80 text-slate-600 dark:text-gray-400 text-xs px-4 py-1.5 rounded-full border border-slate-300 dark:border-gray-700 shadow-sm">${icon} ${DOMPurify.sanitize(data.text)} - ${timeString}</span></div>`;
                 return; 
             }
 
@@ -442,26 +442,26 @@ function loadMessages() {
             let tickHtml = '';
             if (isMe) {
                 let isRead = false; if (isGroupChat) isRead = data.readBy && data.readBy.length > 0; else isRead = data.isRead === true;
-                tickHtml = `<span class="text-[10px] font-bold tracking-tighter ${isRead ? 'text-cyan-300' : 'text-white/60'}" title="${isRead ? 'Görüldü' : 'İletildi'}">${isRead ? '✓✓' : '✓'}</span>`;
+                tickHtml = `<span class="text-[10px] font-bold tracking-tighter ${isRead ? 'text-cyan-200' : 'text-white/60'}" title="${isRead ? 'Görüldü' : 'İletildi'}">${isRead ? '✓✓' : '✓'}</span>`;
             }
 
-            let replyHtml = ''; if (data.replyTo) replyHtml = `<div class="bg-black/20 border-l-2 border-[#06b6d4] p-2 rounded-lg text-xs mb-2 text-gray-200 truncate"><b class="text-[#06b6d4]">@${window.escapeHtml(data.replyTo.sender)}</b>: ${data.replyTo.text}</div>`;
+            let replyHtml = ''; if (data.replyTo) replyHtml = `<div class="${isMe ? 'bg-white/20 border-white text-white' : 'bg-slate-100 dark:bg-black/20 border-cyan-500 text-slate-700 dark:text-gray-200'} border-l-2 p-2 rounded-lg text-xs mb-2 truncate"><b class="${isMe ? 'text-white' : 'text-cyan-600 dark:text-cyan-400'}">@${window.escapeHtml(data.replyTo.sender)}</b>: ${data.replyTo.text}</div>`;
             let imageHtml = ''; if (data.imageUrl) imageHtml = `<img src="${window.sanitizeUrl(data.imageUrl)}" class="max-w-full max-h-64 rounded-xl mb-2 object-cover border border-white/10 shadow-sm">`;
             const safeText = data.text ? data.text.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
             
-            let actionsHtml = `<div class="flex gap-4 text-[11px] text-gray-500 mt-1 opacity-0 group-hover:opacity-100 transition px-2">`;
-            actionsHtml += `<span class="cursor-pointer hover:text-[#06b6d4] transition font-semibold" onclick="window.prepareReply('${docSnap.id}', '${data.sender}', '${safeText}')">Yanıtla</span>`;
+            let actionsHtml = `<div class="flex gap-4 text-[11px] text-slate-500 dark:text-gray-500 mt-1 opacity-0 group-hover:opacity-100 transition px-2">`;
+            actionsHtml += `<span class="cursor-pointer hover:text-cyan-600 dark:hover:text-cyan-400 transition font-semibold" onclick="window.prepareReply('${docSnap.id}', '${data.sender}', '${safeText}')">Yanıtla</span>`;
             if (isMe) {
-                if(!data.imageUrl) actionsHtml += `<span class="cursor-pointer hover:text-white transition font-semibold" onclick="window.editMessage('${docSnap.id}', '${safeText}', ${timeMillis})">Düzenle</span>`;
-                actionsHtml += `<span class="cursor-pointer hover:text-red-400 transition font-semibold" onclick="window.deleteMessage('${docSnap.id}')">Sil</span>`;
+                if(!data.imageUrl) actionsHtml += `<span class="cursor-pointer hover:text-slate-800 dark:hover:text-white transition font-semibold" onclick="window.editMessage('${docSnap.id}', '${safeText}', ${timeMillis})">Düzenle</span>`;
+                actionsHtml += `<span class="cursor-pointer hover:text-red-500 dark:hover:text-red-400 transition font-semibold" onclick="window.deleteMessage('${docSnap.id}')">Sil</span>`;
             }
             actionsHtml += `</div>`;
 
-            let bubbleClass = isMe ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-2xl rounded-tr-sm shadow-md' : 'bg-[#1e293b] text-gray-200 border border-gray-700 rounded-2xl rounded-tl-sm shadow-sm';
+            let bubbleClass = isMe ? 'bg-gradient-to-tr from-cyan-500 to-blue-500 text-white rounded-2xl rounded-tr-sm shadow-md' : 'bg-white dark:bg-[#1e293b] text-slate-800 dark:text-gray-200 border border-slate-200 dark:border-gray-700 rounded-2xl rounded-tl-sm shadow-sm';
 
             html += `
                 <div class="flex flex-col w-full group ${isMe ? 'items-end' : 'items-start'} mb-4">
-                    ${senderNameHtml ? `<span class="text-[10px] text-gray-500 font-bold mb-1 ml-1">${senderNameHtml}</span>` : ''}
+                    ${senderNameHtml ? `<span class="text-[10px] text-slate-500 dark:text-gray-500 font-bold mb-1 ml-1">${senderNameHtml}</span>` : ''}
                     <div class="max-w-[85%] md:max-w-[70%]">
                         <div class="p-3 ${bubbleClass}">
                             ${replyHtml}
@@ -519,7 +519,7 @@ async function sendMessage() {
     if (file && file.size > 5 * 1024 * 1024) {
         alert("Göndermek istediğiniz fotoğraf 5 MB'dan büyük olamaz!");
         if(imgInput) imgInput.value = ''; 
-        const upLabel = document.getElementById('img-upload-label'); if(upLabel) { upLabel.classList.remove('text-[#06b6d4]', 'border-[#06b6d4]'); upLabel.classList.add('text-gray-400'); }
+        const upLabel = document.getElementById('img-upload-label'); if(upLabel) { upLabel.classList.remove('text-cyan-500', 'border-cyan-500'); upLabel.classList.add('text-slate-500', 'dark:text-gray-400'); }
         if (text.length === 0 && sendBtn) sendBtn.disabled = true;
         return; 
     }
@@ -527,7 +527,7 @@ async function sendMessage() {
     if(sendBtn) sendBtn.disabled = true; 
     msgInput.value = ''; 
     const picker = document.getElementById('chat-emoji-picker'); if(picker) { picker.classList.add('hidden'); picker.classList.remove('flex'); }
-    const uploadLabel = document.getElementById('img-upload-label'); if(uploadLabel) { uploadLabel.classList.remove('text-[#06b6d4]', 'border-[#06b6d4]'); uploadLabel.classList.add('text-gray-400'); }
+    const uploadLabel = document.getElementById('img-upload-label'); if(uploadLabel) { uploadLabel.classList.remove('text-cyan-500', 'border-cyan-500'); uploadLabel.classList.add('text-slate-500', 'dark:text-gray-400'); }
     
     try {
         let imgUrl = null;
@@ -606,7 +606,7 @@ document.getElementById('audio-call-btn')?.addEventListener('click', () => {
 document.getElementById('add-member-btn')?.addEventListener('click', () => {
     const modal = document.getElementById('add-member-modal'); if(modal) modal.style.display = 'flex';
     const inp = document.getElementById('add-member-search'); if(inp) { inp.value = ''; inp.focus(); }
-    const res = document.getElementById('add-member-results'); if(res) res.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center; font-size:13px;">Kişi aratın...</div>';
+    const res = document.getElementById('add-member-results'); if(res) res.innerHTML = '<div class="text-slate-500 dark:text-gray-400 text-center text-sm py-4">Kişi aratın...</div>';
 });
 
 document.getElementById('add-member-search')?.addEventListener('input', debounce((e) => {
@@ -617,7 +617,7 @@ document.getElementById('add-member-search')?.addEventListener('input', debounce
     let html = '';
     
     if(!text) {
-        container.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center; font-size:13px;">İsim veya kullanıcı adı yazın...</div>';
+        container.innerHTML = '<div class="text-slate-500 dark:text-gray-400 text-center text-sm py-4">İsim veya kullanıcı adı yazın...</div>';
         return;
     }
 
@@ -638,20 +638,20 @@ document.getElementById('add-member-search')?.addEventListener('input', debounce
             const safeTitle = DOMPurify.sanitize(uData.fullName || uid);
             
             html += `
-                <div class="flex items-center justify-between p-2 hover:bg-gray-800 rounded-xl transition">
+                <div class="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-gray-800 rounded-xl transition">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-gray-700 overflow-hidden flex justify-center items-center">${avatar}</div>
+                        <div class="w-10 h-10 rounded-xl bg-slate-200 dark:bg-gray-700 overflow-hidden flex justify-center items-center text-slate-500 dark:text-gray-300 border border-slate-300 dark:border-gray-600">${avatar}</div>
                         <div>
-                            <div class="font-bold text-sm text-white">${safeTitle}</div>
-                            <div class="text-xs text-gray-500">@${window.escapeHtml(uid)}</div>
+                            <div class="font-bold text-sm text-slate-900 dark:text-white">${safeTitle}</div>
+                            <div class="text-xs text-slate-500 dark:text-gray-400">@${window.escapeHtml(uid)}</div>
                         </div>
                     </div>
-                    <button onclick="window.addMemberToGroup('${window.escapeHtml(uid)}')" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">Ekle</button>
+                    <button onclick="window.addMemberToGroup('${window.escapeHtml(uid)}')" class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">Ekle</button>
                 </div>
             `;
         });
     } else {
-        html = '<div style="padding:10px; color:#64748b; text-align:center; font-size:13px;">Kişi bulunamadı veya zaten grupta.</div>';
+        html = '<div class="text-slate-500 dark:text-gray-400 text-center text-sm py-4">Kişi bulunamadı veya zaten grupta.</div>';
     }
     container.innerHTML = html;
 }, 300));

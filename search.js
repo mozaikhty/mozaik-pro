@@ -155,13 +155,12 @@ async function loadExplorePosts(isLoadMore = false) {
 
         if(newPosts.length === 0) {
             if(!isLoadMore && (!allPosts || allPosts.length === 0)) {
-                if(exploreResults) exploreResults.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10">Bu kategoride içerik bulunamadı.</div>';
+                if(exploreResults) exploreResults.innerHTML = '<div class="col-span-full text-center text-slate-400 dark:text-gray-500 py-10">Bu kategoride içerik bulunamadı.</div>';
                 if(popularResults) popularResults.innerHTML = '';
             }
         } else {
             await window.fetchMissingUsers(Array.from(neededUsers));
             
-            // Puana göre sırala ki en iyiler popüler bölümüne düşsün
             newPosts.sort((a,b) => b.score - a.score);
             
             if(isLoadMore) {
@@ -206,16 +205,15 @@ window.addEventListener('scroll', debounce(() => {
 window.setCategory = function(cat) {
     currentCategory = cat;
     
-    // Aktif stil güncellemesi
     const categories = ['all', 'fotoğraf', 'video', 'müzik', 'yazı', 'konum', 'ruh hali'];
     categories.forEach(c => {
         let elId = 'cat-' + (c === 'all' ? 'all' : (c === 'fotoğraf' ? 'foto' : c));
         let el = document.getElementById(elId);
         if(el) {
             if (c === cat) {
-                el.className = "w-14 h-14 rounded-2xl bg-cyan-900/30 text-cyan-400 border border-cyan-400/50 flex justify-center items-center text-xl shadow-[0_0_15px_rgba(6,182,212,0.2)] transition";
+                el.className = "w-14 h-14 rounded-2xl bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-400/50 flex justify-center items-center text-xl shadow-sm transition";
             } else {
-                el.className = "w-14 h-14 rounded-2xl bg-gray-800 text-gray-400 border border-gray-700 flex justify-center items-center text-xl transition hover:bg-gray-700";
+                el.className = "w-14 h-14 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-200 dark:border-gray-700 flex justify-center items-center text-xl transition hover:bg-slate-200 dark:hover:bg-gray-700";
             }
         }
     });
@@ -239,9 +237,6 @@ window.setCategory = function(cat) {
     loadExplorePosts(false);
 };
 
-// ==========================================
-// TASARIM RENDER (HTML ÜRETİM) FONKSİYONU
-// ==========================================
 function renderExplore(postsToRender = [], append = false) {
     if(!exploreResults) return;
     if(postsToRender.length === 0) return;
@@ -249,7 +244,6 @@ function renderExplore(postsToRender = [], append = false) {
     let popularArr = [];
     let gridArr = [];
 
-    // Eğer "Tümü" seçiliyse ve ilk sayfayı yüklüyorsak, ilk 5 postu 'Popüler' listesine atalım.
     if (!append && currentCategory === 'all' && postsToRender.length >= 4) {
         popularArr = postsToRender.slice(0, 5);
         gridArr = postsToRender.slice(5);
@@ -257,17 +251,16 @@ function renderExplore(postsToRender = [], append = false) {
         gridArr = postsToRender;
     }
 
-    // 1. POPÜLER BÖLÜMÜNÜ ÇİZ (Yatay Kartlar)
     if (popularResults && popularArr.length > 0) {
         let popHtml = '';
         popularArr.forEach(post => {
             const author = post.isRepost ? post.originalPostAuthor : post.author;
             const aData = allUsersData[author] || {};
-            const avatar = aData.avatarUrl ? `<img src="${window.sanitizeUrl(aData.avatarUrl)}" class="w-6 h-6 rounded-full border border-gray-500 object-cover">` : `<div class="w-6 h-6 rounded-full border border-gray-500 bg-gray-700 flex items-center justify-center text-[10px]">👤</div>`;
+            const avatar = aData.avatarUrl ? `<img src="${window.sanitizeUrl(aData.avatarUrl)}" class="w-6 h-6 rounded-full border border-slate-300 dark:border-gray-500 object-cover">` : `<div class="w-6 h-6 rounded-full border border-slate-300 dark:border-gray-500 bg-slate-200 dark:bg-gray-700 flex items-center justify-center text-[10px]">👤</div>`;
             const likes = post.likes ? post.likes.length : 0;
             const comments = post.comments ? post.comments.length : 0;
             
-            let thumbnail = 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&q=80'; // Fallback
+            let thumbnail = 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&q=80';
             let tagIcon = 'location-dot'; let tagText = post.location || 'Gönderi';
 
             if (post.media && post.media.length > 0) {
@@ -285,7 +278,7 @@ function renderExplore(postsToRender = [], append = false) {
             cleanText = cleanText.replace(/<[^>]*>?/gm, ''); 
 
             popHtml += `
-            <div class="min-w-[240px] md:min-w-[280px] h-[320px] rounded-2xl overflow-hidden relative flex-shrink-0 snap-start cursor-pointer group border border-gray-800" onclick="window.openPostDetail('${post.id}')">
+            <div class="min-w-[240px] md:min-w-[280px] h-[320px] rounded-2xl overflow-hidden relative flex-shrink-0 snap-start cursor-pointer group border border-slate-200 dark:border-gray-800 shadow-sm" onclick="window.openPostDetail('${post.id}')">
                 <img src="${window.sanitizeUrl(thumbnail)}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-500">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                 
@@ -309,7 +302,6 @@ function renderExplore(postsToRender = [], append = false) {
         popularResults.innerHTML = popHtml;
     }
 
-    // 2. NORMAL ÖNERİLER BÖLÜMÜNÜ ÇİZ (Küçük Grid Kareleri)
     if (exploreResults && gridArr.length > 0) {
         let gridHtml = '';
         gridArr.forEach((post, index) => {
@@ -334,13 +326,12 @@ function renderExplore(postsToRender = [], append = false) {
             let cleanText = post.content || post.text || "";
             cleanText = cleanText.replace(/<[^>]*>?/gm, ''); 
 
-            // Masonry hissi için rastgele bazı kartları yatay geniş yapıyoruz (Tailwind col-span)
             let spanClass = (index % 7 === 0) ? 'col-span-2 aspect-[2/1]' : 'col-span-1 aspect-[4/5]';
-            if (!thumbnail) spanClass = 'col-span-1 aspect-[4/5] bg-gray-800 border border-gray-700';
+            if (!thumbnail) spanClass = 'col-span-1 aspect-[4/5] bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-700';
 
             gridHtml += `
-            <div class="rounded-xl overflow-hidden relative cursor-pointer group ${spanClass}" onclick="window.openPostDetail('${post.id}')">
-                ${thumbnail ? `<img src="${window.sanitizeUrl(thumbnail)}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-500">` : `<div class="p-4 h-full flex items-center justify-center text-center"><p class="text-xs text-gray-300 line-clamp-4">${window.escapeHtml(cleanText)}</p></div>`}
+            <div class="rounded-xl overflow-hidden relative cursor-pointer group ${spanClass} shadow-sm dark:shadow-none" onclick="window.openPostDetail('${post.id}')">
+                ${thumbnail ? `<img src="${window.sanitizeUrl(thumbnail)}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-500">` : `<div class="p-4 h-full flex items-center justify-center text-center"><p class="text-xs text-slate-600 dark:text-gray-300 line-clamp-4">${window.escapeHtml(cleanText)}</p></div>`}
                 
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col justify-end p-3 pointer-events-none">
                     ${thumbnail && cleanText ? `<p class="text-white text-xs line-clamp-2">${window.escapeHtml(cleanText)}</p>` : ''}
@@ -357,7 +348,6 @@ function renderExplore(postsToRender = [], append = false) {
     }
 }
 
-// ARAMA MANTIĞI
 let searchTimeout = null;
 searchInput?.addEventListener('input', () => {
     clearTimeout(searchTimeout);
@@ -383,12 +373,12 @@ async function performSmartSearch() {
     
     const matchedTags = globalTrendingTags.filter(t => t.tag.toLowerCase().includes(q)).slice(0, 3);
     if(matchedTags.length > 0) {
-        html += '<div class="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Etiketler</div>';
+        html += '<div class="px-4 py-2 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">Etiketler</div>';
         matchedTags.forEach(t => {
             html += `
-                <div class="flex items-center gap-3 px-4 py-2 hover:bg-gray-800 cursor-pointer transition" onclick="window.setCategory('${t.tag}'); document.getElementById('smart-search-input').value=''; document.getElementById('search-suggestions').style.display='none';">
-                    <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-300">#</div>
-                    <div><div class="text-sm font-bold text-white">${t.tag}</div><div class="text-[10px] text-gray-500">Popüler Etiket</div></div>
+                <div class="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer transition" onclick="window.setCategory('${t.tag}'); document.getElementById('smart-search-input').value=''; document.getElementById('search-suggestions').style.display='none';">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-gray-700 flex items-center justify-center text-slate-600 dark:text-gray-300">#</div>
+                    <div><div class="text-sm font-bold text-slate-900 dark:text-white">${t.tag}</div><div class="text-[10px] text-slate-400 dark:text-gray-500">Popüler Etiket</div></div>
                 </div>
             `;
         });
@@ -404,23 +394,22 @@ async function performSmartSearch() {
     }).slice(0, 4);
     
     if(matchedUsers.length > 0) {
-        html += '<div class="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-2">Kişiler</div>';
+        html += '<div class="px-4 py-2 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mt-2">Kişiler</div>';
         matchedUsers.forEach(u => {
             const avatarHtml = u.avatarUrl ? `<img src="${window.sanitizeUrl(u.avatarUrl)}" class="w-full h-full object-cover">` : '👤';
             html += `
-                <div class="flex items-center gap-3 px-4 py-2 hover:bg-gray-800 cursor-pointer transition" onclick="window.location.href='profile.html?user=${window.escapeHtml(u.username)}'">
-                    <div class="w-8 h-8 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center">${avatarHtml}</div>
-                    <div><div class="text-sm font-bold text-white">${window.escapeHtml(u.fullName || u.username)}</div><div class="text-[10px] text-gray-500">@${window.escapeHtml(u.username)}</div></div>
+                <div class="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer transition" onclick="window.location.href='profile.html?user=${window.escapeHtml(u.username)}'">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center">${avatarHtml}</div>
+                    <div><div class="text-sm font-bold text-slate-900 dark:text-white">${window.escapeHtml(u.fullName || u.username)}</div><div class="text-[10px] text-slate-400 dark:text-gray-500">@${window.escapeHtml(u.username)}</div></div>
                 </div>
             `;
         });
     }
     
-    if(!html) html = '<div class="p-4 text-center text-gray-500 text-sm">Sonuç bulunamadı.</div>';
+    if(!html) html = '<div class="p-4 text-center text-slate-400 dark:text-gray-500 text-sm">Sonuç bulunamadı.</div>';
     searchSuggestions.innerHTML = html;
 }
 
-// POST DETAY MODALI MANTIĞI (Eski kod korundu, sadece arka planlar ayarlandı)
 window.openPostDetail = async function(postId) {
     if(!postId) return;
     const modal = document.getElementById('post-detail-modal');
@@ -429,12 +418,12 @@ window.openPostDetail = async function(postId) {
     
     document.body.classList.add('modal-open');
     modal.style.display = 'flex';
-    container.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Yükleniyor...</div>';
+    container.innerHTML = '<div style="padding:40px; text-align:center;" class="text-slate-500 dark:text-gray-400">Yükleniyor...</div>';
     
     try {
         const postRef = doc(db, "posts", postId);
         const postSnap = await getDoc(postRef);
-        if(!postSnap.exists()) { container.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Gönderi bulunamadı veya silinmiş.</div>'; return; }
+        if(!postSnap.exists()) { container.innerHTML = '<div style="padding:40px; text-align:center;" class="text-red-500">Gönderi bulunamadı veya silinmiş.</div>'; return; }
         
         const postData = postSnap.data();
         let originalAuthor = postData.author; if(postData.isRepost) originalAuthor = postData.originalPostAuthor;
@@ -442,7 +431,7 @@ window.openPostDetail = async function(postId) {
         
         const authorData = allUsersData[originalAuthor] || {};
         const vHtml = authorData.isVerified ? '<span style="color:#1da1f2; font-size:14px; margin-left:4px;">☑️</span>' : '';
-        const avatarImg = authorData.avatarUrl ? `<img src="${window.sanitizeUrl(authorData.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
+        const avatarImg = authorData.avatarUrl ? `<img src="${window.sanitizeUrl(authorData.avatarUrl)}" class="w-full h-full object-cover rounded-full">` : `👤`;
         const fullName = window.escapeHtml(authorData.fullName || originalAuthor);
         
         let mediaHtmlDetail = '';
@@ -454,30 +443,30 @@ window.openPostDetail = async function(postId) {
             mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
         } else if (postData.media && postData.media.length === 1) {
             let m = postData.media[0];
-            let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #334155; object-fit:contain;">`;
+            let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9))}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
             mediaHtmlDetail = tag;
         } else if (postData.imageUrl) {
-            mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #334155; object-fit:contain;">`;
+            mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
         }
         
         let cleanContent = postData.content || postData.text || "";
         cleanContent = cleanContent.replace(/<[^>]*>?/gm, ''); 
         
         container.innerHTML = `
-            <div style="padding: 10px 25px 25px 25px; color: white;">
+            <div style="padding: 10px 25px 25px 25px;">
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${window.escapeHtml(originalAuthor)}'">
-                    <div style="width:48px; height:48px; border-radius:12px; background:#1e293b; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #334155;">${avatarImg}</div>
+                    <div style="width:48px; height:48px; border-radius:50%; background:#e2e8f0; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #cbd5e1;">${avatarImg}</div>
                     <div style="flex:1;">
-                        <div style="font-weight:700; font-size:16px;">${fullName} ${vHtml}</div>
-                        <div style="color:#94a3b8; font-size:14px;">@${window.escapeHtml(originalAuthor)}</div>
+                        <div style="font-weight:700; font-size:16px;" class="text-slate-900 dark:text-white">${fullName} ${vHtml}</div>
+                        <div class="text-slate-500 dark:text-gray-400 text-sm">@${window.escapeHtml(originalAuthor)}</div>
                     </div>
                 </div>
                 ${mediaHtmlDetail}
-                <div style="font-size:16px; line-height:1.6; margin-bottom:15px; word-wrap:break-word;">
-                    ${window.escapeHtml(cleanContent).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="#" onclick="window.closePostDetail(); window.setCategory('#$1');" style="color:#06b6d4; font-weight:500; text-decoration:none;">#$1</a>`)}
+                <div class="text-base leading-relaxed text-slate-800 dark:text-gray-200 mb-4 break-words">
+                    ${window.escapeHtml(cleanContent).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="#" onclick="window.closePostDetail(); window.setCategory('#$1');" class="text-cyan-500 font-medium hover:underline">#$1</a>`)}
                 </div>
-                <div style="display:flex; gap:15px; color:#94a3b8; font-weight:600; padding-top:15px; border-top:1px solid #334155;">
-                    <span onclick="window.showLikes('${postId}', event)" style="cursor:pointer;">❤️ ${postData.likes ? postData.likes.length : 0} Beğeni</span>
+                <div class="flex gap-4 text-slate-500 dark:text-gray-400 font-semibold pt-4 border-t border-slate-200 dark:border-gray-800">
+                    <span onclick="window.showLikes('${postId}', event)" class="cursor-pointer hover:text-red-500 transition">❤️ ${postData.likes ? postData.likes.length : 0} Beğeni</span>
                     <span>💬 ${postData.comments ? postData.comments.length : 0} Yorum</span>
                 </div>
             </div>

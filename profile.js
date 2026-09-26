@@ -27,7 +27,6 @@ let isPostsLoaded = false;
 const urlParams = new URLSearchParams(window.location.search);
 let targetUsername = urlParams.get('user');
 
-// KAYDIRMA İLE YENİ GÖNDERİ ÇEKME
 window.addEventListener('scroll', () => { 
     if (isLoadingMore || !hasMorePosts) return; 
     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) { 
@@ -42,22 +41,10 @@ document.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal-overlay') && event.target.id !== 'story-viewer-overlay') {
         event.target.style.display = 'none';
         if(event.target.id === 'post-detail-modal') { window.currentOpenPostId = null; activeReplyParentId = null; document.getElementById('post-detail-container').innerHTML = ''; }
-        if(event.target.id === 'story-details-modal' || event.target.id === 'story-share-modal') { if(window.resumeStory) window.resumeStory(); }
     }
 });
 
 window.goToMyProfile = function() { if(myUsername) window.location.href = 'profile.html?user=' + myUsername; };
-
-window.logoutUser = function() { signOut(auth).then(() => { window.location.href = "index.html"; }); };
-
-window.switchProfileTab = function(tabName) {
-    currentProfileTab = tabName;
-    document.querySelectorAll('.feed-tabs .feed-tab').forEach(t => t.classList.remove('active'));
-    const activeTab = document.getElementById(tabName === 'posts' ? 'tab-profile-posts' : 'tab-profile-replies');
-    if(activeTab) activeTab.classList.add('active');
-    
-    if (isPostsLoaded) { window.renderProfileFeed(); } else { loadUserPosts(); }
-};
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -67,9 +54,6 @@ onAuthStateChanged(auth, async (user) => {
 
         if (!targetUsername) { targetUsername = myUsername; }
         
-        const checkMyBan = await getDoc(doc(db, "users", myUsername));
-        if (checkMyBan.exists() && checkMyBan.data().isBanned === true) { signOut(auth).then(() => { window.location.href = "index.html"; }); return; }
-
         onSnapshot(doc(db, "users", myUsername), async (docSnap) => { 
             if(docSnap.exists()) {
                 const u = docSnap.data();
@@ -80,17 +64,6 @@ onAuthStateChanged(auth, async (user) => {
                 await window.fetchMissingUsers(myFollowingList);
                 loadUserProfileData();
             }
-        });
-
-        onSnapshot(query(collection(db, "chats"), where("participants", "array-contains", myUsername)), (snapshot) => { 
-            activeChats = activeChats.filter(c => c.type === 'group'); 
-            snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'private' }); }); 
-            if(window.attachCallListeners) window.attachCallListeners(activeChats); 
-        });
-        onSnapshot(query(collection(db, "groups"), where("members", "array-contains", myUsername)), (snapshot) => { 
-            activeChats = activeChats.filter(c => c.type === 'private'); 
-            snapshot.forEach(docSnap => { activeChats.push({ id: docSnap.id, ...docSnap.data(), type:'group' }); }); 
-            if(window.attachCallListeners) window.attachCallListeners(activeChats); 
         });
 
         const urlPostId = urlParams.get('post');
@@ -105,9 +78,6 @@ window.toggleLike = async function(postId, isLiked, postAuthor, event, isDoubleT
     event.stopPropagation();
     if (window.isActionLocked && window.isActionLocked('like_' + postId)) return; 
     
-    let isDouble = (event && event.type === 'dblclick') || isDoubleTap;
-    if (isDouble && isLiked) return; 
-
     const postObj = globalPosts.find(p => p.id === postId);
     if (postObj) {
         if (!postObj.data.likes) postObj.data.likes = [];
@@ -125,9 +95,6 @@ window.toggleLike = async function(postId, isLiked, postAuthor, event, isDoubleT
         await updateDoc(postRef, { likes: arrayRemove(myUsername) }); 
     } else { 
         await updateDoc(postRef, { likes: arrayUnion(myUsername) }); 
-        if (postAuthor !== myUsername) { 
-            await addDoc(collection(db, "notifications"), { type: 'like', sender: myUsername, recipient: postAuthor, postId: postId, createdAt: serverTimestamp() }); 
-        } 
     } 
 };
 
@@ -146,16 +113,9 @@ window.deletePost = async function(postId) {
             if (detailModal) detailModal.style.display = 'none';
             window.currentOpenPostId = null;
 
-            if (postObj && postObj.data && postObj.data.imageUrl && !postObj.data.isRepost) {
-                try {
-                    const imageRef = ref(storage, postObj.data.imageUrl);
-                    await deleteObject(imageRef); 
-                } catch(imgErr) {}
-            }
             await deleteDoc(doc(db, "posts", postId)); 
         } catch(e) {
             console.error("Silme hatası:", e);
-            alert("İçerik silinirken bir hata oluştu."); 
         }
     } 
 };
@@ -172,52 +132,13 @@ window.repostPost = async function(postId, originalAuthor, event) {
     }
 };
 
-window.toggleDropdown = function(postId, event) {
-    event.stopPropagation();
-    document.querySelectorAll('.dropdown-menu').forEach(menu => { if(menu.id !== `dropdown-${postId}`) menu.style.display = 'none'; });
-    const menu = document.getElementById(`dropdown-${postId}`);
-    if(menu) menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
-};
-
-window.pinPost = async function(postId) {
-    try {
-        const userRef = doc(db, "users", myUsername);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-            const currentPinned = userSnap.data().pinnedPostId;
-            if (currentPinned === postId) {
-                await updateDoc(userRef, { pinnedPostId: null });
-            } else {
-                await updateDoc(userRef, { pinnedPostId: postId });
-            }
-        }
-    } catch(e) { console.error('Sabitleme hatası:', e); }
-};
-
-window.openEditModal = function(postId, currentContent) { currentlyEditingPostId = postId; document.getElementById('edit-post-input').value = currentContent; document.getElementById('edit-post-modal').style.display = 'flex'; };
-
-document.getElementById('save-edited-post-btn')?.addEventListener('click', async () => {
-    if(!currentlyEditingPostId) return; const newContent = document.getElementById('edit-post-input').value.trim(); if(!newContent) return;
-    if (newContent.length > 280) { alert("Gönderi en fazla 280 karakter olabilir!"); return; }
-    
-    const postObj = globalPosts.find(p => p.id === currentlyEditingPostId);
-    if (postObj) {
-        postObj.data.content = newContent;
-        postObj.data.isEdited = true;
-        window.renderProfileFeed();
-        if (window.currentOpenPostId === currentlyEditingPostId) window.openPostDetail(currentlyEditingPostId);
-    }
-    document.getElementById('edit-post-modal').style.display = 'none';
-    try { await updateDoc(doc(db, "posts", currentlyEditingPostId), { content: newContent, isEdited: true }); } catch(e) {}
-});
-
 window.openShareModal = function(postId, event) {
     event.stopPropagation(); postToShare = postId; const container = document.getElementById('share-users-list'); container.innerHTML = '';
-    if(myFollowingList.length === 0) { container.innerHTML = '<div style=\"padding:20px; text-align:center; color:#64748b;\">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; }
+    if(myFollowingList.length === 0) { container.innerHTML = '<div style=\"padding:20px; text-align:center;\" class="text-slate-500 dark:text-gray-400">İletmek için önce ağınıza kişi eklemelisiniz.</div>'; }
     else {
         myFollowingList.forEach(uname => {
-            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${window.sanitizeUrl(uData.avatarUrl)}\">` : `👤`; let vHtml = uData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : '';
-            container.innerHTML += `<div class=\"user-row\" onclick=\"window.sendPostAsMessage('${window.escapeHtml(uname)}')\"><div class=\"row-avatar\">${avatarHtml}</div><div style=\"flex:1;\"><div style=\"font-weight:700;\">${window.escapeHtml(uData.fullName || uname)} ${vHtml}</div><div style=\"font-size:13px; color:#64748b;\">@${window.escapeHtml(uname)}</div></div><button style=\"background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; padding:6px 15px; border-radius:6px; font-weight:600; cursor:pointer;\">Gönder</button></div>`;
+            let uData = allUsersData[uname] || {}; let avatarHtml = uData.avatarUrl ? `<img src=\"${window.sanitizeUrl(uData.avatarUrl)}\" class="w-10 h-10 rounded-full object-cover">` : `👤`; 
+            container.innerHTML += `<div class=\"flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-gray-800 rounded-xl cursor-pointer\" onclick=\"window.sendPostAsMessage('${window.escapeHtml(uname)}')\"><div class=\"flex-shrink-0\">${avatarHtml}</div><div style=\"flex:1;\"><div class="font-bold text-slate-900 dark:text-white">${window.escapeHtml(uData.fullName || uname)}</div><div class="text-xs text-slate-500 dark:text-gray-400">@${window.escapeHtml(uname)}</div></div><button class="bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm">Gönder</button></div>`;
         });
     }
     document.getElementById('share-dm-modal').style.display = 'flex';
@@ -261,7 +182,7 @@ window.openPostDetail = async function(postId) {
     
     let originalAuthor = postData.author; if(postData.isRepost) { originalAuthor = postData.originalPostAuthor; }
     const authorData = allUsersData[originalAuthor] || {}; const likesArray = postData.likes || []; const isLiked = likesArray.includes(myUsername);
-    const vHtml = authorData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : ''; const avatarImg = authorData.avatarUrl ? `<img src=\"${window.sanitizeUrl(authorData.avatarUrl)}\" style=\"width:100%;height:100%;object-fit:cover; border-radius:50%;\">` : `👤`;
+    const vHtml = authorData.isVerified ? '<span class=\"verified-badge\">☑️</span>' : ''; const avatarImg = authorData.avatarUrl ? `<img src=\"${window.sanitizeUrl(authorData.avatarUrl)}\" class="w-full h-full object-cover rounded-full">` : `👤`;
     const fullName = window.escapeHtml(authorData.fullName || originalAuthor);
     
     let timeString = "";
@@ -270,9 +191,9 @@ window.openPostDetail = async function(postId) {
         else if (postData.createdAt.seconds) { timeString = new Date(postData.createdAt.seconds * 1000).toLocaleString('tr-TR', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
     }
     
-    let locHtml = postData.location ? `<span style="font-size:14px; color:#3b82f6; margin-left:10px;">📍 ${window.escapeHtml(postData.location)}</span>` : '';
+    let locHtml = postData.location ? `<span style="font-size:14px; color:#06b6d4; margin-left:10px;">📍 ${window.escapeHtml(postData.location)}</span>` : '';
     let repostLabel = "";
-    if(postData.isRepost) { repostLabel = `<div style=\"color:#64748b; font-weight:600; font-size:12px; margin-bottom:10px; padding:0 20px;\">🔁 @${postData.author} ağında paylaştı</div>`; }
+    if(postData.isRepost) { repostLabel = `<div class="text-xs font-semibold text-slate-500 dark:text-gray-400 mb-2 px-5">🔁 @${postData.author} ağında paylaştı</div>`; }
 
             let mediaHtmlDetail = '';
             if (postData.media && postData.media.length > 1) {
@@ -283,48 +204,48 @@ window.openPostDetail = async function(postId) {
                 mediaHtmlDetail = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; max-width: 100%; margin-bottom:15px;">${slides}</div>`;
             } else if (postData.media && postData.media.length === 1) {
                 let m = postData.media[0];
-                let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9), window.currentOpenPostId)}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #334155; object-fit:contain;">`;
+                let tag = m.type === 'video' ? `${window.renderCustomVideo(window.sanitizeUrl(m.url), "", "modal-" + Math.random().toString(36).substr(2,9), window.currentOpenPostId)}` : `<img src="${window.sanitizeUrl(m.url)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
                 mediaHtmlDetail = tag;
             } else if (postData.imageUrl) {
-                mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #334155; object-fit:contain;">`;
+                mediaHtmlDetail = `<img src="${window.sanitizeUrl(postData.imageUrl)}" style="width:100%; max-height:60vh; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; object-fit:contain;">`;
             }
 
             let html = `
                 ${repostLabel}
-                <div style="padding: 10px 25px 25px 25px; border-bottom:1px solid #334155;">
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; cursor:pointer;" onclick="window.location.href='profile.html?user=${originalAuthor}'">
-                        <div style="width:48px; height:48px; border-radius:50%; background:#1e293b; overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:24px; border: 1px solid #334155;">${avatarImg}</div>
-                        <div style="flex:1;">
-                            <div style="font-weight:700; font-size:16px; color:white;">${fullName} ${vHtml}</div>
-                            <div style="color:#94a3b8; font-size:14px;">@${originalAuthor} ${locHtml}</div>
+                <div class="px-5 pb-5 border-b border-slate-200 dark:border-gray-800">
+                    <div class="flex items-center gap-3 mb-4 cursor-pointer" onclick="window.location.href='profile.html?user=${originalAuthor}'">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 flex justify-center items-center">${avatarImg}</div>
+                        <div class="flex-1">
+                            <div class="font-bold text-slate-900 dark:text-white">${fullName} ${vHtml}</div>
+                            <div class="text-sm text-slate-500 dark:text-gray-400">@${originalAuthor} ${locHtml}</div>
                         </div>
                     </div>
-                    <div style="font-size:16px; line-height:1.6; color:white; margin-bottom:15px; word-wrap:break-word;">
-                        ${postData.content ? DOMPurify.sanitize(postData.content).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" style="color:#06b6d4; font-weight:500; text-decoration:none;">#$1</a>`) : ''}
+                    <div class="text-base leading-relaxed text-slate-800 dark:text-gray-200 mb-4 break-words">
+                        ${postData.content ? DOMPurify.sanitize(postData.content).replace(/#([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ_]+)/g, `<a href="search.html?tag=$1" class="text-cyan-500 font-medium hover:underline">#$1</a>`) : ''}
                     </div>
                     ${mediaHtmlDetail}
-                    <div style="color:#64748b; font-size:13px; padding-bottom:15px; border-bottom:1px solid #334155;">${timeString}</div>
+                    <div class="text-xs text-slate-500 dark:text-gray-400 pb-3">${timeString}</div>
             
-            <div style=\"display:flex; justify-content:flex-start; gap:30px; padding:15px 0; color:#94a3b8;\">
-                <div class=\"action-item\" onclick=\"document.getElementById('detail-comment-input').focus()\"><span class=\"action-icon\" style="background:#1e293b; border-color:#334155;">💬</span> ${(postData.comments || []).length}</div>
-                <div class=\"action-item repost-box\" onclick=\"window.repostPost('${postId}', '${originalAuthor}', event)\"><span class=\"action-icon\" style="background:#1e293b; border-color:#334155;">🔁</span></div>
-                <div class=\"action-item like-box ${isLiked ? 'liked' : ''}\" onclick=\"window.toggleLike('${postId}', ${isLiked}, '${originalAuthor}', event)\"><span class=\"action-icon\" style="background:#1e293b; border-color:#334155;">${isLiked ? '❤️' : '🤍'}</span> <span onclick=\"window.showLikes('${postId}', event)\">${likesArray.length}</span></div>
-                <div class=\"action-item ${myBookmarks.includes(postId) ? 'liked' : ''}\" onclick=\"window.toggleBookmark('${postId}', ${myBookmarks.includes(postId)}, event)\" title=\"Yer İşaretlerine Ekle/Çıkar\"><span class=\"action-icon\" style="background:#1e293b; border-color:#334155;">${myBookmarks.includes(postId) ? '🔖' : '📑'}</span></div>
-                <div class=\"action-item\" onclick=\"window.openShareModal('${postId}', event)\"><span class=\"action-icon\" style="background:#1e293b; border-color:#334155;">📤</span></div>
+            <div class="flex gap-6 py-3 text-slate-500 dark:text-gray-400 font-semibold border-t border-slate-200 dark:border-gray-800">
+                <div class="cursor-pointer hover:text-blue-500 transition" onclick="document.getElementById('detail-comment-input').focus()">💬 ${(postData.comments || []).length}</div>
+                <div class="cursor-pointer hover:text-green-500 transition" onclick="window.repostPost('${postId}', '${originalAuthor}', event)">🔁</div>
+                <div class="cursor-pointer hover:text-red-500 transition ${isLiked ? 'text-red-500' : ''}" onclick="window.toggleLike('${postId}', ${isLiked}, '${originalAuthor}', event)">${isLiked ? '❤️' : '🤍'} <span onclick="window.showLikes('${postId}', event)">${likesArray.length}</span></div>
+                <div class="cursor-pointer hover:text-cyan-500 transition ${myBookmarks.includes(postId) ? 'text-cyan-500' : ''}" onclick="window.toggleBookmark('${postId}', ${myBookmarks.includes(postId)}, event)">${myBookmarks.includes(postId) ? '🔖' : '📑'}</div>
+                <div class="cursor-pointer hover:text-purple-500 transition" onclick="window.openShareModal('${postId}', event)">📤</div>
             </div>
         </div>
 
-        <div class=\"comments-wrapper\" style=\"padding: 0 25px;\">
+        <div class="px-5 pt-4">
             ${buildCommentsTree(postData.comments || [], null, 0, postId, originalAuthor)}
         </div>
         
-        <div style=\"position:sticky; bottom:0; background:#151e32; padding:20px 25px; border-top:1px solid #334155; display:flex; flex-direction:column; gap:10px;\">
-            <div id=\"replying-to-info\" style=\"display:none; font-size:13px; color:#94a3b8;\">
-                Yanıtlanıyor: <b id=\"replying-to-name\"></b> <span style=\"cursor:pointer; color:#ef4444; margin-left:10px;\" onclick=\"window.cancelDetailReply()\">İptal</span>
+        <div class="sticky bottom-0 bg-white dark:bg-[#151e32] p-4 border-t border-slate-200 dark:border-gray-800 flex flex-col gap-2">
+            <div id="replying-to-info" class="hidden text-xs text-slate-500 dark:text-gray-400">
+                Yanıtlanıyor: <b id="replying-to-name"></b> <span class="cursor-pointer text-red-500 ml-2" onclick="window.cancelDetailReply()">İptal</span>
             </div>
-            <div style=\"display:flex; gap:10px;\">
-                <input type=\"text\" id=\"detail-comment-input\" maxlength=\"500\" style=\"flex:1; background:#1e293b; border:1px solid #334155; padding:12px 15px; border-radius:8px; outline:none; font-size:15px; color:white;\" placeholder=\"Görüşünüzü bildirin...\">
-                <button onclick=\"window.sendDetailComment('${postId}', '${originalAuthor}')\" style=\"background:#06b6d4; color:white; border:none; border-radius:8px; padding:0 20px; font-weight:600; cursor:pointer;\">Gönder</button>
+            <div class="flex gap-2">
+                <input type="text" id="detail-comment-input" maxlength="500" class="flex-1 bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 px-4 py-2 rounded-xl outline-none text-sm text-slate-800 dark:text-white" placeholder="Görüşünüzü bildirin...">
+                <button onclick="window.sendDetailComment('${postId}', '${originalAuthor}')" class="bg-cyan-500 hover:bg-cyan-600 text-white border-none rounded-xl px-4 font-bold cursor-pointer transition shadow-sm">Gönder</button>
             </div>
         </div>
     `;
@@ -333,7 +254,6 @@ window.openPostDetail = async function(postId) {
     document.getElementById('post-detail-container').innerHTML = html; window.initVideoPlayers(); window.observeVideos();
     document.getElementById('post-detail-modal').style.display = 'flex';
     document.body.classList.add('modal-open');
-    document.getElementById('post-detail-modal').onclick = function(e) { if(e.target === this) window.closePostDetail(); };
 };
 
 function buildCommentsTree(allComments, parentId, depth = 0, postId = null, postAuthor = null) {
@@ -342,27 +262,27 @@ function buildCommentsTree(allComments, parentId, depth = 0, postId = null, post
     const children = allComments.filter(c => (c.parentId || null) === safeParentId).sort((a,b) => a.timestamp - b.timestamp);
     
     children.forEach(c => {
-        const cUserData = allUsersData[c.author] || {}; const avatarHtml = cUserData.avatarUrl ? `<img src=\"${window.sanitizeUrl(cUserData.avatarUrl)}\" style="width:100%;height:100%;object-fit:cover;">` : `👤`;
-        const vHtml = cUserData.isVerified ? `<span class=\"verified-badge\" style=\"font-size:12px;\">☑️</span>` : '';
+        const cUserData = allUsersData[c.author] || {}; const avatarHtml = cUserData.avatarUrl ? `<img src=\"${window.sanitizeUrl(cUserData.avatarUrl)}\" class="w-full h-full object-cover">` : `👤`;
+        const vHtml = cUserData.isVerified ? `<span class=\"text-blue-500 text-[10px]\">☑️</span>` : '';
         const safeCommentId = c.id || ('legacy_' + Math.random().toString(36).substr(2, 9));
 
         let deleteBtnHtml = '';
-        if (myUsername === c.author || myUsername === postAuthor) { deleteBtnHtml = `<div class=\"comment-action-btn\" style=\"color:#ef4444;\" onclick=\"window.deleteComment('${postId}', '${safeCommentId}')\">Sil</div>`; }
+        if (myUsername === c.author || myUsername === postAuthor) { deleteBtnHtml = `<div class="cursor-pointer text-red-500 hover:underline" onclick="window.deleteComment('${postId}', '${safeCommentId}')">Sil</div>`; }
 
         html += `
-            <div class=\"comment-node\" style="background:#1e293b; border-color:#334155;">
-                <div class=\"comment-header\">
-                    <div class=\"comment-avatar\" onclick=\"window.location.href='profile.html?user=${c.author}'\" style=\"cursor:pointer; border-radius:50%;\">${avatarHtml}</div>
-                    <div class=\"comment-body\">
-                        <div><a href=\"profile.html?user=${window.escapeHtml(c.author)}\" class=\"comment-author-name\" style="color:white;">${window.escapeHtml(cUserData.fullName || c.author)}</a> ${vHtml} <span style=\"color:#94a3b8; font-size:13px; font-weight:normal;\">@${window.escapeHtml(c.author)}</span></div>
-                        <div class=\"comment-text\" style="color:#cbd5e1;">${DOMPurify.sanitize(c.text)}</div>
-                        <div class=\"comment-actions\" style="color:#94a3b8;">
-                            <div class=\"comment-action-btn\" onclick=\"window.setDetailReply('${safeCommentId}', '${c.author}')\">Yanıtla</div>
+            <div class="mt-4 bg-slate-50 dark:bg-gray-800/50 p-3 rounded-xl border border-slate-200 dark:border-gray-700/50">
+                <div class="flex gap-3 items-start">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-gray-700 flex items-center justify-center cursor-pointer overflow-hidden flex-shrink-0" onclick="window.location.href='profile.html?user=${c.author}'">${avatarHtml}</div>
+                    <div class="flex-1">
+                        <div><a href="profile.html?user=${window.escapeHtml(c.author)}" class="font-bold text-slate-800 dark:text-white text-sm hover:underline">${window.escapeHtml(cUserData.fullName || c.author)}</a> ${vHtml} <span class="text-slate-500 dark:text-gray-400 text-xs font-normal">@${window.escapeHtml(c.author)}</span></div>
+                        <div class="text-sm text-slate-600 dark:text-gray-300 mt-1">${DOMPurify.sanitize(c.text)}</div>
+                        <div class="flex gap-4 mt-2 text-xs font-semibold text-slate-500 dark:text-gray-400">
+                            <div class="cursor-pointer hover:text-slate-800 dark:hover:text-white transition" onclick="window.setDetailReply('${safeCommentId}', '${c.author}')">Yanıtla</div>
                             ${deleteBtnHtml}
                         </div>
                     </div>
                 </div>
-                <div class=\"comment-replies\">
+                <div class="ml-4 pl-4 border-l-2 border-slate-200 dark:border-gray-700 mt-2">
                     ${buildCommentsTree(allComments, safeCommentId, depth + 1, postId, postAuthor)}
                 </div>
             </div>
@@ -389,16 +309,6 @@ window.sendDetailComment = async function(postId, postAuthor) {
     }
 
     await updateDoc(doc(db, "posts", postId), { comments: arrayUnion(newComment) });
-    
-    let notifyTarget = postAuthor;
-    if (activeReplyParentId && postObj && postObj.data && postObj.data.comments) {
-        const parentComment = postObj.data.comments.find(c => c.id === activeReplyParentId);
-        if (parentComment && parentComment.author) notifyTarget = parentComment.author;
-    }
-    if (notifyTarget && notifyTarget !== myUsername) {
-        await addDoc(collection(db, "notifications"), { type: 'comment', sender: myUsername, recipient: notifyTarget, postId: postId, createdAt: serverTimestamp() });
-    }
-
     input.value = ''; window.cancelDetailReply();
 };
 
@@ -422,9 +332,6 @@ window.deleteComment = async function(postId, commentId) {
     }
 };
 
-// ==========================================
-// 1. PROFİL BİLGİLERİNİ YÜKLEME VE BUTONLARI AYARLAMA (Tailwind Güncellemesi)
-// ==========================================
 function loadUserProfileData() {
     onSnapshot(doc(db, "users", targetUsername), async (docSnap) => {
         if (docSnap.exists()) {
@@ -433,7 +340,7 @@ function loadUserProfileData() {
             const isInfoHidden = data.hideInfo || false;
 
             const dFullName = document.getElementById('display-fullname'); 
-            if(dFullName) dFullName.innerHTML = `${window.escapeHtml(data.fullName || targetUsername)} ${data.isVerified ? '<span class="verified-badge">☑️</span>' : ''}`;
+            if(dFullName) dFullName.innerHTML = `${window.escapeHtml(data.fullName || targetUsername)} ${data.isVerified ? '<span class="text-blue-500 text-sm">☑️</span>' : ''}`;
             const dUsername = document.getElementById('display-username'); 
             if(dUsername) dUsername.innerText = `@${targetUsername}`;
             
@@ -457,23 +364,22 @@ function loadUserProfileData() {
             isTargetPrivate = data.isPrivate || false; isTargetVerified = data.isVerified || false; 
             
             const pBadge = document.getElementById('private-badge-container');
-            if(isTargetPrivate) { if(pBadge) pBadge.innerHTML = `<div class="bg-gray-800 text-gray-300 border border-gray-700 text-xs px-2 py-1 rounded-md inline-block mt-2">🔒 Bu hesap gizli</div>`; }
+            if(isTargetPrivate) { if(pBadge) pBadge.innerHTML = `<div class="bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-300 border border-slate-200 dark:border-gray-700 text-xs px-2 py-1 rounded-md inline-block mt-2 font-semibold">🔒 Bu hesap gizli</div>`; }
             else { if(pBadge) pBadge.innerHTML = ''; }
             
             const amIFollowing = currentProfileFollowers.includes(myUsername);
 
-            // Aksiyon Butonları (Tailwind Güncellemesi)
             const actionContainer = document.getElementById('action-buttons-container');
             if (isMe) {
-                if(actionContainer) actionContainer.innerHTML = `<button class="bg-gray-800 border border-gray-600 hover:bg-gray-700 text-white w-full py-2 rounded-xl font-bold transition text-sm" onclick="window.openProfileEdit()">Profili Düzenle</button>`;
+                if(actionContainer) actionContainer.innerHTML = `<button class="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-800 dark:text-white w-full py-2 rounded-xl font-bold transition text-sm shadow-sm" onclick="window.openProfileEdit()">Profili Düzenle</button>`;
             } else {
                 const mySnap = await getDoc(doc(db, "users", myUsername)); 
                 if(mySnap.exists() && mySnap.data().following) isFollowing = mySnap.data().following.includes(targetUsername); 
                 isRequested = (data.followRequests || []).includes(myUsername);
                 
                 if(actionContainer) actionContainer.innerHTML = `
-                    <button class="bg-gray-800 border border-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl transition flex items-center justify-center" onclick="window.location.href='chat.html?user=${targetUsername}'" title="Mesaj Gönder"><i class="fa-regular fa-envelope text-lg"></i></button>
-                    <button id="main-follow-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded-xl font-bold transition text-sm" onclick="window.toggleFollow()">Takip Et</button>
+                    <button class="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-800 dark:text-white px-4 py-2 rounded-xl transition flex items-center justify-center shadow-sm" onclick="window.location.href='chat.html?user=${targetUsername}'" title="Mesaj Gönder"><i class="fa-regular fa-envelope text-lg"></i></button>
+                    <button id="main-follow-btn" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-2 rounded-xl font-bold transition text-sm shadow-sm" onclick="window.toggleFollow()">Takip Et</button>
                 `;
                 updateFollowButtonUI();
             }
@@ -487,7 +393,7 @@ function loadUserProfileData() {
             if (isTargetPrivate && !isMe && !amIFollowing) {
                 if(feedContainer) {
                     feedContainer.style.display = 'block';
-                    feedContainer.innerHTML = `<div style="padding:50px 20px; text-align:center;"><div style="font-size:40px; margin-bottom:10px;">🔒</div><div style="font-size:18px; font-weight:800; color:#e2e8f0;">Bu hesap gizli</div><div style="color:#64748b; font-size:14px;">İçeriklerini görmek için takip edin.</div></div>`;
+                    feedContainer.innerHTML = `<div style="padding:50px 20px; text-align:center;"><div style="font-size:40px; margin-bottom:10px;">🔒</div><div style="font-size:18px; font-weight:800;" class="text-slate-800 dark:text-white">Bu hesap gizli</div><div class="text-slate-500 dark:text-gray-400 text-sm mt-1">İçeriklerini görmek için takip edin.</div></div>`;
                 }
                 isPostsLoaded = false; 
             } else { 
@@ -501,7 +407,7 @@ function loadUserProfileData() {
             const fCont = document.getElementById('profile-feed-container');
             if(fCont) {
                 fCont.style.display = 'block';
-                fCont.innerHTML = `<div style="padding:40px; text-align:center; color:#64748b;">Bu hesap mevcut değil.</div>`;
+                fCont.innerHTML = `<div style="padding:40px; text-align:center;" class="text-slate-500 dark:text-gray-400">Bu hesap mevcut değil.</div>`;
             }
         }
     });
@@ -654,15 +560,15 @@ function updateFollowButtonUI() {
     if(!btn) return;
     
     if(isFollowing) { 
-        btn.className = 'w-full bg-gray-800 border border-gray-600 hover:bg-gray-700 text-white py-2 rounded-xl font-bold transition text-sm';
+        btn.className = 'w-full bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-600 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-800 dark:text-white py-2 rounded-xl font-bold transition text-sm shadow-sm';
         btn.innerText = "Ağınızda"; 
     } 
     else if (isRequested) { 
-        btn.className = 'w-full bg-gray-800 border border-gray-600 hover:bg-gray-700 text-white py-2 rounded-xl font-bold transition text-sm';
+        btn.className = 'w-full bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-600 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-800 dark:text-white py-2 rounded-xl font-bold transition text-sm shadow-sm';
         btn.innerText = "İstek Gönderildi"; 
     } 
     else { 
-        btn.className = 'w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded-xl font-bold transition text-sm';
+        btn.className = 'w-full bg-cyan-500 hover:bg-cyan-600 text-white py-2 rounded-xl font-bold transition text-sm shadow-sm';
         btn.innerText = "Takip Et"; 
     }
 }
@@ -672,7 +578,7 @@ async function loadUserPosts(isLoadMore = false) {
     if (!isLoadMore) { 
         if(feedContainer) {
             feedContainer.style.display = 'block';
-            feedContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b;">Yükleniyor...</div>';
+            feedContainer.innerHTML = '<div style="padding:40px; text-align:center;" class="text-slate-500 dark:text-gray-400">Yükleniyor...</div>';
         }
         globalPosts = []; 
         lastVisiblePostSnap = null; 
@@ -724,14 +630,11 @@ async function loadUserPosts(isLoadMore = false) {
         console.error("Kullanıcı gönderileri yüklenemedi:", error);
         if(feedContainer && !isLoadMore) {
             feedContainer.style.display = 'block';
-            feedContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#ef4444;">Gönderiler yüklenemedi. Lütfen daha sonra tekrar deneyin.</div>';
+            feedContainer.innerHTML = '<div style="padding:40px; text-align:center;" class="text-red-500">Gönderiler yüklenemedi. Lütfen daha sonra tekrar deneyin.</div>';
         }
     }
 }
 
-// ==========================================
-// 2. YENİ MOZAİK (ASİMETRİK) GRID RENDER SİSTEMİ
-// ==========================================
 window.renderProfileFeed = function() { 
     window.currentGlobalPosts = globalPosts;
     const feedContainer = document.getElementById('profile-feed-container'); 
@@ -746,9 +649,7 @@ window.renderProfileFeed = function() {
         
         if (postData.author === targetUsername && !postData.isRepost) userPostCount++;
 
-        // Profil sayfasında sadece kullanıcının kendi postlarını gösteriyoruz 
         if (postData.author === targetUsername) {
-            
             let thumbnailUrl = '';
             let iconHtml = '';
             
@@ -768,7 +669,7 @@ window.renderProfileFeed = function() {
             }
 
             const postDiv = document.createElement('div'); 
-            postDiv.className = 'mosaic-item bg-gray-800 flex items-center justify-center relative group';
+            postDiv.className = 'mosaic-item bg-white dark:bg-gray-800 flex items-center justify-center relative group shadow-sm dark:shadow-none';
             postDiv.onclick = () => window.openPostDetail(postId); 
 
             if (thumbnailUrl) {
@@ -783,8 +684,8 @@ window.renderProfileFeed = function() {
             } else {
                 let cleanText = postData.content.replace(/<[^>]*>?/gm, '');
                 postDiv.innerHTML = `
-                    <div class="p-3 w-full h-full flex flex-col justify-center items-center text-center bg-gray-800">
-                        <p class="text-xs text-gray-300 line-clamp-4 overflow-hidden">${window.escapeHtml(cleanText)}</p>
+                    <div class="p-3 w-full h-full flex flex-col justify-center items-center text-center bg-slate-100 dark:bg-gray-800">
+                        <p class="text-xs text-slate-700 dark:text-gray-300 line-clamp-4 overflow-hidden">${window.escapeHtml(cleanText)}</p>
                     </div>
                     ${iconHtml ? `<div class="absolute top-2 right-2">${iconHtml}</div>` : ''}
                 `;
@@ -799,7 +700,7 @@ window.renderProfileFeed = function() {
     
     if(userPostCount === 0 && feedContainer) {
         feedContainer.style.display = 'block';
-        feedContainer.innerHTML = `<div style="padding:40px; text-align:center;"><div style="font-size:40px; margin-bottom:10px;">📭</div><div style="font-size:18px; font-weight:800; color:#e2e8f0;">Henüz içerik yok</div><div style="color:#64748b; font-size:14px;">Paylaşılan mozaikler burada görünecek.</div></div>`;
+        feedContainer.innerHTML = `<div style="padding:40px; text-align:center;"><div style="font-size:40px; margin-bottom:10px;">📭</div><div style="font-size:18px; font-weight:800;" class="text-slate-800 dark:text-white">Henüz içerik yok</div><div class="text-slate-500 dark:text-gray-400 text-sm mt-1">Paylaşılan mozaikler burada görünecek.</div></div>`;
     } else {
         feedContainer.style.display = 'grid';
     }
